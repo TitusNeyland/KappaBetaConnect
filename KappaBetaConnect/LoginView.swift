@@ -21,7 +21,7 @@ struct LoginView: View {
                     .autocapitalization(.none)
                     .keyboardType(.emailAddress)
                 
-                HStack {
+                ZStack(alignment: .trailing) {
                     if showPassword {
                         TextField("Password", text: $password)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -36,6 +36,7 @@ struct LoginView: View {
                         Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
                             .foregroundColor(.gray)
                     }
+                    .padding(.trailing, 8)
                 }
                 
                 Button(action: {
@@ -57,6 +58,18 @@ struct LoginView: View {
             .padding(.horizontal, 30)
             
             Spacer()
+            
+            // Sign up prompt
+            HStack {
+                Text("Not a member?")
+                    .foregroundColor(.gray)
+                Button("Sign Up") {
+                    // Handle sign up action
+                }
+                .foregroundColor(.black)
+                .fontWeight(.bold)
+            }
+            .padding(.bottom, 20)
         }
         .background(Color(.systemBackground))
     }
