@@ -4,17 +4,15 @@ struct WelcomeView: View {
     @State private var navigateToProfile = false
     
     var body: some View {
-        VStack(spacing: 20) {
-            Image("kblogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 150, height: 150)
-                .padding(.top, 50)
+        VStack {
+            Spacer()
             
             Text("Let's get your profile set up...")
-                .font(.title2)
-                .fontWeight(.bold)
-                .padding(.top, 30)
+                .font(.system(size: 32, weight: .bold))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+            
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
