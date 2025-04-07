@@ -83,14 +83,16 @@ struct InitiationDetailsView: View {
                     )
                     
                     Button(action: {
-                        // Handle completion
+                        // Handle navigation
                     }) {
-                        Text("Complete Setup")
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.black)
-                            .cornerRadius(10)
+                        NavigationLink(destination: PasswordSetupView()) {
+                            Text("Continue")
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.black)
+                                .cornerRadius(10)
+                        }
                     }
                 }
                 .padding(.horizontal, 30)
