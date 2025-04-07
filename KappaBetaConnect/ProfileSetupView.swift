@@ -1,17 +1,13 @@
 import SwiftUI
 
-struct SignUpView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var prefix = ""
-    @State private var firstName = ""
-    @State private var lastName = ""
-    @State private var suffix = ""
-    @State private var email = ""
-    @State private var phoneNumber = ""
+struct ProfileSetupView: View {
+    @State private var career = ""
+    @State private var major = ""
+    @State private var job = ""
+    @State private var company = ""
     
     var body: some View {
         VStack(spacing: 20) {
-            // Logo at the top
             Image("kblogo")
                 .resizable()
                 .scaledToFit()
@@ -20,29 +16,22 @@ struct SignUpView: View {
             
             ScrollView {
                 VStack(spacing: 15) {
-                    TextField("Prefix (Optional)", text: $prefix)
+                    TextField("Career Field", text: $career)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     
-                    TextField("First Name", text: $firstName)
+                    TextField("Major", text: $major)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     
-                    TextField("Last Name", text: $lastName)
+                    TextField("Current Job Title", text: $job)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     
-                    TextField("Suffix (Optional)", text: $suffix)
+                    TextField("Company", text: $company)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     
-                    TextField("Email", text: $email)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                    
-                    TextField("Phone Number", text: $phoneNumber)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.phonePad)
-                    
-                    NavigationLink(destination: WelcomeView()) {
-                        Text("Sign Up")
+                    Button(action: {
+                        // Handle profile setup completion
+                    }) {
+                        Text("Complete Setup")
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -60,6 +49,6 @@ struct SignUpView: View {
 
 #Preview {
     NavigationStack {
-        SignUpView()
+        ProfileSetupView()
     }
 } 
