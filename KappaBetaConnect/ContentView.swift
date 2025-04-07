@@ -8,14 +8,29 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var isShowingSplash = true
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        ZStack {
+            if isShowingSplash {
+                SplashScreenView()
+            } else {
+                // Main content will go here later
+                VStack {
+                    Text("Kappa Beta Connect")
+                        .font(.title)
+                        .bold()
+                }
+            }
         }
-        .padding()
+        .onAppear {
+            // Automatically dismiss splash screen after 5 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                withAnimation(.easeOut(duration: 0.5)) {
+                    isShowingSplash = false
+                }
+            }
+        }
     }
 }
 
