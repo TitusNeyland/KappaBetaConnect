@@ -15,12 +15,7 @@ struct ContentView: View {
             if isShowingSplash {
                 SplashScreenView()
             } else {
-                // Main content will go here later
-                VStack {
-                    Text("Kappa Beta Connect")
-                        .font(.title)
-                        .bold()
-                }
+                LoginView()
             }
         }
         .onAppear {
