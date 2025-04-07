@@ -5,6 +5,7 @@ struct ProfileSetupView: View {
     @State private var major = ""
     @State private var job = ""
     @State private var company = ""
+    @State private var navigateToInitiation = false
     
     var body: some View {
         VStack(spacing: 20) {
@@ -28,10 +29,8 @@ struct ProfileSetupView: View {
                     TextField("Company", text: $company)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     
-                    Button(action: {
-                        // Handle profile setup completion
-                    }) {
-                        Text("Complete Setup")
+                    NavigationLink(destination: InitiationDetailsView()) {
+                        Text("Continue")
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
