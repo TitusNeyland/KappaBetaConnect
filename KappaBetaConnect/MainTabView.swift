@@ -5,32 +5,42 @@ struct MainTabView: View {
     
     let tabs = ["Home", "Directory", "Events", "Messages", "Profile"]
     
+    // Add these properties
+    @State private var scrollProxy: ScrollViewProxy? = nil
+    @Namespace private var namespace
+    
     var body: some View {
         VStack(spacing: 0) {
             // Custom Tab Bar
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 30) {
-                    ForEach(0..<tabs.count, id: \.self) { index in
-                        VStack {
-                            Text(tabs[index])
-                                .foregroundColor(selectedTab == index ? .black : .gray)
-                                .fontWeight(selectedTab == index ? .bold : .regular)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 12)
-                            
-                            // Active tab indicator
-                            Rectangle()
-                                .frame(height: 2)
-                                .foregroundColor(selectedTab == index ? .black : .clear)
-                        }
-                        .onTapGesture {
-                            withAnimation(.easeInOut) {
-                                selectedTab = index
+                ScrollViewReader { proxy in
+                    HStack(spacing: 30) {
+                        ForEach(0..<tabs.count, id: \.self) { index in
+                            VStack {
+                                Text(tabs[index])
+                                    .foregroundColor(selectedTab == index ? .black : .gray)
+                                    .fontWeight(selectedTab == index ? .bold : .regular)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 12)
+                                
+                                // Active tab indicator
+                                Rectangle()
+                                    .frame(height: 2)
+                                    .foregroundColor(selectedTab == index ? .black : .clear)
+                            }
+                            .id(index) // Add id for scrolling
+                            .onTapGesture {
+                                withAnimation(.easeInOut) {
+                                    selectedTab = index
+                                }
                             }
                         }
                     }
+                    .padding(.horizontal, 16)
+                    .onAppear {
+                        scrollProxy = proxy
+                    }
                 }
-                .padding(.horizontal, 16)
             }
             .background(Color.white)
             .shadow(color: .gray.opacity(0.2), radius: 4, y: 2)
@@ -53,6 +63,12 @@ struct MainTabView: View {
                     .tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .onChange(of: selectedTab) { newValue in
+                // Scroll to keep selected tab in view
+                withAnimation {
+                    scrollProxy?.scrollTo(newValue, anchor: .center)
+                }
+            }
         }
         .navigationBarHidden(true)
     }
