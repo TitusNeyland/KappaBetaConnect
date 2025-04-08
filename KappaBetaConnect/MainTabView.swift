@@ -366,6 +366,7 @@ struct DirectoryView: View {
 
 struct EventsView: View {
     @State private var searchText = ""
+    @State private var showAddEvent = false
     
     // Sample events data
     let events = [
@@ -380,80 +381,101 @@ struct EventsView: View {
     ]
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header with logo
-            HStack {
-                Text("Events")
-                    .font(.title)
-                    .fontWeight(.semibold)
+        ZStack(alignment: .bottomTrailing) {
+            VStack(spacing: 0) {
+                // Header with logo
+                HStack {
+                    Text("Events")
+                        .font(.title)
+                        .fontWeight(.semibold)
+                    
+                    Spacer()
+                    
+                    Image("kblogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 70, height: 70)
+                        .padding(.trailing, -20)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
                 
-                Spacer()
+                // Search bar
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    TextField("Search", text: $searchText)
+                }
+                .padding(10)
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 10)
                 
-                Image("kblogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 70, height: 70)
-                    .padding(.trailing, -20)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            
-            // Search bar
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.gray)
-                TextField("Search", text: $searchText)
-            }
-            .padding(10)
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            .padding(.bottom, 10)
-            
-            // Events list
-            ScrollView {
-                VStack(spacing: 20) {
-                    ForEach(Array(events.enumerated()), id: \.element.title) { index, event in
-                        HStack(alignment: .top, spacing: 15) {
-                            // Date box
-                            VStack {
-                                Text(event.month)
-                                    .font(.system(size: 14, weight: .medium))
-                                Text(event.day)
-                                    .font(.system(size: 24, weight: .bold))
+                // Events list
+                ScrollView {
+                    VStack(spacing: 20) {
+                        ForEach(Array(events.enumerated()), id: \.element.title) { index, event in
+                            HStack(alignment: .top, spacing: 15) {
+                                // Date box
+                                VStack {
+                                    Text(event.month)
+                                        .font(.system(size: 14, weight: .medium))
+                                    Text(event.day)
+                                        .font(.system(size: 24, weight: .bold))
+                                }
+                                .frame(width: 60)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.black, lineWidth: 1)
+                                )
+                                
+                                // Event details
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(event.title)
+                                        .font(.system(size: 20, weight: .semibold))
+                                    Text(event.date)
+                                        .font(.system(size: 16))
+                                    Text(event.location)
+                                        .font(.system(size: 16))
+                                }
+                                
+                                Spacer()
                             }
-                            .frame(width: 60)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.black, lineWidth: 1)
-                            )
+                            .padding(.horizontal, 20)
                             
-                            // Event details
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(event.title)
-                                    .font(.system(size: 20, weight: .semibold))
-                                Text(event.date)
-                                    .font(.system(size: 16))
-                                Text(event.location)
-                                    .font(.system(size: 16))
+                            if index < events.count - 1 {
+                                Divider()
+                                    .padding(.horizontal, 20)
                             }
-                            
-                            Spacer()
-                        }
-                        .padding(.horizontal, 20)
-                        
-                        if index < events.count - 1 {
-                            Divider()
-                                .padding(.horizontal, 20)
                         }
                     }
+                    .padding(.top, 10)
                 }
-                .padding(.top, 10)
             }
+            .background(Color(.systemBackground))
+            
+            // Floating Action Button
+            Button(action: {
+                showAddEvent = true
+            }) {
+                Image(systemName: "plus")
+                    .font(.title2)
+                    .foregroundColor(.white)
+                    .frame(width: 60, height: 60)
+                    .background(Color.black)
+                    .clipShape(Circle())
+                    .shadow(radius: 4)
+            }
+            .padding(.trailing, 20)
+            .padding(.bottom, 20)
         }
-        .background(Color(.systemBackground))
+        .sheet(isPresented: $showAddEvent) {
+            Text("Add Event") // Placeholder for AddEventView
+                .presentationDetents([.medium, .large])
+        }
     }
 }
 
