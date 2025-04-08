@@ -62,11 +62,11 @@ struct MainTabView: View {
 struct HomeView: View {
     // Sample data for new members - replace with actual data later
     let newMembers = [
-        "John Smith",
-        "Michael Johnson",
-        "David Williams",
-        "James Brown",
-        "Robert Davis"
+        (name: "John Smith", city: "Houston, TX"),
+        (name: "Michael Johnson", city: "Atlanta, GA"),
+        (name: "David Williams", city: "Chicago, IL"),
+        (name: "James Brown", city: "Dallas, TX"),
+        (name: "Robert Davis", city: "Miami, FL")
     ]
     
     var body: some View {
@@ -95,7 +95,7 @@ struct HomeView: View {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 20) {
-                    ForEach(newMembers, id: \.self) { member in
+                    ForEach(newMembers, id: \.name) { member in
                         VStack {
                             Circle()
                                 .fill(Color.gray.opacity(0.3))
@@ -106,11 +106,16 @@ struct HomeView: View {
                                         .font(.system(size: 30))
                                 )
                             
-                            Text(member)
+                            Text(member.name)
                                 .font(.caption)
                                 .multilineTextAlignment(.center)
-                                .frame(width: 80)
+                            
+                            Text(member.city)
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                                .multilineTextAlignment(.center)
                         }
+                        .frame(width: 80)
                     }
                 }
                 .padding(.horizontal, 20)
