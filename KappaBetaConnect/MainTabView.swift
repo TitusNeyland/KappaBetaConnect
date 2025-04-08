@@ -473,8 +473,7 @@ struct EventsView: View {
             .padding(.bottom, 20)
         }
         .sheet(isPresented: $showAddEvent) {
-            Text("Add Event") // Placeholder for AddEventView
-                .presentationDetents([.medium, .large])
+            AddEventView()
         }
     }
 }
