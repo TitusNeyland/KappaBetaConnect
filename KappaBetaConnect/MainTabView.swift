@@ -365,8 +365,85 @@ struct DirectoryView: View {
 }
 
 struct EventsView: View {
+    @State private var searchText = ""
+    
+    // Sample events data
+    let events = [
+        (month: "MAY", day: "12", title: "Networking Mixer", 
+         date: "Sunday, May 12, 6:00 PM", location: "Austin, TX"),
+        (month: "MAY", day: "25", title: "Alumni Panel Discussion", 
+         date: "Saturday, May 25, 2:00 PM", location: "New York, NY"),
+        (month: "JUN", day: "5", title: "Volunteer Opportunity", 
+         date: "Wednesday, June 5, 9:00 AM", location: "Chicago, IL"),
+        (month: "JUN", day: "21", title: "Summer Social", 
+         date: "Friday, June 21, 5:30 PM", location: "Los Angeles, CA")
+    ]
+    
     var body: some View {
-        Text("Events")
+        VStack(spacing: 0) {
+            Text("Events")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+            
+            // Search bar
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.gray)
+                TextField("Search", text: $searchText)
+            }
+            .padding(10)
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 10)
+            
+            // Events list
+            ScrollView {
+                VStack(spacing: 20) {
+                    ForEach(Array(events.enumerated()), id: \.element.title) { index, event in
+                        HStack(alignment: .top, spacing: 15) {
+                            // Date box
+                            VStack {
+                                Text(event.month)
+                                    .font(.system(size: 14, weight: .medium))
+                                Text(event.day)
+                                    .font(.system(size: 24, weight: .bold))
+                            }
+                            .frame(width: 60)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.black, lineWidth: 1)
+                            )
+                            
+                            // Event details
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(event.title)
+                                    .font(.system(size: 20, weight: .semibold))
+                                Text(event.date)
+                                    .font(.system(size: 16))
+                                Text(event.location)
+                                    .font(.system(size: 16))
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        if index < events.count - 1 {
+                            Divider()
+                                .padding(.horizontal, 20)
+                        }
+                    }
+                }
+                .padding(.top, 10)
+            }
+        }
+        .background(Color(.systemBackground))
     }
 }
 
