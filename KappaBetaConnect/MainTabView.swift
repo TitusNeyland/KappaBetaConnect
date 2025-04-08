@@ -61,7 +61,25 @@ struct MainTabView: View {
 // Placeholder Views
 struct HomeView: View {
     var body: some View {
-        Text("Home")
+        VStack {
+            HStack {
+                Text("Welcome back!")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .padding(.leading, 20)
+                
+                Spacer()
+                
+                Image("kblogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 50, height: 50)
+                    .padding(.trailing, 20)
+            }
+            .padding(.top, 20)
+            
+            Spacer()
+        }
     }
 }
 
