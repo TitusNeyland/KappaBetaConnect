@@ -5,32 +5,42 @@ struct MainTabView: View {
     
     let tabs = ["Home", "Directory", "Events", "Messages", "Profile"]
     
+    // Add these properties
+    @State private var scrollProxy: ScrollViewProxy? = nil
+    @Namespace private var namespace
+    
     var body: some View {
         VStack(spacing: 0) {
             // Custom Tab Bar
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 30) {
-                    ForEach(0..<tabs.count, id: \.self) { index in
-                        VStack {
-                            Text(tabs[index])
-                                .foregroundColor(selectedTab == index ? .black : .gray)
-                                .fontWeight(selectedTab == index ? .bold : .regular)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 12)
-                            
-                            // Active tab indicator
-                            Rectangle()
-                                .frame(height: 2)
-                                .foregroundColor(selectedTab == index ? .black : .clear)
-                        }
-                        .onTapGesture {
-                            withAnimation(.easeInOut) {
-                                selectedTab = index
+                ScrollViewReader { proxy in
+                    HStack(spacing: 30) {
+                        ForEach(0..<tabs.count, id: \.self) { index in
+                            VStack {
+                                Text(tabs[index])
+                                    .foregroundColor(selectedTab == index ? .black : .gray)
+                                    .fontWeight(selectedTab == index ? .bold : .regular)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 12)
+                                
+                                // Active tab indicator
+                                Rectangle()
+                                    .frame(height: 2)
+                                    .foregroundColor(selectedTab == index ? .black : .clear)
+                            }
+                            .id(index) // Add id for scrolling
+                            .onTapGesture {
+                                withAnimation(.easeInOut) {
+                                    selectedTab = index
+                                }
                             }
                         }
                     }
+                    .padding(.horizontal, 16)
+                    .onAppear {
+                        scrollProxy = proxy
+                    }
                 }
-                .padding(.horizontal, 16)
             }
             .background(Color.white)
             .shadow(color: .gray.opacity(0.2), radius: 4, y: 2)
@@ -53,6 +63,12 @@ struct MainTabView: View {
                     .tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .onChange(of: selectedTab) { newValue in
+                // Scroll to keep selected tab in view
+                withAnimation {
+                    scrollProxy?.scrollTo(newValue, anchor: .center)
+                }
+            }
         }
         .navigationBarHidden(true)
     }
@@ -94,7 +110,7 @@ struct HomeView: View {
                 HStack {
                     Text("Welcome back!")
                         .font(.title)
-                        .fontWeight(.bold)
+                        .fontWeight(.semibold)
                         .padding(.leading, 20)
                     
                     Spacer()
@@ -283,8 +299,8 @@ struct DirectoryView: View {
             // Header with logo
             HStack {
                 Text("Directory")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                    .font(.title)
+                    .fontWeight(.semibold)
                 
                 Spacer()
                 
@@ -365,8 +381,116 @@ struct DirectoryView: View {
 }
 
 struct EventsView: View {
+    @State private var searchText = ""
+    @State private var showAddEvent = false
+    
+    // Sample events data
+    let events = [
+        (month: "MAY", day: "12", title: "Networking Mixer", 
+         date: "Sunday, May 12, 6:00 PM", location: "Austin, TX"),
+        (month: "MAY", day: "25", title: "Alumni Panel Discussion", 
+         date: "Saturday, May 25, 2:00 PM", location: "New York, NY"),
+        (month: "JUN", day: "5", title: "Volunteer Opportunity", 
+         date: "Wednesday, June 5, 9:00 AM", location: "Chicago, IL"),
+        (month: "JUN", day: "21", title: "Summer Social", 
+         date: "Friday, June 21, 5:30 PM", location: "Los Angeles, CA")
+    ]
+    
     var body: some View {
-        Text("Events")
+        ZStack(alignment: .bottomTrailing) {
+            VStack(spacing: 0) {
+                // Header with logo
+                HStack {
+                    Text("Events")
+                        .font(.title)
+                        .fontWeight(.semibold)
+                    
+                    Spacer()
+                    
+                    Image("kblogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 70, height: 70)
+                        .padding(.trailing, -20)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                
+                // Search bar
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    TextField("Search", text: $searchText)
+                }
+                .padding(10)
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 10)
+                
+                // Events list
+                ScrollView {
+                    VStack(spacing: 20) {
+                        ForEach(Array(events.enumerated()), id: \.element.title) { index, event in
+                            HStack(alignment: .top, spacing: 15) {
+                                // Date box
+                                VStack {
+                                    Text(event.month)
+                                        .font(.system(size: 14, weight: .medium))
+                                    Text(event.day)
+                                        .font(.system(size: 24, weight: .bold))
+                                }
+                                .frame(width: 60)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.black, lineWidth: 1)
+                                )
+                                
+                                // Event details
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(event.title)
+                                        .font(.system(size: 20, weight: .semibold))
+                                    Text(event.date)
+                                        .font(.system(size: 16))
+                                    Text(event.location)
+                                        .font(.system(size: 16))
+                                }
+                                
+                                Spacer()
+                            }
+                            .padding(.horizontal, 20)
+                            
+                            if index < events.count - 1 {
+                                Divider()
+                                    .padding(.horizontal, 20)
+                            }
+                        }
+                    }
+                    .padding(.top, 10)
+                }
+            }
+            .background(Color(.systemBackground))
+            
+            // Floating Action Button
+            Button(action: {
+                showAddEvent = true
+            }) {
+                Image(systemName: "plus")
+                    .font(.title2)
+                    .foregroundColor(.white)
+                    .frame(width: 60, height: 60)
+                    .background(Color.black)
+                    .clipShape(Circle())
+                    .shadow(radius: 4)
+            }
+            .padding(.trailing, 20)
+            .padding(.bottom, 20)
+        }
+        .sheet(isPresented: $showAddEvent) {
+            AddEventView()
+        }
     }
 }
 
