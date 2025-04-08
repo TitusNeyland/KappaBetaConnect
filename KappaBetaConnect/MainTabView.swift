@@ -94,7 +94,7 @@ struct HomeView: View {
                 HStack {
                     Text("Welcome back!")
                         .font(.title)
-                        .fontWeight(.bold)
+                        .fontWeight(.semibold)
                         .padding(.leading, 20)
                     
                     Spacer()
@@ -283,8 +283,8 @@ struct DirectoryView: View {
             // Header with logo
             HStack {
                 Text("Directory")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                    .font(.title)
+                    .fontWeight(.semibold)
                 
                 Spacer()
                 
@@ -383,7 +383,7 @@ struct EventsView: View {
         VStack(spacing: 0) {
             Text("Events")
                 .font(.largeTitle)
-                .fontWeight(.bold)
+                .fontWeight(.semibold)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
