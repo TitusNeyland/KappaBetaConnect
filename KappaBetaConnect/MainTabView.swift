@@ -102,7 +102,7 @@ struct HomeView: View {
                     Image("kblogo")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 50, height: 50)
+                        .frame(width: 70, height: 70)
                         .padding(.trailing, 20)
                 }
                 .padding(.top, 20)
