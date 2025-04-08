@@ -501,7 +501,10 @@ struct MessagesView: View {
 }
 
 struct ProfileView: View {
-    let userName = "John Smith"
+    let userName = "Titus Neyland"
+    let jobTitle = "Software Engineer"
+    let company = "Apple"
+    let location = "Houston, TX"
     
     var body: some View {
         VStack(spacing: 0) {
@@ -517,11 +520,25 @@ struct ProfileView: View {
                             .font(.system(size: 40))
                     )
                 
-                // User Name
-                Text(userName)
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .offset(y: -20) // Move username up by 20 points
+                VStack(alignment: .leading, spacing: 4) {
+                    // User Name
+                    Text(userName)
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .offset(y: -20)
+                    
+                    // Job Title and Company
+                    Text("\(jobTitle), \(company)")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                        .offset(y: -22)
+                    
+                    // Location
+                    Text(location)
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                        .offset(y: -22)
+                }
                 
                 Spacer()
             }
