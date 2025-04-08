@@ -501,8 +501,36 @@ struct MessagesView: View {
 }
 
 struct ProfileView: View {
+    let userName = "John Smith"
+    
     var body: some View {
-        Text("Profile")
+        VStack(spacing: 0) {
+            // Profile Header
+            HStack(spacing: 15) {
+                // Profile Image
+                Circle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 90, height: 90)
+                    .overlay(
+                        Image(systemName: "person.fill")
+                            .foregroundColor(.gray)
+                            .font(.system(size: 40))
+                    )
+                
+                // User Name
+                Text(userName)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .offset(y: -20) // Move username up by 20 points
+                
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            
+            Spacer()
+        }
+        .background(Color(.systemBackground))
     }
 }
 
