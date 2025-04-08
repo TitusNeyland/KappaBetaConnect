@@ -60,8 +60,17 @@ struct MainTabView: View {
 
 // Placeholder Views
 struct HomeView: View {
+    // Sample data for new members - replace with actual data later
+    let newMembers = [
+        "John Smith",
+        "Michael Johnson",
+        "David Williams",
+        "James Brown",
+        "Robert Davis"
+    ]
+    
     var body: some View {
-        VStack {
+        VStack(alignment: .leading) {
             HStack {
                 Text("Welcome back!")
                     .font(.title)
@@ -77,6 +86,36 @@ struct HomeView: View {
                     .padding(.trailing, 20)
             }
             .padding(.top, 20)
+            
+            Text("New Members")
+                .font(.title2)
+                .fontWeight(.semibold)
+                .padding(.leading, 20)
+                .padding(.top, 30)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 20) {
+                    ForEach(newMembers, id: \.self) { member in
+                        VStack {
+                            Circle()
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(width: 70, height: 70)
+                                .overlay(
+                                    Image(systemName: "person.fill")
+                                        .foregroundColor(.gray)
+                                        .font(.system(size: 30))
+                                )
+                            
+                            Text(member)
+                                .font(.caption)
+                                .multilineTextAlignment(.center)
+                                .frame(width: 80)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+            }
             
             Spacer()
         }
