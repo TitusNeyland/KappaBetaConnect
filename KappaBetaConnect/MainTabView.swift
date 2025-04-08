@@ -381,12 +381,22 @@ struct EventsView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            Text("Events")
-                .font(.largeTitle)
-                .fontWeight(.semibold)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
+            // Header with logo
+            HStack {
+                Text("Events")
+                    .font(.title)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Image("kblogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 70, height: 70)
+                    .padding(.trailing, -20)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
             
             // Search bar
             HStack {
