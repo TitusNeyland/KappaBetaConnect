@@ -263,8 +263,94 @@ struct HomeView: View {
 }
 
 struct DirectoryView: View {
+    @State private var searchText = ""
+    
+    // Sample directory data
+    let members = [
+        (name: "John Doe", title: "Software Engineer"),
+        (name: "Jane Smith", title: "Marketing Manager"),
+        (name: "Bob Johnson", title: "Sales Associate"),
+        (name: "Alice Williams", title: "Product Designer"),
+        (name: "Michael Brown", title: "Account Executive"),
+        (name: "Project Manager", title: "Creative Agency"),
+        (name: "David Wilson", title: "Data Analyst"),
+        (name: "Emily Johnson", title: "Consultant"),
+        (name: "Kevin Johnson", title: "HR Specialist")
+    ]
+    
     var body: some View {
-        Text("Directory")
+        VStack(spacing: 0) {
+            Text("Directory")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+            
+            // Search bar and filters
+            HStack(spacing: 15) {
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    TextField("Search", text: $searchText)
+                }
+                .padding(10)
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                
+                Button(action: {
+                    // Handle filters
+                }) {
+                    Text("Filters")
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.black, lineWidth: 1)
+                        )
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 10)
+            
+            // Members list
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(members, id: \.name) { member in
+                        VStack(spacing: 0) {
+                            HStack(spacing: 12) {
+                                Circle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .frame(width: 50, height: 50)
+                                    .overlay(
+                                        Image(systemName: "person.fill")
+                                            .foregroundColor(.gray)
+                                            .font(.system(size: 24))
+                                    )
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(member.name)
+                                        .font(.system(size: 17, weight: .semibold))
+                                    Text(member.title)
+                                        .font(.system(size: 15))
+                                        .foregroundColor(.gray)
+                                }
+                                
+                                Spacer()
+                            }
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 20)
+                            
+                            Divider()
+                                .padding(.leading, 82)
+                        }
+                    }
+                }
+            }
+        }
+        .background(Color(.systemBackground))
     }
 }
 
