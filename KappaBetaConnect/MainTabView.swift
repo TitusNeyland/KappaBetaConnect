@@ -75,100 +75,189 @@ struct HomeView: View {
         (month: "MAY", day: "3", name: "Event Name", location: "Location")
     ]
     
+    // Add recommended connections data
+    let recommendedConnections = [
+        (name: "Michael Brown", title: "Job Title"),
+        (name: "Emma Davis", title: "Company")
+    ]
+    
+    // Add recent activity data
+    let recentActivities = [
+        (name: "Chris Wilson", action: "added a photo", time: "2h ago"),
+        (name: "Rachel Moore", action: "commented on a post", time: "5h ago"),
+        (name: "Daniel Lee", action: "joined the group", time: "1d ago")
+    ]
+    
     var body: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                Text("Welcome back!")
-                    .font(.title)
-                    .fontWeight(.bold)
+        ScrollView { // Add ScrollView to handle all content
+            VStack(alignment: .leading) {
+                HStack {
+                    Text("Welcome back!")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .padding(.leading, 20)
+                    
+                    Spacer()
+                    
+                    Image("kblogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 50, height: 50)
+                        .padding(.trailing, 20)
+                }
+                .padding(.top, 20)
+                
+                Text("New Members")
+                    .font(.title2)
+                    .fontWeight(.semibold)
                     .padding(.leading, 20)
+                    .padding(.top, 30)
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 20) {
+                        ForEach(newMembers, id: \.name) { member in
+                            VStack {
+                                Circle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .frame(width: 70, height: 70)
+                                    .overlay(
+                                        Image(systemName: "person.fill")
+                                            .foregroundColor(.gray)
+                                            .font(.system(size: 30))
+                                    )
+                                
+                                Text(member.name)
+                                    .font(.caption)
+                                    .multilineTextAlignment(.center)
+                                
+                                Text(member.city)
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(width: 80)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 10)
+                }
+                
+                Text("Upcoming Events")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .padding(.leading, 20)
+                    .padding(.top, 40)
+                
+                VStack(spacing: 20) {
+                    ForEach(upcomingEvents, id: \.name) { event in
+                        HStack {
+                            // Date column
+                            VStack(alignment: .center) {
+                                Text(event.month)
+                                    .font(.system(size: 14, weight: .medium))
+                                Text(event.day)
+                                    .font(.system(size: 24, weight: .bold))
+                            }
+                            .frame(width: 50)
+                            
+                            // Event details
+                            VStack(alignment: .leading) {
+                                Text(event.name)
+                                    .font(.system(size: 18, weight: .semibold))
+                                Text(event.location)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.leading, 10)
+                            
+                            Spacer()
+                            
+                            // Chevron indicator
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.gray)
+                                .padding(.trailing, 10)
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 20)
+                    }
+                }
+                
+                Text("Recommended Connections")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .padding(.leading, 20)
+                    .padding(.top, 40)
+                
+                VStack(spacing: 15) {
+                    ForEach(recommendedConnections, id: \.name) { connection in
+                        HStack {
+                            // Profile picture and details
+                            HStack {
+                                Circle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .frame(width: 50, height: 50)
+                                    .overlay(
+                                        Image(systemName: "person.fill")
+                                            .foregroundColor(.gray)
+                                            .font(.system(size: 24))
+                                    )
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(connection.name)
+                                        .font(.system(size: 16, weight: .semibold))
+                                    Text(connection.title)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.gray)
+                                }
+                                .padding(.leading, 8)
+                            }
+                            
+                            Spacer()
+                            
+                            // Connect button
+                            Button(action: {
+                                // Handle connect action
+                            }) {
+                                Text("Connect")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(Color.black, lineWidth: 1)
+                                    )
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                }
+                
+                Text("Recent Activity")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .padding(.leading, 20)
+                    .padding(.top, 40)
+                    .padding(.bottom, 15)
+                
+                VStack(spacing: 15) {
+                    ForEach(recentActivities, id: \.name) { activity in
+                        HStack {
+                            Text(activity.name)
+                                .fontWeight(.semibold)
+                            + Text(" \(activity.action)")
+                            
+                            Spacer()
+                            
+                            Text(activity.time)
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                }
                 
                 Spacer()
-                
-                Image("kblogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 50, height: 50)
-                    .padding(.trailing, 20)
             }
-            .padding(.top, 20)
-            
-            Text("New Members")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .padding(.leading, 20)
-                .padding(.top, 30)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 20) {
-                    ForEach(newMembers, id: \.name) { member in
-                        VStack {
-                            Circle()
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: 70, height: 70)
-                                .overlay(
-                                    Image(systemName: "person.fill")
-                                        .foregroundColor(.gray)
-                                        .font(.system(size: 30))
-                                )
-                            
-                            Text(member.name)
-                                .font(.caption)
-                                .multilineTextAlignment(.center)
-                            
-                            Text(member.city)
-                                .font(.caption2)
-                                .foregroundColor(.gray)
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(width: 80)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-            }
-            
-            Text("Upcoming Events")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .padding(.leading, 20)
-                .padding(.top, 40)
-            
-            VStack(spacing: 20) {
-                ForEach(upcomingEvents, id: \.name) { event in
-                    HStack {
-                        // Date column
-                        VStack(alignment: .center) {
-                            Text(event.month)
-                                .font(.system(size: 14, weight: .medium))
-                            Text(event.day)
-                                .font(.system(size: 24, weight: .bold))
-                        }
-                        .frame(width: 50)
-                        
-                        // Event details
-                        VStack(alignment: .leading) {
-                            Text(event.name)
-                                .font(.system(size: 18, weight: .semibold))
-                            Text(event.location)
-                                .font(.system(size: 14))
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.leading, 10)
-                        
-                        Spacer()
-                        
-                        // Chevron indicator
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.gray)
-                            .padding(.trailing, 10)
-                    }
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 20)
-                }
-            }
-            
-            Spacer()
         }
     }
 }
