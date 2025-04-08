@@ -103,7 +103,7 @@ struct HomeView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 70, height: 70)
-                        .padding(.trailing, 20)
+                        .padding(.trailing, 0)
                 }
                 .padding(.top, 20)
                 
@@ -280,12 +280,22 @@ struct DirectoryView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            Text("Directory")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
+            // Header with logo
+            HStack {
+                Text("Directory")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                
+                Spacer()
+                
+                Image("kblogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 70, height: 70)
+                    .padding(.trailing, -20)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
             
             // Search bar and filters
             HStack(spacing: 15) {
