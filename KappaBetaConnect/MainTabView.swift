@@ -69,6 +69,12 @@ struct HomeView: View {
         (name: "Robert Davis", city: "Miami, FL")
     ]
     
+    // Updated event data structure to split month and day
+    let upcomingEvents = [
+        (month: "APR", day: "25", name: "Event Name", location: "Location"),
+        (month: "MAY", day: "3", name: "Event Name", location: "Location")
+    ]
+    
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
@@ -120,6 +126,46 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
+            }
+            
+            Text("Upcoming Events")
+                .font(.title2)
+                .fontWeight(.semibold)
+                .padding(.leading, 20)
+                .padding(.top, 40)
+            
+            VStack(spacing: 20) {
+                ForEach(upcomingEvents, id: \.name) { event in
+                    HStack {
+                        // Date column
+                        VStack(alignment: .center) {
+                            Text(event.month)
+                                .font(.system(size: 14, weight: .medium))
+                            Text(event.day)
+                                .font(.system(size: 24, weight: .bold))
+                        }
+                        .frame(width: 50)
+                        
+                        // Event details
+                        VStack(alignment: .leading) {
+                            Text(event.name)
+                                .font(.system(size: 18, weight: .semibold))
+                            Text(event.location)
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.leading, 10)
+                        
+                        Spacer()
+                        
+                        // Chevron indicator
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.gray)
+                            .padding(.trailing, 10)
+                    }
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 20)
+                }
             }
             
             Spacer()
