@@ -518,6 +518,11 @@ struct ProfileView: View {
     let bio = "Passionate software engineer with a focus on iOS development. Creating innovative solutions and mentoring junior developers. Always excited to learn new technologies and contribute to meaningful projects."
     let linkedin = "linkedin.com/in/titusneyland"
     
+    // Add new properties for social media
+    let instagram = "@username"
+    let twitter = "@username"
+    let snapchat = "@username"
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 25) {
@@ -697,11 +702,38 @@ struct ProfileView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
                     
-                    HStack {
-                        Image(systemName: "link")
-                            .foregroundColor(.blue)
-                        Link("LinkedIn Profile", destination: URL(string: linkedin)!)
-                            .foregroundColor(.blue)
+                    VStack(alignment: .leading, spacing: 12) {
+                        // LinkedIn
+                        HStack {
+                            Image(systemName: "link")
+                                .foregroundColor(.blue)
+                            Link("LinkedIn Profile", destination: URL(string: linkedin)!)
+                                .foregroundColor(.blue)
+                        }
+                        
+                        // Instagram
+                        HStack {
+                            Image(systemName: "link")
+                                .foregroundColor(.blue)
+                            Link("Instagram", destination: URL(string: "https://instagram.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!)
+                                .foregroundColor(.blue)
+                        }
+                        
+                        // Twitter/X
+                        HStack {
+                            Image(systemName: "link")
+                                .foregroundColor(.blue)
+                            Link("Twitter", destination: URL(string: "https://twitter.com/\(twitter.replacingOccurrences(of: "@", with: ""))")!)
+                                .foregroundColor(.blue)
+                        }
+                        
+                        // Snapchat
+                        HStack {
+                            Image(systemName: "link")
+                                .foregroundColor(.blue)
+                            Link("Snapchat", destination: URL(string: "https://snapchat.com/add/\(snapchat.replacingOccurrences(of: "@", with: ""))")!)
+                                .foregroundColor(.blue)
+                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 4)
