@@ -78,11 +78,11 @@ struct MainTabView: View {
 struct HomeView: View {
     // Sample data for new members - replace with actual data later
     let newMembers = [
-        (name: "John Smith", city: "Houston, TX"),
-        (name: "Michael Johnson", city: "Atlanta, GA"),
-        (name: "David Williams", city: "Chicago, IL"),
-        (name: "James Brown", city: "Dallas, TX"),
-        (name: "Robert Davis", city: "Miami, FL")
+        (name: "Nathan Cooke", city: "Jackson, MS"),
+        (name: "Alfred Carter", city: "Atlanta, GA"),
+        (name: "Victor Simon", city: "Chicago, IL"),
+        (name: "Samuel Trotter", city: "Dallas, TX"),
+        (name: "Austin Wheeler", city: "Miami, FL")
     ]
     
     // Updated event data structure to split month and day
@@ -93,15 +93,15 @@ struct HomeView: View {
     
     // Add recommended connections data
     let recommendedConnections = [
-        (name: "Michael Brown", title: "Job Title"),
-        (name: "Emma Davis", title: "Company")
+        (name: "Fred West", title: "Job Title"),
+        (name: "Edward Evans", title: "Company")
     ]
     
     // Add recent activity data
     let recentActivities = [
-        (name: "Chris Wilson", action: "added a photo", time: "2h ago"),
-        (name: "Rachel Moore", action: "commented on a post", time: "5h ago"),
-        (name: "Daniel Lee", action: "joined the group", time: "1d ago")
+        (name: "Chris Ferrell", action: "added a photo", time: "2h ago"),
+        (name: "Kieran J Williams", action: "commented on a post", time: "5h ago"),
+        (name: "John Tatum", action: "joined the group", time: "1d ago")
     ]
     
     var body: some View {
@@ -283,15 +283,15 @@ struct DirectoryView: View {
     
     // Sample directory data
     let members = [
-        (name: "John Doe", title: "Software Engineer"),
-        (name: "Jane Smith", title: "Marketing Manager"),
-        (name: "Bob Johnson", title: "Sales Associate"),
-        (name: "Alice Williams", title: "Product Designer"),
-        (name: "Michael Brown", title: "Account Executive"),
-        (name: "Project Manager", title: "Creative Agency"),
-        (name: "David Wilson", title: "Data Analyst"),
-        (name: "Emily Johnson", title: "Consultant"),
-        (name: "Kevin Johnson", title: "HR Specialist")
+        (name: "Nathan Moseley", title: "Software Engineer"),
+        (name: "Peyton Brown", title: "Marketing Manager"),
+        (name: "Chris Kee", title: "Sales Associate"),
+        (name: "Zachary Mikell", title: "Product Designer"),
+        (name: "Tyriq Mitchell", title: "Account Executive"),
+        (name: "Rucell Harris", title: "Creative Agency"),
+        (name: "Joshua Bailey", title: "Data Analyst"),
+        (name: "Johnny Wilson", title: "Consultant"),
+        (name: "Tyler Woodberry", title: "HR Specialist")
     ]
     
     var body: some View {
