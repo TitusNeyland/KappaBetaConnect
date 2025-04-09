@@ -505,51 +505,192 @@ struct ProfileView: View {
     let jobTitle = "Software Engineer"
     let company = "Apple"
     let location = "Houston, TX"
+    let industry = "Technology"
+    let yearsExperience = "5 years"
+    let alumniStatus = "Alumni"
+    let skills = ["iOS Development", "Swift", "SwiftUI", "UI/UX Design", "Project Management"]
+    let interests = ["Technology", "Basketball", "Photography", "Travel"]
+    let bio = "Passionate software engineer with a focus on iOS development. Creating innovative solutions and mentoring junior developers. Always excited to learn new technologies and contribute to meaningful projects."
+    let linkedin = "linkedin.com/in/titusneyland"
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Profile Header
-            HStack(spacing: 15) {
-                // Profile Image
-                Circle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 110, height: 110)
-                    .offset(y: -10)
-                    .overlay(
-                        Image(systemName: "person.fill")
+        ScrollView {
+            VStack(spacing: 25) {
+                // Profile Header
+                HStack(spacing: 15) {
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 110, height: 110)
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.gray)
+                                .font(.system(size: 40))
+                        )
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(userName)
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                        
+                        Text("\(jobTitle), \(company)")
+                            .font(.subheadline)
                             .foregroundColor(.gray)
-                            .font(.system(size: 40))
-                            .offset(y: -15)
-                    )
+                        
+                        Text(location)
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
                 
-                VStack(alignment: .leading, spacing: 4) {
-                    // User Name
-                    Text(userName)
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .offset(y: -20)
+                // Professional Info Section
+                HStack(spacing: 30) {
+                    InfoColumn(title: "Industry", value: industry)
+                    InfoColumn(title: "Experience", value: yearsExperience)
+                    InfoColumn(title: "Status", value: alumniStatus)
+                }
+                .padding(.horizontal, 20)
+                
+                // About Section
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("About")
+                        .font(.headline)
+                        .padding(.horizontal, 20)
                     
-                    // Job Title and Company
-                    Text("\(jobTitle), \(company)")
+                    Text(bio)
                         .font(.subheadline)
                         .foregroundColor(.gray)
-                        .offset(y: -22)
-                    
-                    // Location
-                    Text(location)
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                        .offset(y: -22)
+                        .padding(.horizontal, 20)
                 }
                 
-                Spacer()
+                // Skills Section
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Skills & Expertise")
+                        .font(.headline)
+                        .padding(.horizontal, 20)
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(skills, id: \.self) { skill in
+                                Text(skill)
+                                    .font(.subheadline)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.gray.opacity(0.1))
+                                    .cornerRadius(15)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                }
+                
+                // Interests Section
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Interests & Hobbies")
+                        .font(.headline)
+                        .padding(.horizontal, 20)
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(interests, id: \.self) { interest in
+                                Text(interest)
+                                    .font(.subheadline)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.gray.opacity(0.1))
+                                    .cornerRadius(15)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                }
+                
+                // Connect Section
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Connect")
+                        .font(.headline)
+                        .padding(.horizontal, 20)
+                    
+                    Button(action: {
+                        // Open LinkedIn profile
+                    }) {
+                        HStack {
+                            Image(systemName: "link")
+                            Text("LinkedIn Profile")
+                        }
+                        .foregroundColor(.blue)
+                        .padding(.horizontal, 20)
+                    }
+                }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            
-            Spacer()
+            .padding(.bottom, 30)
         }
         .background(Color(.systemBackground))
+    }
+}
+
+// Helper view for info columns
+struct InfoColumn: View {
+    let title: String
+    let value: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(.gray)
+            Text(value)
+                .font(.subheadline)
+                .fontWeight(.medium)
+        }
+    }
+}
+
+// Helper view for creating flowing tag layouts
+struct FlowLayout<Content: View>: View {
+    let items: [String]
+    let spacing: CGFloat = 8
+    let content: (String) -> Content
+    
+    var body: some View {
+        GeometryReader { geometry in
+            self.generateContent(in: geometry)
+        }
+    }
+    
+    private func generateContent(in geometry: GeometryProxy) -> some View {
+        var width = CGFloat.zero
+        var height = CGFloat.zero
+        
+        return ZStack(alignment: .topLeading) {
+            ForEach(items, id: \.self) { item in
+                content(item)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
+                    .alignmentGuide(.leading) { dimension in
+                        if abs(width - dimension.width) > geometry.size.width {
+                            width = 0
+                            height -= dimension.height + spacing
+                        }
+                        let result = width
+                        if item == items.last {
+                            width = 0
+                        } else {
+                            width -= dimension.width + spacing
+                        }
+                        return result
+                    }
+                    .alignmentGuide(.top) { _ in
+                        let result = height
+                        if item == items.last {
+                            height = 0
+                        }
+                        return result
+                    }
+            }
+        }
     }
 }
 
