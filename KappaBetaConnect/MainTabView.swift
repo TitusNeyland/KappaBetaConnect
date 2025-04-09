@@ -503,13 +503,18 @@ struct MessagesView: View {
 struct ProfileView: View {
     let userName = "Titus Neyland"
     let jobTitle = "Software Engineer"
-    let company = "Apple"
-    let location = "Houston, TX"
+    let company = "Dillard's Inc."
+    let location = "Little Rock, AR"
     let industry = "Technology"
     let yearsExperience = "5 years"
     let alumniStatus = "Alumni"
+    let initiationYear = "2021"
+    let lineName = "INDEUCED IN2ENT"
+    let lineNumber = "2"
+    let shipName = "12 INVADERS"
+    let positions = ["Assistant Secretary"]
     let skills = ["iOS Development", "Swift", "SwiftUI", "UI/UX Design", "Project Management"]
-    let interests = ["Technology", "Basketball", "Photography", "Travel"]
+    let interests = ["Technology", "Gaming", "Art", "Travel"]
     let bio = "Passionate software engineer with a focus on iOS development. Creating innovative solutions and mentoring junior developers. Always excited to learn new technologies and contribute to meaningful projects."
     let linkedin = "linkedin.com/in/titusneyland"
     
@@ -565,6 +570,84 @@ struct ProfileView: View {
                         .padding(.horizontal, 20)
                 }
                 
+                // Brotherhood Details Section
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Brotherhood Details")
+                        .font(.headline)
+                        .padding(.horizontal, 20)
+                    
+                    VStack(spacing: 15) {
+                        // First Row: Initiation and Line Info
+                        HStack(spacing: 20) {
+                            VStack(alignment: .leading) {
+                                Text("Initiated")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                Text("Fall \(initiationYear)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                            
+                            VStack(alignment: .leading) {
+                                Text("Line #")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                Text("#\(lineNumber)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                            
+                            VStack(alignment: .leading) {
+                                Text("Ship")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                Text(shipName)
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // Second Row: Line Name and Positions
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(alignment: .top) {
+                                VStack(alignment: .leading) {
+                                    Text("Line Name")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                    Text(lineName)
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
+                                }
+                                
+                                Spacer()
+                                
+                                VStack(alignment: .leading) {
+                                    Text("Positions")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                    HStack {
+                                        ForEach(positions, id: \.self) { position in
+                                            Text(position)
+                                                .font(.subheadline)
+                                                .foregroundColor(.gray)
+                                            if position != positions.last {
+                                                Text("•")
+                                                    .foregroundColor(.gray)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                        }
+                    }
+                    .padding(.vertical, 10)
+                    .background(Color.gray.opacity(0.05))
+                    .cornerRadius(10)
+                    .padding(.horizontal, 20)
+                }
+                
                 // Skills Section
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Skills & Expertise")
@@ -612,18 +695,19 @@ struct ProfileView: View {
                     Text("Connect")
                         .font(.headline)
                         .padding(.horizontal, 20)
+                        .padding(.top, 20)
                     
-                    Button(action: {
-                        // Open LinkedIn profile
-                    }) {
-                        HStack {
-                            Image(systemName: "link")
-                            Text("LinkedIn Profile")
-                        }
-                        .foregroundColor(.blue)
-                        .padding(.horizontal, 20)
+                    HStack {
+                        Image(systemName: "link")
+                            .foregroundColor(.blue)
+                        Link("LinkedIn Profile", destination: URL(string: linkedin)!)
+                            .foregroundColor(.blue)
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 20)
             }
             .padding(.bottom, 30)
         }
