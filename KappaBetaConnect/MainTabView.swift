@@ -513,11 +513,13 @@ struct ProfileView: View {
                 // Profile Image
                 Circle()
                     .fill(Color.gray.opacity(0.3))
-                    .frame(width: 90, height: 90)
+                    .frame(width: 110, height: 110)
+                    .offset(y: -10)
                     .overlay(
                         Image(systemName: "person.fill")
                             .foregroundColor(.gray)
                             .font(.system(size: 40))
+                            .offset(y: -15)
                     )
                 
                 VStack(alignment: .leading, spacing: 4) {
