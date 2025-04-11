@@ -2,6 +2,7 @@ import SwiftUI
 
 struct WelcomeView: View {
     @State private var navigateToProfile = false
+    var userData: UserSignupData
     
     var body: some View {
         VStack {
@@ -13,6 +14,11 @@ struct WelcomeView: View {
                 .padding(.horizontal, 20)
             
             Spacer()
+            
+            // Hidden NavigationLink
+            NavigationLink(destination: ProfileSetupView(userData: userData), isActive: $navigateToProfile) {
+                EmptyView()
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
@@ -22,14 +28,11 @@ struct WelcomeView: View {
                 navigateToProfile = true
             }
         }
-        .navigationDestination(isPresented: $navigateToProfile) {
-            ProfileSetupView()
-        }
     }
 }
 
 #Preview {
     NavigationStack {
-        WelcomeView()
+        WelcomeView(userData: UserSignupData())
     }
 } 

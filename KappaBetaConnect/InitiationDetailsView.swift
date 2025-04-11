@@ -1,9 +1,11 @@
 import SwiftUI
 
 struct InitiationDetailsView: View {
+    @ObservedObject var userData: UserSignupData
     @State private var selectedLineNumber = "1"
     @State private var selectedSemester = "Fall"
     @State private var selectedYear = String(Calendar.current.component(.year, from: Date()))
+    @State private var navigateToPassword = false
     
     let lineNumbers = Array(1...50).map { String($0) }
     let semesters = ["Fall", "Spring"]
@@ -82,10 +84,10 @@ struct InitiationDetailsView: View {
                             .stroke(Color(.systemGray4), lineWidth: 1)
                     )
                     
-                    Button(action: {
-                        // Handle navigation
-                    }) {
-                        NavigationLink(destination: PasswordSetupView()) {
+                    NavigationLink(destination: PasswordSetupView(userData: userData), isActive: $navigateToPassword) {
+                        Button(action: {
+                            navigateToPassword = true
+                        }) {
                             Text("Continue")
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
@@ -94,6 +96,7 @@ struct InitiationDetailsView: View {
                                 .cornerRadius(10)
                         }
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.horizontal, 30)
             }
@@ -105,6 +108,6 @@ struct InitiationDetailsView: View {
 
 #Preview {
     NavigationStack {
-        InitiationDetailsView()
+        InitiationDetailsView(userData: UserSignupData())
     }
 } 
