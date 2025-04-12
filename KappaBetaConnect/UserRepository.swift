@@ -95,6 +95,9 @@ class UserRepository: ObservableObject {
         if let company = user.company { dict["company"] = company }
         if let profileImageURL = user.profileImageURL { dict["profileImageURL"] = profileImageURL }
         if let linkedInURL = user.linkedInURL { dict["linkedInURL"] = linkedInURL }
+        if let lineNumber = user.lineNumber { dict["lineNumber"] = lineNumber }
+        if let semester = user.semester { dict["semester"] = semester }
+        if let year = user.year { dict["year"] = year }
         
         return dict
     }
@@ -127,6 +130,9 @@ class UserRepository: ObservableObject {
             major: dict["major"] as? String,
             jobTitle: dict["jobTitle"] as? String,
             company: dict["company"] as? String,
+            lineNumber: dict["lineNumber"] as? String,
+            semester: dict["semester"] as? String,
+            year: dict["year"] as? String,
             profileImageURL: dict["profileImageURL"] as? String,
             linkedInURL: dict["linkedInURL"] as? String,
             isActive: isActive

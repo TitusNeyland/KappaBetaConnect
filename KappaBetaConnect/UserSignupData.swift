@@ -18,6 +18,11 @@ class UserSignupData: ObservableObject {
     @Published var jobTitle: String = ""
     @Published var company: String = ""
     
+    // Initiation Information
+    @Published var lineNumber: String = ""
+    @Published var semester: String = ""
+    @Published var year: String = ""
+    
     func createUser() -> User {
         return User(
             prefix: prefix.isEmpty ? nil : prefix,
@@ -30,7 +35,10 @@ class UserSignupData: ObservableObject {
             careerField: careerField.isEmpty ? nil : careerField,
             major: major.isEmpty ? nil : major,
             jobTitle: jobTitle.isEmpty ? nil : jobTitle,
-            company: company.isEmpty ? nil : company
+            company: company.isEmpty ? nil : company,
+            lineNumber: lineNumber.isEmpty ? nil : lineNumber,
+            semester: semester.isEmpty ? nil : semester,
+            year: year.isEmpty ? nil : year
         )
     }
 } 

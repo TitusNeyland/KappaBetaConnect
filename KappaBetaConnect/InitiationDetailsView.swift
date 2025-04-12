@@ -86,6 +86,9 @@ struct InitiationDetailsView: View {
                     
                     NavigationLink(destination: PasswordSetupView(userData: userData), isActive: $navigateToPassword) {
                         Button(action: {
+                            userData.lineNumber = selectedLineNumber
+                            userData.semester = selectedSemester
+                            userData.year = selectedYear
                             navigateToPassword = true
                         }) {
                             Text("Continue")
