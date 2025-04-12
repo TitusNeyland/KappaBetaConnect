@@ -1,6 +1,7 @@
 import Foundation
 import FirebaseFirestore
 import Combine
+import FirebaseAuth
 
 class UserRepository: ObservableObject {
     let db = Firestore.firestore()
@@ -8,16 +9,68 @@ class UserRepository: ObservableObject {
     
     @Published var currentUser: User?
     
+    init() {
+        print("UserRepository initialized")
+        // Listen for auth state changes
+        Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            print("Auth state changed. User ID: \(user?.uid ?? "nil")")
+            if let user = user {
+                Task {
+                    do {
+                        try await self?.fetchCurrentUser(userId: user.uid)
+                        print("Successfully fetched current user")
+                    } catch {
+                        print("Error fetching current user: \(error)")
+                    }
+                }
+            } else {
+                print("No user logged in")
+                self?.currentUser = nil
+            }
+        }
+        
+        // Check initial auth state
+        if let currentUser = Auth.auth().currentUser {
+            print("Initial auth state - User ID: \(currentUser.uid)")
+            Task {
+                do {
+                    try await fetchCurrentUser(userId: currentUser.uid)
+                    print("Successfully fetched initial current user")
+                } catch {
+                    print("Error fetching initial current user: \(error)")
+                }
+            }
+        } else {
+            print("Initial auth state - No user logged in")
+        }
+    }
+    
+    private func fetchCurrentUser(userId: String) async throws {
+        print("Fetching user with ID: \(userId)")
+        if let user = try await getUser(withId: userId) {
+            print("Found user: \(user.firstName) \(user.lastName)")
+            DispatchQueue.main.async {
+                self.currentUser = user
+                print("Current user set to: \(user.firstName) \(user.lastName)")
+            }
+        } else {
+            print("No user found with ID: \(userId)")
+        }
+    }
+    
     func createUser(_ user: User) async throws -> String {
-        let docRef = db.collection(usersCollection).document()
+        guard let userId = user.id else {
+            throw NSError(domain: "UserRepository", code: 1, userInfo: [NSLocalizedDescriptionKey: "User has no ID"])
+        }
+        
+        let docRef = db.collection(usersCollection).document(userId)
         var userToSave = user
-        userToSave.id = docRef.documentID
         
         // Convert user to dictionary
         let userData = try userToDictionary(userToSave)
         
         try await docRef.setData(userData)
-        return docRef.documentID
+        return userId
     }
     
     func getUser(withId id: String) async throws -> User? {
