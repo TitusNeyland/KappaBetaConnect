@@ -2,12 +2,17 @@ import SwiftUI
 
 struct AddEventView: View {
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject var eventRepository: EventRepository
+    @ObservedObject var userRepository: UserRepository
+    
     @State private var eventName = ""
     @State private var eventDate = Date()
     @State private var location = ""
     @State private var eventLink = ""
     @State private var description = ""
     @State private var hashtags = ""
+    @State private var showError = false
+    @State private var errorMessage = ""
     
     var body: some View {
         NavigationView {
@@ -49,7 +54,7 @@ struct AddEventView: View {
                     
                     // Description
                     VStack(alignment: .leading) {
-                        Text("Description (Optional)")
+                        Text("Description")
                             .foregroundColor(.gray)
                         TextEditor(text: $description)
                             .frame(height: 100)
@@ -69,8 +74,9 @@ struct AddEventView: View {
                     
                     // Create Event Button
                     Button(action: {
-                        // Here you would handle saving the event
-                        dismiss()
+                        Task {
+                            await createEvent()
+                        }
                     }) {
                         Text("Create Event")
                             .foregroundColor(.white)
@@ -79,6 +85,7 @@ struct AddEventView: View {
                             .background(Color.black)
                             .cornerRadius(10)
                     }
+                    .disabled(eventName.isEmpty || location.isEmpty)
                 }
                 .padding()
             }
@@ -91,6 +98,33 @@ struct AddEventView: View {
                     }
                 }
             }
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private func createEvent() async {
+        guard let userId = userRepository.currentUser?.id else {
+            showError = true
+            errorMessage = "User not logged in"
+            return
+        }
+        
+        do {
+            try await eventRepository.createEvent(
+                title: eventName,
+                description: description,
+                date: eventDate,
+                location: location,
+                createdBy: userId
+            )
+            dismiss()
+        } catch {
+            showError = true
+            errorMessage = error.localizedDescription
         }
     }
 } 

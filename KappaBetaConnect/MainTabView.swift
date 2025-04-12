@@ -398,116 +398,176 @@ struct UserCard: View {
 }
 
 struct EventsView: View {
+    @StateObject private var eventRepository = EventRepository()
+    @StateObject private var userRepository = UserRepository()
+    @State private var showAddEventSheet = false
+    @State private var showError = false
+    @State private var errorMessage = ""
     @State private var searchText = ""
-    @State private var showAddEvent = false
     
-    // Sample events data
-    let events = [
-        (month: "MAY", day: "12", title: "Networking Mixer", 
-         date: "Sunday, May 12, 6:00 PM", location: "Austin, TX"),
-        (month: "MAY", day: "25", title: "Alumni Panel Discussion", 
-         date: "Saturday, May 25, 2:00 PM", location: "New York, NY"),
-        (month: "JUN", day: "5", title: "Volunteer Opportunity", 
-         date: "Wednesday, June 5, 9:00 AM", location: "Chicago, IL"),
-        (month: "JUN", day: "21", title: "Summer Social", 
-         date: "Friday, June 21, 5:30 PM", location: "Los Angeles, CA")
-    ]
+    var filteredEvents: [Event] {
+        if searchText.isEmpty {
+            return eventRepository.events
+        }
+        return eventRepository.events.filter { event in
+            event.title.localizedCaseInsensitiveContains(searchText) ||
+            event.location.localizedCaseInsensitiveContains(searchText)
+        }
+    }
     
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
+        NavigationStack {
             VStack(spacing: 0) {
-                // Header with logo
-                HStack {
-                    Text("Events")
-                        .font(.title)
-                        .fontWeight(.semibold)
-                    
-                    Spacer()
-                    
-                    Image("kblogo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 70, height: 70)
-                        .padding(.trailing, -20)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                
-                // Search bar
+                // Search Bar
                 HStack {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.gray)
                     TextField("Search", text: $searchText)
+                        .textFieldStyle(.plain)
                 }
-                .padding(10)
+                .padding(8)
                 .background(Color(.systemGray6))
-                .cornerRadius(10)
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 10)
+                .cornerRadius(8)
+                .padding()
                 
-                // Events list
-                ScrollView {
-                    VStack(spacing: 20) {
-                        ForEach(Array(events.enumerated()), id: \.element.title) { index, event in
-                            HStack(alignment: .top, spacing: 15) {
-                                // Date box
-                                VStack {
-                                    Text(event.month)
-                                        .font(.system(size: 14, weight: .medium))
-                                    Text(event.day)
-                                        .font(.system(size: 24, weight: .bold))
-                                }
-                                .frame(width: 60)
-                                .padding(.vertical, 8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.black, lineWidth: 1)
-                                )
-                                
-                                // Event details
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(event.title)
-                                        .font(.system(size: 20, weight: .semibold))
-                                    Text(event.date)
-                                        .font(.system(size: 16))
-                                    Text(event.location)
-                                        .font(.system(size: 16))
-                                }
-                                
-                                Spacer()
-                            }
-                            .padding(.horizontal, 20)
-                            
-                            if index < events.count - 1 {
+                if filteredEvents.isEmpty {
+                    VStack {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 50))
+                            .foregroundColor(.gray)
+                        Text("No events scheduled")
+                            .foregroundColor(.gray)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 16) {
+                            ForEach(filteredEvents) { event in
+                                EventListItem(event: event)
+                                    .padding(.horizontal)
                                 Divider()
-                                    .padding(.horizontal, 20)
+                                    .padding(.horizontal)
                             }
                         }
                     }
-                    .padding(.top, 10)
                 }
             }
-            .background(Color(.systemBackground))
-            
-            // Floating Action Button
-            Button(action: {
-                showAddEvent = true
+            .navigationTitle("Events")
+            .sheet(isPresented: $showAddEventSheet, onDismiss: {
+                Task {
+                    do {
+                        try await eventRepository.fetchEvents()
+                    } catch {
+                        showError = true
+                        errorMessage = error.localizedDescription
+                    }
+                }
             }) {
-                Image(systemName: "plus")
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .frame(width: 60, height: 60)
-                    .background(Color.black)
-                    .clipShape(Circle())
-                    .shadow(radius: 4)
+                AddEventView(eventRepository: eventRepository, userRepository: userRepository)
             }
-            .padding(.trailing, 20)
-            .padding(.bottom, 20)
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+            .task {
+                do {
+                    try await eventRepository.fetchEvents()
+                } catch {
+                    showError = true
+                    errorMessage = error.localizedDescription
+                }
+            }
+            .onAppear {
+                print("EventsView appeared")
+                print("Current user: \(userRepository.currentUser?.id ?? "nil")")
+                Task {
+                    do {
+                        try await eventRepository.fetchEvents()
+                    } catch {
+                        showError = true
+                        errorMessage = error.localizedDescription
+                    }
+                }
+            }
+            .overlay(
+                Button(action: {
+                    print("Add event button tapped")
+                    print("Current user: \(userRepository.currentUser?.id ?? "nil")")
+                    if let currentUser = userRepository.currentUser {
+                        print("User is logged in: \(currentUser.firstName) \(currentUser.lastName)")
+                        showAddEventSheet = true
+                    } else {
+                        print("No user logged in")
+                        showError = true
+                        errorMessage = "Please log in to create events"
+                    }
+                }) {
+                    Image(systemName: "plus")
+                        .font(.title2)
+                        .foregroundColor(.white)
+                        .frame(width: 60, height: 60)
+                        .background(Color.black)
+                        .clipShape(Circle())
+                        .shadow(radius: 4)
+                }
+                .padding(.trailing, 20)
+                .padding(.bottom, 20),
+                alignment: .bottomTrailing
+            )
         }
-        .sheet(isPresented: $showAddEvent) {
-            AddEventView()
+    }
+}
+
+struct EventListItem: View {
+    let event: Event
+    
+    private var dateComponents: (month: String, day: String, dayOfWeek: String, time: String) {
+        let calendar = Calendar.current
+        let date = event.date
+        let month = calendar.shortMonthSymbols[calendar.component(.month, from: date) - 1].uppercased()
+        let day = String(calendar.component(.day, from: date))
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE"
+        let dayOfWeek = formatter.string(from: date)
+        formatter.dateFormat = "h:mm a"
+        let time = formatter.string(from: date)
+        return (month, day, dayOfWeek, time)
+    }
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 16) {
+            // Date Box
+            VStack {
+                Text(dateComponents.month)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                Text(dateComponents.day)
+                    .font(.title)
+                    .fontWeight(.bold)
+            }
+            .frame(width: 60)
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+            )
+            
+            // Event Details
+            VStack(alignment: .leading, spacing: 4) {
+                Text(event.title)
+                    .font(.headline)
+                Text("\(dateComponents.dayOfWeek), \(dateComponents.month) \(dateComponents.day), \(dateComponents.time)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                Text(event.location)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
         }
+        .padding(.vertical, 8)
     }
 }
 
