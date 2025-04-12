@@ -397,19 +397,162 @@ struct UserCard: View {
     }
 }
 
+struct EditEventView: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var eventRepository: EventRepository
+    let event: Event
+    
+    @State private var eventName: String
+    @State private var eventDate: Date
+    @State private var location: String
+    @State private var eventLink: String
+    @State private var description: String
+    @State private var hashtags: String
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    init(eventRepository: EventRepository, event: Event) {
+        self.eventRepository = eventRepository
+        self.event = event
+        _eventName = State(initialValue: event.title)
+        _eventDate = State(initialValue: event.date)
+        _location = State(initialValue: event.location)
+        _eventLink = State(initialValue: event.eventLink ?? "")
+        _description = State(initialValue: event.description)
+        _hashtags = State(initialValue: event.hashtags ?? "")
+    }
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Event Name
+                    VStack(alignment: .leading) {
+                        Text("Event Name")
+                            .foregroundColor(.gray)
+                        TextField("Enter event name", text: $eventName)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                    }
+                    
+                    // Date and Time
+                    VStack(alignment: .leading) {
+                        Text("Date and Time")
+                            .foregroundColor(.gray)
+                        DatePicker("", selection: $eventDate)
+                            .datePickerStyle(.graphical)
+                    }
+                    
+                    // Location
+                    VStack(alignment: .leading) {
+                        Text("Location")
+                            .foregroundColor(.gray)
+                        TextField("Enter location", text: $location)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                    }
+                    
+                    // Event Link
+                    VStack(alignment: .leading) {
+                        Text("Event Link")
+                            .foregroundColor(.gray)
+                        TextField("Enter event link", text: $eventLink)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .keyboardType(.URL)
+                            .autocapitalization(.none)
+                    }
+                    
+                    // Description
+                    VStack(alignment: .leading) {
+                        Text("Description")
+                            .foregroundColor(.gray)
+                        TextEditor(text: $description)
+                            .frame(height: 100)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color(.systemGray4), lineWidth: 1)
+                            )
+                    }
+                    
+                    // Hashtags
+                    VStack(alignment: .leading) {
+                        Text("Hashtags")
+                            .foregroundColor(.gray)
+                        TextField("Enter hashtags (separated by spaces)", text: $hashtags)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                    }
+                    
+                    // Update Event Button
+                    Button(action: {
+                        Task {
+                            await updateEvent()
+                        }
+                    }) {
+                        Text("Update Event")
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.black)
+                            .cornerRadius(10)
+                    }
+                    .disabled(eventName.isEmpty || location.isEmpty)
+                }
+                .padding()
+            }
+            .navigationTitle("Edit Event")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private func updateEvent() async {
+        do {
+            try await eventRepository.updateEvent(
+                eventId: event.id ?? "",
+                title: eventName,
+                description: description,
+                date: eventDate,
+                location: location,
+                eventLink: eventLink.isEmpty ? nil : eventLink,
+                hashtags: hashtags.isEmpty ? nil : hashtags
+            )
+            dismiss()
+        } catch {
+            showError = true
+            errorMessage = error.localizedDescription
+        }
+    }
+}
+
 struct EventDetailView: View {
     @ObservedObject var userRepository: UserRepository
     @ObservedObject var eventRepository: EventRepository
     let eventId: String
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var showEditSheet = false
+    @State private var showDeleteAlert = false
+    @State private var showMenu = false
     
     private var event: Event? {
         eventRepository.events.first { $0.id == eventId }
     }
     
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
-    @State private var showError = false
-    @State private var errorMessage = ""
+    private var isEventCreator: Bool {
+        guard let event = event, let currentUserId = userRepository.currentUser?.id else { return false }
+        return event.createdBy == currentUserId
+    }
     
     private var dateComponents: (dayOfWeek: String, month: String, day: String, year: String, time: String)? {
         guard let event = event else { return nil }
@@ -449,10 +592,28 @@ struct EventDetailView: View {
             if let event = event, let dateComponents = dateComponents {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        // Title
-                        Text(event.title)
-                            .font(.title)
-                            .fontWeight(.bold)
+                        // Title with menu for creator
+                        HStack {
+                            Text(event.title)
+                                .font(.title)
+                                .fontWeight(.bold)
+                            
+                            if isEventCreator {
+                                Spacer()
+                                Menu {
+                                    Button(action: { showEditSheet = true }) {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
+                                    Button(role: .destructive, action: { showDeleteAlert = true }) {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                } label: {
+                                    Image(systemName: "ellipsis")
+                                        .foregroundColor(.gray)
+                                        .padding(8)
+                                }
+                            }
+                        }
                         
                         // Date and Time
                         VStack(alignment: .leading, spacing: 4) {
@@ -553,6 +714,29 @@ struct EventDetailView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showEditSheet) {
+            if let event = event {
+                EditEventView(eventRepository: eventRepository, event: event)
+            }
+        }
+        .alert("Delete Event", isPresented: $showDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                Task {
+                    do {
+                        if let eventId = event?.id {
+                            try await eventRepository.deleteEvent(eventId: eventId)
+                            dismiss()
+                        }
+                    } catch {
+                        showError = true
+                        errorMessage = error.localizedDescription
+                    }
+                }
+            }
+        } message: {
+            Text("Are you sure you want to delete this event? This action cannot be undone.")
+        }
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) { }
         } message: {

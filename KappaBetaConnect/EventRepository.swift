@@ -88,4 +88,30 @@ class EventRepository: ObservableObject {
     func deleteEvent(eventId: String) async throws {
         try await db.collection(eventsCollection).document(eventId).delete()
     }
+    
+    func updateEvent(eventId: String, title: String, description: String, date: Date, location: String, eventLink: String?, hashtags: String?) async throws {
+        let eventRef = db.collection(eventsCollection).document(eventId)
+        
+        // Get the existing event to preserve createdBy and createdAt
+        let eventDoc = try await eventRef.getDocument()
+        guard let existingEvent = try? eventDoc.data(as: Event.self) else {
+            throw NSError(domain: "EventRepository", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to decode event data"])
+        }
+        
+        let updatedEvent = Event(
+            id: eventId,
+            title: title,
+            description: description,
+            date: date,
+            location: location,
+            eventLink: eventLink,
+            hashtags: hashtags,
+            createdBy: existingEvent.createdBy,
+            createdAt: existingEvent.createdAt,
+            attendees: existingEvent.attendees,
+            isActive: existingEvent.isActive
+        )
+        
+        try await eventRef.setData(from: updatedEvent)
+    }
 } 
