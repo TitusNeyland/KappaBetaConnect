@@ -402,6 +402,7 @@ struct EventDetailView: View {
     @ObservedObject var userRepository: UserRepository
     @ObservedObject var eventRepository: EventRepository
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @State private var showError = false
     @State private var errorMessage = ""
     
@@ -417,6 +418,24 @@ struct EventDetailView: View {
         formatter.dateFormat = "h:mm a"
         let time = formatter.string(from: date)
         return (dayOfWeek, month, day, year, time)
+    }
+    
+    private func handleURLTap(_ urlString: String) {
+        // Add http:// if no scheme is specified
+        let urlStringWithScheme = urlString.lowercased().hasPrefix("http") ? urlString : "https://" + urlString
+        
+        guard let url = URL(string: urlStringWithScheme) else {
+            showError = true
+            errorMessage = "Invalid URL format"
+            return
+        }
+        
+        openURL(url) { success in
+            if !success {
+                showError = true
+                errorMessage = "Could not open the URL"
+            }
+        }
     }
     
     var body: some View {
@@ -462,9 +481,14 @@ struct EventDetailView: View {
                         Text("Event Link")
                             .font(.headline)
                             .foregroundColor(.gray)
-                        Link(eventLink, destination: URL(string: eventLink)!)
-                            .font(.body)
-                            .foregroundColor(.blue)
+                        Button(action: {
+                            handleURLTap(eventLink)
+                        }) {
+                            Text(eventLink)
+                                .font(.body)
+                                .foregroundColor(.blue)
+                                .underline()
+                        }
                     }
                 }
                 
