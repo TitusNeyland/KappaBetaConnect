@@ -1,11 +1,9 @@
 import SwiftUI
 
 struct ProfileSetupView: View {
-    @State private var career = ""
-    @State private var major = ""
-    @State private var job = ""
-    @State private var company = ""
+    @ObservedObject var userData: UserSignupData
     @State private var navigateToInitiation = false
+    @State private var isLoading = false
     
     var body: some View {
         VStack(spacing: 20) {
@@ -17,26 +15,37 @@ struct ProfileSetupView: View {
             
             ScrollView {
                 VStack(spacing: 15) {
-                    TextField("Career Field", text: $career)
+                    TextField("Career Field", text: $userData.careerField)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     
-                    TextField("Major", text: $major)
+                    TextField("Major", text: $userData.major)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     
-                    TextField("Current Job Title", text: $job)
+                    TextField("Current Job Title", text: $userData.jobTitle)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     
-                    TextField("Company", text: $company)
+                    TextField("Company", text: $userData.company)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     
-                    NavigationLink(destination: InitiationDetailsView()) {
-                        Text("Continue")
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.black)
-                            .cornerRadius(10)
+                    NavigationLink(destination: InitiationDetailsView(userData: userData), isActive: $navigateToInitiation) {
+                        Button(action: {
+                            navigateToInitiation = true
+                        }) {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text("Continue")
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.black)
+                        .cornerRadius(10)
+                        .disabled(isLoading)
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.horizontal, 30)
             }
@@ -48,6 +57,6 @@ struct ProfileSetupView: View {
 
 #Preview {
     NavigationStack {
-        ProfileSetupView()
+        ProfileSetupView(userData: UserSignupData())
     }
 } 
