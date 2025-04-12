@@ -7,6 +7,22 @@ class EventRepository: ObservableObject {
     
     @Published var events: [Event] = []
     
+    init() {
+        // Set up real-time listener for events
+        db.collection(eventsCollection)
+            .order(by: "date", descending: false)
+            .addSnapshotListener { [weak self] querySnapshot, error in
+                guard let documents = querySnapshot?.documents else {
+                    print("Error fetching events: \(error?.localizedDescription ?? "Unknown error")")
+                    return
+                }
+                
+                self?.events = documents.compactMap { document in
+                    try? document.data(as: Event.self)
+                }
+            }
+    }
+    
     func createEvent(title: String, description: String, date: Date, location: String, eventLink: String?, hashtags: String?, createdBy: String) async throws {
         let event = Event(
             title: title,
