@@ -281,104 +281,119 @@ struct HomeView: View {
 }
 
 struct DirectoryView: View {
+    @StateObject private var userRepository = UserRepository()
     @State private var searchText = ""
-    
-    // Sample directory data
-    let members = [
-        (name: "Nathan Moseley", title: "Software Engineer"),
-        (name: "Peyton Brown", title: "Marketing Manager"),
-        (name: "Chris Kee", title: "Sales Associate"),
-        (name: "Zachary Mikell", title: "Product Designer"),
-        (name: "Tyriq Mitchell", title: "Account Executive"),
-        (name: "Rucell Harris", title: "Creative Agency"),
-        (name: "Joshua Bailey", title: "Data Analyst"),
-        (name: "Johnny Wilson", title: "Consultant"),
-        (name: "Tyler Woodberry", title: "HR Specialist")
-    ]
+    @State private var users: [User] = []
+    @State private var isLoading = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var searchTask: Task<Void, Never>?
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header with logo
-            HStack {
-                Text("Directory")
-                    .font(.title)
-                    .fontWeight(.semibold)
-                
-                Spacer()
-                
-                Image("kblogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 70, height: 70)
-                    .padding(.trailing, -20)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            
-            // Search bar and filters
-            HStack(spacing: 15) {
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Search Bar
                 HStack {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.gray)
-                    TextField("Search", text: $searchText)
-                }
-                .padding(10)
-                .background(Color(.systemGray6))
-                .cornerRadius(10)
-                
-                Button(action: {
-                    // Handle filters
-                }) {
-                    Text("Filters")
-                        .foregroundColor(.black)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color.black, lineWidth: 1)
-                        )
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            .padding(.bottom, 10)
-            
-            // Members list
-            ScrollView {
-                VStack(spacing: 0) {
-                    ForEach(members, id: \.name) { member in
-                        VStack(spacing: 0) {
-                            HStack(spacing: 12) {
-                                Circle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .frame(width: 50, height: 50)
-                                    .overlay(
-                                        Image(systemName: "person.fill")
-                                            .foregroundColor(.gray)
-                                            .font(.system(size: 24))
-                                    )
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(member.name)
-                                        .font(.system(size: 17, weight: .semibold))
-                                    Text(member.title)
-                                        .font(.system(size: 15))
-                                        .foregroundColor(.gray)
-                                }
-                                
-                                Spacer()
-                            }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 20)
+                    TextField("Search by name...", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .onChange(of: searchText) { _ in
+                            // Cancel any existing search task
+                            searchTask?.cancel()
                             
-                            Divider()
-                                .padding(.leading, 82)
+                            // Create a new search task with debounce
+                            searchTask = Task {
+                                try? await Task.sleep(nanoseconds: 300_000_000) // 300ms debounce
+                                if !Task.isCancelled {
+                                    await searchUsers()
+                                }
+                            }
                         }
+                }
+                .padding(8)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
+                .padding()
+                
+                if isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if users.isEmpty {
+                    VStack {
+                        Image(systemName: "person.3")
+                            .font(.system(size: 50))
+                            .foregroundColor(.gray)
+                        Text("No members found")
+                            .foregroundColor(.gray)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(users) { user in
+                                UserCard(user: user)
+                            }
+                        }
+                        .padding()
                     }
                 }
             }
+            .navigationTitle("Directory")
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+            .task {
+                await searchUsers()
+            }
         }
-        .background(Color(.systemBackground))
+    }
+    
+    private func searchUsers() async {
+        isLoading = true
+        do {
+            users = try await userRepository.searchUsers(byName: searchText)
+        } catch {
+            showError = true
+            errorMessage = error.localizedDescription
+        }
+        isLoading = false
+    }
+}
+
+struct UserCard: View {
+    let user: User
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("\(user.firstName) \(user.lastName)")
+                    .font(.headline)
+                Spacer()
+                if let lineNumber = user.lineNumber {
+                    Text("Line \(lineNumber)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            if let major = user.major {
+                Text(major)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            
+            if let company = user.company {
+                Text(company)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(10)
     }
 }
 

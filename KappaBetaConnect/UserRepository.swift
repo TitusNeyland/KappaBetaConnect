@@ -3,7 +3,7 @@ import FirebaseFirestore
 import Combine
 
 class UserRepository: ObservableObject {
-    private let db = Firestore.firestore()
+    let db = Firestore.firestore()
     private let usersCollection = "users"
     
     @Published var currentUser: User?
@@ -71,6 +71,36 @@ class UserRepository: ObservableObject {
         ])
     }
     
+    func searchUsers(byName searchText: String) async throws -> [User] {
+        if searchText.isEmpty {
+            // If search is empty, return all users
+            let snapshot = try await db.collection(usersCollection)
+                .getDocuments()
+            
+            return try snapshot.documents.compactMap { document in
+                try? dictionaryToUser(document.data(), id: document.documentID)
+            }
+        }
+        
+        let searchText = searchText.lowercased()
+        
+        // Get all users and filter them in memory
+        let snapshot = try await db.collection(usersCollection)
+            .getDocuments()
+        
+        let allUsers = try snapshot.documents.compactMap { document in
+            try? dictionaryToUser(document.data(), id: document.documentID)
+        }
+        
+        // Filter users based on partial matches in first name or last name
+        return allUsers.filter { user in
+            let firstName = user.firstName.lowercased()
+            let lastName = user.lastName.lowercased()
+            
+            return firstName.contains(searchText) || lastName.contains(searchText)
+        }
+    }
+    
     // Helper function to convert User to Firestore dictionary
     private func userToDictionary(_ user: User) throws -> [String: Any] {
         let dateFormatter = ISO8601DateFormatter()
@@ -103,7 +133,7 @@ class UserRepository: ObservableObject {
     }
     
     // Helper function to convert Firestore dictionary to User
-    private func dictionaryToUser(_ dict: [String: Any], id: String) throws -> User {
+    func dictionaryToUser(_ dict: [String: Any], id: String) throws -> User {
         guard let firstName = dict["firstName"] as? String,
               let lastName = dict["lastName"] as? String,
               let email = dict["email"] as? String,
