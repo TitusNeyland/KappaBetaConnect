@@ -119,6 +119,8 @@ struct AddEventView: View {
                 description: description,
                 date: eventDate,
                 location: location,
+                eventLink: eventLink.isEmpty ? nil : eventLink,
+                hashtags: hashtags.isEmpty ? nil : hashtags,
                 createdBy: userId
             )
             dismiss()

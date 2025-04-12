@@ -397,6 +397,133 @@ struct UserCard: View {
     }
 }
 
+struct EventDetailView: View {
+    let event: Event
+    @ObservedObject var userRepository: UserRepository
+    @ObservedObject var eventRepository: EventRepository
+    @Environment(\.dismiss) private var dismiss
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    private var dateComponents: (dayOfWeek: String, month: String, day: String, year: String, time: String) {
+        let calendar = Calendar.current
+        let date = event.date
+        let month = calendar.monthSymbols[calendar.component(.month, from: date) - 1]
+        let day = String(calendar.component(.day, from: date))
+        let year = String(calendar.component(.year, from: date))
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE"
+        let dayOfWeek = formatter.string(from: date)
+        formatter.dateFormat = "h:mm a"
+        let time = formatter.string(from: date)
+        return (dayOfWeek, month, day, year, time)
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                // Title
+                Text(event.title)
+                    .font(.title)
+                    .fontWeight(.bold)
+                
+                // Date and Time
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Date & Time")
+                        .font(.headline)
+                        .foregroundColor(.gray)
+                    Text("\(dateComponents.dayOfWeek), \(dateComponents.month) \(dateComponents.day), \(dateComponents.year)")
+                        .font(.body)
+                    Text(dateComponents.time)
+                        .font(.body)
+                }
+                
+                // Location
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Location")
+                        .font(.headline)
+                        .foregroundColor(.gray)
+                    Text(event.location)
+                        .font(.body)
+                }
+                
+                // Description
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Description")
+                        .font(.headline)
+                        .foregroundColor(.gray)
+                    Text(event.description)
+                        .font(.body)
+                }
+                
+                // Event Link
+                if let eventLink = event.eventLink, !eventLink.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Event Link")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                        Link(eventLink, destination: URL(string: eventLink)!)
+                            .font(.body)
+                            .foregroundColor(.blue)
+                    }
+                }
+                
+                // Hashtags
+                if let hashtags = event.hashtags, !hashtags.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Hashtags")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                        Text(hashtags)
+                            .font(.body)
+                    }
+                }
+                
+                // Attendance
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Attendance")
+                        .font(.headline)
+                        .foregroundColor(.gray)
+                    Text("\(event.attendees.count) attending")
+                        .font(.body)
+                }
+                
+                // RSVP Button
+                if let userId = userRepository.currentUser?.id {
+                    Button(action: {
+                        Task {
+                            do {
+                                try await eventRepository.toggleEventAttendance(
+                                    eventId: event.id ?? "",
+                                    userId: userId
+                                )
+                            } catch {
+                                showError = true
+                                errorMessage = error.localizedDescription
+                            }
+                        }
+                    }) {
+                        Text(event.attendees.contains(userId) ? "Cancel RSVP" : "RSVP")
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(event.attendees.contains(userId) ? Color.red : Color.black)
+                            .cornerRadius(10)
+                    }
+                    .padding(.top, 20)
+                }
+            }
+            .padding()
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+}
+
 struct EventsView: View {
     @StateObject private var eventRepository = EventRepository()
     @StateObject private var userRepository = UserRepository()
@@ -443,8 +570,11 @@ struct EventsView: View {
                     ScrollView {
                         LazyVStack(spacing: 16) {
                             ForEach(filteredEvents) { event in
-                                EventListItem(event: event)
-                                    .padding(.horizontal)
+                                NavigationLink(destination: EventDetailView(event: event, userRepository: userRepository, eventRepository: eventRepository)) {
+                                    EventListItem(event: event)
+                                        .padding(.horizontal)
+                                }
+                                .buttonStyle(PlainButtonStyle())
                                 Divider()
                                     .padding(.horizontal)
                             }

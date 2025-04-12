@@ -7,6 +7,8 @@ struct Event: Identifiable, Codable {
     let description: String
     let date: Date
     let location: String
+    let eventLink: String?
+    let hashtags: String?
     let createdBy: String // User ID of the creator
     let createdAt: Date
     var attendees: [String] // Array of user IDs
@@ -18,6 +20,8 @@ struct Event: Identifiable, Codable {
         case description
         case date
         case location
+        case eventLink
+        case hashtags
         case createdBy
         case createdAt
         case attendees

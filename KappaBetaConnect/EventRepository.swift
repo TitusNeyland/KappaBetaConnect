@@ -7,12 +7,14 @@ class EventRepository: ObservableObject {
     
     @Published var events: [Event] = []
     
-    func createEvent(title: String, description: String, date: Date, location: String, createdBy: String) async throws {
+    func createEvent(title: String, description: String, date: Date, location: String, eventLink: String?, hashtags: String?, createdBy: String) async throws {
         let event = Event(
             title: title,
             description: description,
             date: date,
             location: location,
+            eventLink: eventLink,
+            hashtags: hashtags,
             createdBy: createdBy,
             createdAt: Date(),
             attendees: [],
