@@ -1321,6 +1321,228 @@ struct FlowLayout<Content: View>: View {
     }
 }
 
+// Create Post Sheet View
+struct CreatePostSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var postRepository: PostRepository
+    @EnvironmentObject private var authManager: AuthManager
+    @Binding var showError: Bool
+    @Binding var errorMessage: String
+    @State private var newPostContent = ""
+    
+    private let maxCharacterCount = 500
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 16) {
+                // User info header
+                if let currentUser = authManager.currentUser {
+                    UserHeaderView(user: currentUser)
+                }
+                
+                // Post content editor
+                PostEditorView(content: $newPostContent)
+                
+                // Character count and guidelines
+                PostGuidelinesView(contentCount: newPostContent.count, maxCount: maxCharacterCount)
+                
+                Spacer()
+            }
+            .navigationTitle("Create Post")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                        newPostContent = ""
+                    }
+                    .foregroundColor(.gray)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Post") {
+                        createPost()
+                    }
+                    .disabled(isPostButtonDisabled)
+                    .font(.headline)
+                    .foregroundColor(isPostButtonDisabled ? .gray : .black)
+                }
+            }
+        }
+    }
+    
+    private var isPostButtonDisabled: Bool {
+        newPostContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        newPostContent.count > maxCharacterCount
+    }
+    
+    private func createPost() {
+        guard let currentUser = authManager.currentUser else {
+            showError = true
+            errorMessage = "You must be logged in to create a post"
+            return
+        }
+        
+        let content = newPostContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !content.isEmpty && content.count <= maxCharacterCount else { return }
+        
+        Task {
+            do {
+                try await postRepository.createPost(
+                    content: content,
+                    authorId: currentUser.id ?? "",
+                    authorName: "\(currentUser.firstName) \(currentUser.lastName)"
+                )
+                dismiss()
+                newPostContent = ""
+            } catch {
+                showError = true
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+}
+
+struct UserHeaderView: View {
+    let user: User
+    
+    var body: some View {
+        HStack {
+            Circle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 40, height: 40)
+                .overlay(
+                    Image(systemName: "person.fill")
+                        .foregroundColor(.gray)
+                )
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(user.firstName) \(user.lastName)")
+                    .font(.headline)
+                Text("Posting to Feed")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal)
+    }
+}
+
+struct FocusedTextEditor: UIViewRepresentable {
+    @Binding var text: String
+    let placeholder: String
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    func makeUIView(context: Context) -> UITextView {
+        let textView = UITextView()
+        textView.delegate = context.coordinator
+        textView.font = .systemFont(ofSize: 16)
+        textView.backgroundColor = .clear
+        textView.text = text.isEmpty ? placeholder : text
+        textView.textColor = text.isEmpty ? .placeholderText : .label
+        textView.becomeFirstResponder() // Automatically show keyboard
+        
+        // Prevent keyboard from being dismissed
+        textView.alwaysBounceVertical = true
+        textView.keyboardDismissMode = .none
+        
+        return textView
+    }
+    
+    func updateUIView(_ uiView: UITextView, context: Context) {
+        if text != uiView.text {
+            uiView.text = text
+        }
+        if text.isEmpty && !uiView.isFirstResponder {
+            uiView.text = placeholder
+            uiView.textColor = .placeholderText
+        }
+    }
+    
+    class Coordinator: NSObject, UITextViewDelegate {
+        var parent: FocusedTextEditor
+        
+        init(_ parent: FocusedTextEditor) {
+            self.parent = parent
+        }
+        
+        func textViewDidBeginEditing(_ textView: UITextView) {
+            if parent.text.isEmpty {
+                textView.text = ""
+                textView.textColor = .label
+            }
+        }
+        
+        func textViewDidChange(_ textView: UITextView) {
+            parent.text = textView.text
+        }
+        
+        func textViewDidEndEditing(_ textView: UITextView) {
+            if parent.text.isEmpty {
+                textView.text = parent.placeholder
+                textView.textColor = .placeholderText
+            }
+        }
+    }
+}
+
+struct PostEditorView: View {
+    @Binding var content: String
+    
+    var body: some View {
+        FocusedTextEditor(text: $content, placeholder: "What's on your mind?")
+            .frame(minHeight: 150)
+            .padding(4)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color(.systemGray4))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.black.opacity(0.1), lineWidth: 1)
+            )
+            .padding(.horizontal)
+    }
+}
+
+struct PostGuidelinesView: View {
+    let contentCount: Int
+    let maxCount: Int
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Text("\(contentCount)/\(maxCount)")
+                    .font(.caption)
+                    .foregroundColor(
+                        contentCount > Int(Double(maxCount) * 0.8)
+                        ? (contentCount > maxCount ? .red : .orange)
+                        : .gray
+                    )
+                
+                Spacer()
+            }
+            
+            if contentCount > 0 {
+                HStack {
+                    Image(systemName: "info.circle")
+                        .foregroundColor(.gray)
+                    Text("Your post will be visible to all fraternity members")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
 // Update FeedView
 struct FeedView: View {
     @StateObject private var postRepository = PostRepository()
@@ -1328,7 +1550,6 @@ struct FeedView: View {
     @State private var showNewPostSheet = false
     @State private var showError = false
     @State private var errorMessage = ""
-    @State private var newPostContent = ""
     
     var body: some View {
         NavigationStack {
@@ -1360,36 +1581,11 @@ struct FeedView: View {
                 alignment: .bottomTrailing
             )
             .sheet(isPresented: $showNewPostSheet) {
-                NavigationView {
-                    VStack {
-                        TextEditor(text: $newPostContent)
-                            .frame(height: 150)
-                            .padding(4)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(.systemGray4))
-                            )
-                            .padding()
-                        
-                        Spacer()
-                    }
-                    .navigationTitle("New Post")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            Button("Cancel") {
-                                showNewPostSheet = false
-                                newPostContent = ""
-                            }
-                        }
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("Post") {
-                                createPost()
-                            }
-                            .disabled(newPostContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        }
-                    }
-                }
+                CreatePostSheet(
+                    postRepository: postRepository,
+                    showError: $showError,
+                    errorMessage: $errorMessage
+                )
             }
             .alert("Error", isPresented: $showError) {
                 Button("OK", role: .cancel) { }
@@ -1403,29 +1599,6 @@ struct FeedView: View {
                     showError = true
                     errorMessage = error.localizedDescription
                 }
-            }
-        }
-    }
-    
-    private func createPost() {
-        guard let currentUser = authManager.currentUser else {
-            showError = true
-            errorMessage = "You must be logged in to create a post"
-            return
-        }
-        
-        Task {
-            do {
-                try await postRepository.createPost(
-                    content: newPostContent,
-                    authorId: currentUser.id ?? "",
-                    authorName: "\(currentUser.firstName) \(currentUser.lastName)"
-                )
-                showNewPostSheet = false
-                newPostContent = ""
-            } catch {
-                showError = true
-                errorMessage = error.localizedDescription
             }
         }
     }
