@@ -1321,18 +1321,22 @@ struct FlowLayout<Content: View>: View {
     }
 }
 
-// Add FeedView
+// Update FeedView
 struct FeedView: View {
+    @StateObject private var postRepository = PostRepository()
+    @EnvironmentObject private var authManager: AuthManager
     @State private var showNewPostSheet = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var newPostContent = ""
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 20) {
-                        // Placeholder content
-                        ForEach(0..<5) { _ in
-                            PostCard()
+                        ForEach(postRepository.posts) { post in
+                            PostCard(post: post, postRepository: postRepository)
                         }
                     }
                     .padding()
@@ -1355,12 +1359,94 @@ struct FeedView: View {
                 .padding(.bottom, 20),
                 alignment: .bottomTrailing
             )
+            .sheet(isPresented: $showNewPostSheet) {
+                NavigationView {
+                    VStack {
+                        TextEditor(text: $newPostContent)
+                            .frame(height: 150)
+                            .padding(4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color(.systemGray4))
+                            )
+                            .padding()
+                        
+                        Spacer()
+                    }
+                    .navigationTitle("New Post")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("Cancel") {
+                                showNewPostSheet = false
+                                newPostContent = ""
+                            }
+                        }
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Post") {
+                                createPost()
+                            }
+                            .disabled(newPostContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+                }
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+            .task {
+                do {
+                    try await postRepository.fetchPosts()
+                } catch {
+                    showError = true
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+    
+    private func createPost() {
+        guard let currentUser = authManager.currentUser else {
+            showError = true
+            errorMessage = "You must be logged in to create a post"
+            return
+        }
+        
+        Task {
+            do {
+                try await postRepository.createPost(
+                    content: newPostContent,
+                    authorId: currentUser.id ?? "",
+                    authorName: "\(currentUser.firstName) \(currentUser.lastName)"
+                )
+                showNewPostSheet = false
+                newPostContent = ""
+            } catch {
+                showError = true
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }
 
-// Add PostCard view
+// Update PostCard
 struct PostCard: View {
+    let post: Post
+    let postRepository: PostRepository
+    @EnvironmentObject private var authManager: AuthManager
+    @State private var showCommentSheet = false
+    @State private var newComment = ""
+    @State private var showShareSheet = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    private var isLiked: Bool {
+        guard let userId = authManager.currentUser?.id else { return false }
+        return post.likes.contains(userId)
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // User info
@@ -1374,9 +1460,9 @@ struct PostCard: View {
                     )
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("John Doe")
+                    Text(post.authorName)
                         .font(.headline)
-                    Text("2 hours ago")
+                    Text(post.timestamp.formatted(date: .abbreviated, time: .shortened))
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
@@ -1384,8 +1470,14 @@ struct PostCard: View {
                 Spacer()
                 
                 Menu {
-                    Button(action: {}) {
-                        Label("Report", systemImage: "flag")
+                    if post.authorId == authManager.currentUser?.id {
+                        Button(role: .destructive, action: {}) {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    } else {
+                        Button(action: {}) {
+                            Label("Report", systemImage: "flag")
+                        }
                     }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -1394,20 +1486,39 @@ struct PostCard: View {
             }
             
             // Post content
-            Text("This is a sample post content. Looking forward to connecting with more brothers!")
+            Text(post.content)
                 .font(.body)
+            
+            // Interaction counts
+            HStack(spacing: 20) {
+                Text("\(post.likes.count) likes")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                
+                Text("\(post.comments.count) comments")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                
+                Text("\(post.shareCount) shares")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
             
             // Interaction buttons
             HStack(spacing: 20) {
-                Button(action: {}) {
+                Button(action: {
+                    handleLike()
+                }) {
                     HStack {
-                        Image(systemName: "heart")
+                        Image(systemName: isLiked ? "heart.fill" : "heart")
                         Text("Like")
                     }
-                    .foregroundColor(.gray)
+                    .foregroundColor(isLiked ? .red : .gray)
                 }
                 
-                Button(action: {}) {
+                Button(action: {
+                    showCommentSheet = true
+                }) {
                     HStack {
                         Image(systemName: "bubble.right")
                         Text("Comment")
@@ -1415,7 +1526,9 @@ struct PostCard: View {
                     .foregroundColor(.gray)
                 }
                 
-                Button(action: {}) {
+                Button(action: {
+                    showShareSheet = true
+                }) {
                     HStack {
                         Image(systemName: "square.and.arrow.up")
                         Text("Share")
@@ -1423,12 +1536,154 @@ struct PostCard: View {
                     .foregroundColor(.gray)
                 }
             }
+            
+            // Recent comments (show last 2)
+            if !post.comments.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(post.comments.suffix(2)) { comment in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(comment.authorName)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                            Text(comment.content)
+                                .font(.caption)
+                            Text(comment.timestamp.formatted(date: .abbreviated, time: .shortened))
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    
+                    if post.comments.count > 2 {
+                        Button(action: {
+                            showCommentSheet = true
+                        }) {
+                            Text("View all \(post.comments.count) comments")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                .padding(.top, 8)
+            }
         }
         .padding()
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        .sheet(isPresented: $showCommentSheet) {
+            NavigationView {
+                VStack {
+                    // Existing comments
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            ForEach(post.comments) { comment in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Text(comment.authorName)
+                                            .font(.headline)
+                                        Spacer()
+                                        Text(comment.timestamp.formatted(date: .abbreviated, time: .shortened))
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+                                    Text(comment.content)
+                                        .font(.body)
+                                }
+                                .padding(.horizontal)
+                                Divider()
+                            }
+                        }
+                        .padding(.vertical)
+                    }
+                    
+                    // New comment input
+                    HStack {
+                        TextField("Add a comment...", text: $newComment)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                        
+                        Button(action: {
+                            handleComment()
+                        }) {
+                            Text("Post")
+                                .fontWeight(.medium)
+                        }
+                        .disabled(newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    .padding()
+                }
+                .navigationTitle("Comments")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            showCommentSheet = false
+                        }
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(items: [post.content])
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
+        }
     }
+    
+    private func handleLike() {
+        guard let userId = authManager.currentUser?.id else {
+            showError = true
+            errorMessage = "You must be logged in to like posts"
+            return
+        }
+        
+        Task {
+            do {
+                try await postRepository.toggleLike(postId: post.id ?? "", userId: userId)
+            } catch {
+                showError = true
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+    
+    private func handleComment() {
+        guard let currentUser = authManager.currentUser else {
+            showError = true
+            errorMessage = "You must be logged in to comment"
+            return
+        }
+        
+        Task {
+            do {
+                try await postRepository.addComment(
+                    postId: post.id ?? "",
+                    content: newComment,
+                    authorId: currentUser.id ?? "",
+                    authorName: "\(currentUser.firstName) \(currentUser.lastName)"
+                )
+                newComment = ""
+                showCommentSheet = false
+            } catch {
+                showError = true
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+}
+
+// Add ShareSheet for sharing functionality
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 #Preview {
