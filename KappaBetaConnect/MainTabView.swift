@@ -1052,8 +1052,6 @@ struct ProfileView: View {
     @State private var errorMessage = ""
     
     // Sample data - replace with actual user data
-    let jobTitle = "Software Engineer"
-    let company = "Dillard's Inc."
     let location = "Little Rock, AR"
     let industry = "Technology"
     let yearsExperience = "5 years"
@@ -1114,15 +1112,21 @@ struct ProfileView: View {
                                 Text("\(currentUser.firstName) \(currentUser.lastName)")
                                     .font(.title)
                                     .fontWeight(.bold)
+                                
+                                if let jobTitle = currentUser.jobTitle, let company = currentUser.company {
+                                    Text("\(jobTitle) at \(company)")
+                                        .font(.title3)
+                                        .foregroundColor(.gray)
+                                } else {
+                                    Text("No job information available")
+                                        .font(.title3)
+                                        .foregroundColor(.gray)
+                                }
                             } else {
                                 Text("Loading...")
                                     .font(.title)
                                     .fontWeight(.bold)
                             }
-                            
-                            Text("\(jobTitle) at \(company)")
-                                .font(.title3)
-                                .foregroundColor(.gray)
                             
                             Text(location)
                                 .font(.title3)
