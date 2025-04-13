@@ -1052,7 +1052,6 @@ struct ProfileView: View {
     @State private var errorMessage = ""
     
     // Sample data - replace with actual user data
-    let location = "Little Rock, AR"
     let industry = "Technology"
     let yearsExperience = "5 years"
     let alumniStatus = "Alumni"
@@ -1122,15 +1121,21 @@ struct ProfileView: View {
                                         .font(.title3)
                                         .foregroundColor(.gray)
                                 }
+                                
+                                if let city = currentUser.city, let state = currentUser.state {
+                                    Text("\(city), \(state)")
+                                        .font(.title3)
+                                        .foregroundColor(.gray)
+                                } else {
+                                    Text("No location information available")
+                                        .font(.title3)
+                                        .foregroundColor(.gray)
+                                }
                             } else {
                                 Text("Loading...")
                                     .font(.title)
                                     .fontWeight(.bold)
                             }
-                            
-                            Text(location)
-                                .font(.title3)
-                                .foregroundColor(.gray)
                         }
                         .padding(.top, 60)
                         
