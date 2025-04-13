@@ -11,6 +11,8 @@ struct User: Identifiable, Codable {
     var suffix: String?
     var email: String
     var phoneNumber: String
+    var city: String?
+    var state: String?
     
     // Security
     var password: String // Note: In a real app, passwords should not be stored directly. Firebase Auth handles this.
@@ -25,6 +27,8 @@ struct User: Identifiable, Codable {
     var lineNumber: String?
     var semester: String?
     var year: String?
+    var status: String? // collegiate or alumni
+    var graduationYear: String?
     
     // Additional Information
     var createdAt: Date
@@ -37,10 +41,10 @@ struct User: Identifiable, Codable {
     
     enum CodingKeys: String, CodingKey {
         case id
-        case prefix, firstName, lastName, suffix, email, phoneNumber
+        case prefix, firstName, lastName, suffix, email, phoneNumber, city, state
         case password
         case careerField, major, jobTitle, company
-        case lineNumber, semester, year
+        case lineNumber, semester, year, status, graduationYear
         case createdAt, updatedAt, isActive
         case profileImageURL, linkedInURL
     }
@@ -51,7 +55,9 @@ struct User: Identifiable, Codable {
          lastName: String, 
          suffix: String? = nil, 
          email: String, 
-         phoneNumber: String, 
+         phoneNumber: String,
+         city: String? = nil,
+         state: String? = nil,
          password: String,
          careerField: String? = nil, 
          major: String? = nil, 
@@ -60,6 +66,8 @@ struct User: Identifiable, Codable {
          lineNumber: String? = nil,
          semester: String? = nil,
          year: String? = nil,
+         status: String? = nil,
+         graduationYear: String? = nil,
          profileImageURL: String? = nil,
          linkedInURL: String? = nil,
          isActive: Bool = true) {
@@ -71,6 +79,8 @@ struct User: Identifiable, Codable {
         self.suffix = suffix
         self.email = email
         self.phoneNumber = phoneNumber
+        self.city = city
+        self.state = state
         self.password = password
         
         self.major = major
@@ -79,6 +89,8 @@ struct User: Identifiable, Codable {
         self.lineNumber = lineNumber
         self.semester = semester
         self.year = year
+        self.status = status
+        self.graduationYear = graduationYear
         self.profileImageURL = profileImageURL
         self.linkedInURL = linkedInURL
         self.createdAt = Date()
