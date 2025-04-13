@@ -88,6 +88,7 @@ struct HomeView: View {
     ]
     
     @StateObject private var eventRepository = EventRepository()
+    @StateObject private var userRepository = UserRepository()
     
     var upcomingEvents: [Event] {
         let now = Date()
@@ -115,10 +116,18 @@ struct HomeView: View {
         ScrollView {
             VStack(alignment: .leading) {
                 HStack {
-                    Text("Welcome back!")
-                        .font(.title)
-                        .fontWeight(.semibold)
-                        .padding(.leading, 20)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Welcome back,")
+                            .font(.title)
+                            .fontWeight(.semibold)
+                        if let firstName = userRepository.currentUser?.firstName {
+                            Text("\(firstName)!")
+                                .font(.title)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.black)
+                        }
+                    }
+                    .padding(.leading, 20)
                     
                     Spacer()
                     
