@@ -87,11 +87,16 @@ struct HomeView: View {
         (name: "Austin Wheeler", city: "Miami, FL")
     ]
     
-    // Updated event data structure to split month and day
-    let upcomingEvents = [
-        (month: "APR", day: "25", name: "Event Name", location: "Location"),
-        (month: "MAY", day: "3", name: "Event Name", location: "Location")
-    ]
+    @StateObject private var eventRepository = EventRepository()
+    
+    var upcomingEvents: [Event] {
+        let now = Date()
+        return eventRepository.events
+            .filter { $0.date > now }
+            .sorted { $0.date < $1.date }
+            .prefix(2)
+            .map { $0 }
+    }
     
     // Add recommended connections data
     let recommendedConnections = [
@@ -107,7 +112,7 @@ struct HomeView: View {
     ]
     
     var body: some View {
-        ScrollView { // Add ScrollView to handle all content
+        ScrollView {
             VStack(alignment: .leading) {
                 HStack {
                     Text("Welcome back!")
@@ -166,37 +171,52 @@ struct HomeView: View {
                     .padding(.leading, 20)
                     .padding(.top, 40)
                 
-                VStack(spacing: 20) {
-                    ForEach(upcomingEvents, id: \.name) { event in
-                        HStack {
-                            // Date column
-                            VStack(alignment: .center) {
-                                Text(event.month)
-                                    .font(.system(size: 14, weight: .medium))
-                                Text(event.day)
-                                    .font(.system(size: 24, weight: .bold))
+                if upcomingEvents.isEmpty {
+                    Text("No upcoming events")
+                        .foregroundColor(.gray)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 10)
+                } else {
+                    VStack(spacing: 20) {
+                        ForEach(upcomingEvents) { event in
+                            NavigationLink(destination: EventDetailView(userRepository: UserRepository(), eventRepository: eventRepository, eventId: event.id ?? "")) {
+                                HStack {
+                                    // Date column
+                                    let calendar = Calendar.current
+                                    let month = calendar.shortMonthSymbols[calendar.component(.month, from: event.date) - 1].uppercased()
+                                    let day = String(calendar.component(.day, from: event.date))
+                                    
+                                    VStack(alignment: .center) {
+                                        Text(month)
+                                            .font(.system(size: 14, weight: .medium))
+                                        Text(day)
+                                            .font(.system(size: 24, weight: .bold))
+                                    }
+                                    .frame(width: 50)
+                                    
+                                    // Event details
+                                    VStack(alignment: .leading) {
+                                        Text(event.title)
+                                            .font(.system(size: 18, weight: .semibold))
+                                            .foregroundColor(.primary)
+                                        Text(event.location)
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.gray)
+                                    }
+                                    .padding(.leading, 10)
+                                    
+                                    Spacer()
+                                    
+                                    // Chevron indicator
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(.gray)
+                                        .padding(.trailing, 10)
+                                }
                             }
-                            .frame(width: 50)
-                            
-                            // Event details
-                            VStack(alignment: .leading) {
-                                Text(event.name)
-                                    .font(.system(size: 18, weight: .semibold))
-                                Text(event.location)
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.gray)
-                            }
-                            .padding(.leading, 10)
-                            
-                            Spacer()
-                            
-                            // Chevron indicator
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
-                                .padding(.trailing, 10)
+                            .buttonStyle(PlainButtonStyle())
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 20)
                         }
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 20)
                     }
                 }
                 
@@ -275,6 +295,15 @@ struct HomeView: View {
                 }
                 
                 Spacer()
+            }
+        }
+        .onAppear {
+            Task {
+                do {
+                    try await eventRepository.fetchEvents()
+                } catch {
+                    print("Error fetching events: \(error.localizedDescription)")
+                }
             }
         }
     }
