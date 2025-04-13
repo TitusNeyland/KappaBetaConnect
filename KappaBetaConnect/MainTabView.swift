@@ -111,6 +111,23 @@ extension Date {
     }
 }
 
+// Add this extension before the PostCard view
+extension String {
+    func detectURLs() -> [(url: URL, range: Range<String.Index>)] {
+        var urls: [(URL, Range<String.Index>)] = []
+        let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+        let matches = detector?.matches(in: self, options: [], range: NSRange(location: 0, length: self.utf16.count))
+        
+        matches?.forEach { match in
+            if let url = match.url,
+               let range = Range(match.range, in: self) {
+                urls.append((url, range))
+            }
+        }
+        return urls
+    }
+}
+
 // Placeholder Views
 struct HomeView: View {
     // Sample data for new members - replace with actual data later
@@ -1388,6 +1405,10 @@ struct CreatePostSheet: View {
     
     private let maxCharacterCount = 500
     
+    private var detectedLinks: [URL] {
+        newPostContent.detectURLs().map { $0.url }
+    }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 16) {
@@ -1398,6 +1419,29 @@ struct CreatePostSheet: View {
                 
                 // Post content editor
                 PostEditorView(content: $newPostContent)
+                
+                // Link previews
+                if !detectedLinks.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Links detected:")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        
+                        ForEach(detectedLinks, id: \.absoluteString) { url in
+                            HStack {
+                                Image(systemName: "link")
+                                    .foregroundColor(.blue)
+                                Text(url.absoluteString)
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                            }
+                            .padding(8)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(8)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
                 
                 // Character count and guidelines
                 PostGuidelinesView(contentCount: newPostContent.count, maxCount: maxCharacterCount)
@@ -1684,6 +1728,21 @@ struct PostCard: View {
         Array(post.comments.reversed())
     }
     
+    private func createAttributedContent() -> AttributedString {
+        var attributed = AttributedString(post.content)
+        let urls = post.content.detectURLs()
+        
+        for (url, range) in urls {
+            if let attributedRange = Range(range, in: attributed) {
+                attributed[attributedRange].foregroundColor = .blue
+                attributed[attributedRange].underlineStyle = .single
+                attributed[attributedRange].link = url
+            }
+        }
+        
+        return attributed
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // User info
@@ -1722,9 +1781,13 @@ struct PostCard: View {
                 }
             }
             
-            // Post content
-            Text(post.content)
+            // Post content with clickable links
+            Text(createAttributedContent())
                 .font(.body)
+                .environment(\.openURL, OpenURLAction { url in
+                    print("Opening URL: \(url)")
+                    return .systemAction
+                })
             
             // Interaction counts
             HStack(spacing: 20) {
