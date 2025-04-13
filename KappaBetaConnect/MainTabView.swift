@@ -1053,7 +1053,6 @@ struct ProfileView: View {
     
     // Sample data - replace with actual user data
     let yearsExperience = "5 years"
-    let initiationYear = "2021"
     let lineName = "INDEUCED IN2ENT"
     let lineNumber = "2"
     let shipName = "12 INVADERS"
@@ -1210,9 +1209,17 @@ struct ProfileView: View {
                                         Text("Initiated")
                                             .font(.title3)
                                             .fontWeight(.medium)
-                                        Text("Fall \(initiationYear)")
-                                            .font(.title3)
-                                            .foregroundColor(.gray)
+                                        if let currentUser = userRepository.currentUser,
+                                           let semester = currentUser.semester,
+                                           let year = currentUser.year {
+                                            Text("\(semester) \(year)")
+                                                .font(.title3)
+                                                .foregroundColor(.gray)
+                                        } else {
+                                            Text("Not specified")
+                                                .font(.title3)
+                                                .foregroundColor(.gray)
+                                        }
                                     }
                                     
                                     VStack(alignment: .leading) {
