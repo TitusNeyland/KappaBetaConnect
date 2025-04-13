@@ -10,15 +10,15 @@ class UserRepository: ObservableObject {
     @Published var currentUser: User?
     
     init() {
-        print("UserRepository initialized")
+        //print("UserRepository initialized")
         // Listen for auth state changes
         Auth.auth().addStateDidChangeListener { [weak self] _, user in
-            print("Auth state changed. User ID: \(user?.uid ?? "nil")")
+            //print("Auth state changed. User ID: \(user?.uid ?? "nil")")
             if let user = user {
                 Task {
                     do {
                         try await self?.fetchCurrentUser(userId: user.uid)
-                        print("Successfully fetched current user")
+                        //print("Successfully fetched current user")
                     } catch {
                         print("Error fetching current user: \(error)")
                     }
@@ -31,11 +31,11 @@ class UserRepository: ObservableObject {
         
         // Check initial auth state
         if let currentUser = Auth.auth().currentUser {
-            print("Initial auth state - User ID: \(currentUser.uid)")
+           // print("Initial auth state - User ID: \(currentUser.uid)")
             Task {
                 do {
                     try await fetchCurrentUser(userId: currentUser.uid)
-                    print("Successfully fetched initial current user")
+                    //print("Successfully fetched initial current user")
                 } catch {
                     print("Error fetching initial current user: \(error)")
                 }
@@ -46,12 +46,12 @@ class UserRepository: ObservableObject {
     }
     
     private func fetchCurrentUser(userId: String) async throws {
-        print("Fetching user with ID: \(userId)")
+        //print("Fetching user with ID: \(userId)")
         if let user = try await getUser(withId: userId) {
-            print("Found user: \(user.firstName) \(user.lastName)")
+            //print("Found user: \(user.firstName) \(user.lastName)")
             DispatchQueue.main.async {
                 self.currentUser = user
-                print("Current user set to: \(user.firstName) \(user.lastName)")
+                //print("Current user set to: \(user.firstName) \(user.lastName)")
             }
         } else {
             print("No user found with ID: \(userId)")
