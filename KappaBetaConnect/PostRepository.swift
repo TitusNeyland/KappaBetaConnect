@@ -17,6 +17,17 @@ class PostRepository: ObservableObject {
         }
     }
     
+    func fetchPost(postId: String) async throws {
+        let document = try await db.collection("posts").document(postId).getDocument()
+        guard var updatedPost = try? document.data(as: Post.self) else { return }
+        updatedPost.id = document.documentID
+        
+        // Update the specific post in the posts array
+        if let index = posts.firstIndex(where: { $0.id == postId }) {
+            posts[index] = updatedPost
+        }
+    }
+    
     func createPost(content: String, authorId: String, authorName: String) async throws {
         let post = Post(
             content: content,
@@ -47,18 +58,24 @@ class PostRepository: ObservableObject {
                 }
                 
                 try transaction.setData(from: post, forDocument: postRef)
+                
+                // Update local posts array
+                if let index = self.posts.firstIndex(where: { $0.id == postId }) {
+                    self.posts[index].likes = post.likes
+                }
+                
                 return nil
             } catch {
                 errorPointer?.pointee = error as NSError
                 return nil
             }
         }
-        
-        try await fetchPosts() // Refresh posts after updating
     }
     
-    func addComment(postId: String, content: String, authorId: String, authorName: String) async throws {
+    @discardableResult
+    func addComment(postId: String, content: String, authorId: String, authorName: String) async throws -> Comment {
         let comment = Comment(
+            id: UUID().uuidString,
             content: content,
             authorId: authorId,
             authorName: authorName,
@@ -74,6 +91,12 @@ class PostRepository: ObservableObject {
                 
                 post.comments.append(comment)
                 try transaction.setData(from: post, forDocument: postRef)
+                
+                // Update local posts array
+                if let index = self.posts.firstIndex(where: { $0.id == postId }) {
+                    self.posts[index].comments = post.comments
+                }
+                
                 return nil
             } catch {
                 errorPointer?.pointee = error as NSError
@@ -81,7 +104,7 @@ class PostRepository: ObservableObject {
             }
         }
         
-        try await fetchPosts() // Refresh posts after updating
+        return comment
     }
     
     func incrementShareCount(postId: String) async throws {
@@ -94,13 +117,17 @@ class PostRepository: ObservableObject {
                 
                 post.shareCount += 1
                 try transaction.setData(from: post, forDocument: postRef)
+                
+                // Update local posts array
+                if let index = self.posts.firstIndex(where: { $0.id == postId }) {
+                    self.posts[index].shareCount = post.shareCount
+                }
+                
                 return nil
             } catch {
                 errorPointer?.pointee = error as NSError
                 return nil
             }
         }
-        
-        try await fetchPosts() // Refresh posts after updating
     }
 } 

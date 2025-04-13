@@ -1447,6 +1447,14 @@ struct PostCard: View {
         return post.likes.contains(userId)
     }
     
+    private var recentComments: [Comment] {
+        Array(post.comments.suffix(2).reversed())
+    }
+    
+    private var allComments: [Comment] {
+        Array(post.comments.reversed())
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // User info
@@ -1458,7 +1466,7 @@ struct PostCard: View {
                         Image(systemName: "person.fill")
                             .foregroundColor(.gray)
                     )
-                
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(post.authorName)
                         .font(.headline)
@@ -1540,7 +1548,7 @@ struct PostCard: View {
             // Recent comments (show last 2)
             if !post.comments.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    ForEach(post.comments.suffix(2)) { comment in
+                    ForEach(recentComments) { comment in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(comment.authorName)
                                 .font(.caption)
@@ -1576,7 +1584,7 @@ struct PostCard: View {
                     // Existing comments
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
-                            ForEach(post.comments) { comment in
+                            ForEach(allComments) { comment in
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
                                         Text(comment.authorName)
@@ -1656,16 +1664,31 @@ struct PostCard: View {
             return
         }
         
+        let commentContent = newComment.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !commentContent.isEmpty else { return }
+        
         Task {
             do {
                 try await postRepository.addComment(
                     postId: post.id ?? "",
-                    content: newComment,
+                    content: commentContent,
                     authorId: currentUser.id ?? "",
                     authorName: "\(currentUser.firstName) \(currentUser.lastName)"
                 )
+                
                 newComment = ""
                 showCommentSheet = false
+            } catch {
+                showError = true
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+    
+    private func handleShare() {
+        Task {
+            do {
+                try await postRepository.incrementShareCount(postId: post.id ?? "")
             } catch {
                 showError = true
                 errorMessage = error.localizedDescription
