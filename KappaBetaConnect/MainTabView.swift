@@ -128,531 +128,6 @@ extension String {
     }
 }
 
-struct EditEventView: View {
-    @Environment(\.dismiss) private var dismiss
-    @ObservedObject var eventRepository: EventRepository
-    let event: Event
-    
-    @State private var eventName: String
-    @State private var eventDate: Date
-    @State private var location: String
-    @State private var eventLink: String
-    @State private var description: String
-    @State private var hashtags: String
-    @State private var showError = false
-    @State private var errorMessage = ""
-    
-    init(eventRepository: EventRepository, event: Event) {
-        self.eventRepository = eventRepository
-        self.event = event
-        _eventName = State(initialValue: event.title)
-        _eventDate = State(initialValue: event.date)
-        _location = State(initialValue: event.location)
-        _eventLink = State(initialValue: event.eventLink ?? "")
-        _description = State(initialValue: event.description)
-        _hashtags = State(initialValue: event.hashtags ?? "")
-    }
-    
-    var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Event Name
-                    VStack(alignment: .leading) {
-                        Text("Event Name")
-                            .foregroundColor(.gray)
-                        TextField("Enter event name", text: $eventName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                    }
-                    
-                    // Date and Time
-                    VStack(alignment: .leading) {
-                        Text("Date and Time")
-                            .foregroundColor(.gray)
-                        DatePicker("", selection: $eventDate)
-                            .datePickerStyle(.graphical)
-                    }
-                    
-                    // Location
-                    VStack(alignment: .leading) {
-                        Text("Location")
-                            .foregroundColor(.gray)
-                        TextField("Enter location", text: $location)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                    }
-                    
-                    // Event Link
-                    VStack(alignment: .leading) {
-                        Text("Event Link")
-                            .foregroundColor(.gray)
-                        TextField("Enter event link", text: $eventLink)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .keyboardType(.URL)
-                            .autocapitalization(.none)
-                    }
-                    
-                    // Description
-                    VStack(alignment: .leading) {
-                        Text("Description")
-                            .foregroundColor(.gray)
-                        TextEditor(text: $description)
-                            .frame(height: 100)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(.systemGray4), lineWidth: 1)
-                            )
-                    }
-                    
-                    // Hashtags
-                    VStack(alignment: .leading) {
-                        Text("Hashtags")
-                            .foregroundColor(.gray)
-                        TextField("Enter hashtags (separated by spaces)", text: $hashtags)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                    }
-                    
-                    // Update Event Button
-                Button(action: {
-                        Task {
-                            await updateEvent()
-                        }
-                    }) {
-                        Text("Update Event")
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.black)
-                            .cornerRadius(10)
-                    }
-                    .disabled(eventName.isEmpty || location.isEmpty)
-                }
-                .padding()
-            }
-            .navigationTitle("Edit Event")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-            }
-            .alert("Error", isPresented: $showError) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text(errorMessage)
-            }
-        }
-    }
-    
-    private func updateEvent() async {
-        do {
-            try await eventRepository.updateEvent(
-                eventId: event.id ?? "",
-                title: eventName,
-                description: description,
-                date: eventDate,
-                location: location,
-                eventLink: eventLink.isEmpty ? nil : eventLink,
-                hashtags: hashtags.isEmpty ? nil : hashtags
-            )
-            dismiss()
-        } catch {
-            showError = true
-            errorMessage = error.localizedDescription
-        }
-    }
-}
-
-struct EventDetailView: View {
-    @ObservedObject var userRepository: UserRepository
-    @ObservedObject var eventRepository: EventRepository
-    let eventId: String
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
-    @State private var showError = false
-    @State private var errorMessage = ""
-    @State private var showEditSheet = false
-    @State private var showDeleteAlert = false
-    @State private var showMenu = false
-    
-    private var event: Event? {
-        eventRepository.events.first { $0.id == eventId }
-    }
-    
-    private var isEventCreator: Bool {
-        guard let event = event, let currentUserId = userRepository.currentUser?.id else { return false }
-        return event.createdBy == currentUserId
-    }
-    
-    private var dateComponents: (dayOfWeek: String, month: String, day: String, year: String, time: String)? {
-        guard let event = event else { return nil }
-        let calendar = Calendar.current
-        let date = event.date
-        let month = calendar.monthSymbols[calendar.component(.month, from: date) - 1]
-        let day = String(calendar.component(.day, from: date))
-        let year = String(calendar.component(.year, from: date))
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE"
-        let dayOfWeek = formatter.string(from: date)
-        formatter.dateFormat = "h:mm a"
-        let time = formatter.string(from: date)
-        return (dayOfWeek, month, day, year, time)
-    }
-    
-    private func handleURLTap(_ urlString: String) {
-        // Add http:// if no scheme is specified
-        let urlStringWithScheme = urlString.lowercased().hasPrefix("http") ? urlString : "https://" + urlString
-        
-        guard let url = URL(string: urlStringWithScheme) else {
-            showError = true
-            errorMessage = "Invalid URL format"
-            return
-        }
-        
-        openURL(url) { success in
-            if !success {
-                showError = true
-                errorMessage = "Could not open the URL"
-            }
-        }
-    }
-    
-    var body: some View {
-        Group {
-            if let event = event, let dateComponents = dateComponents {
-            ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        // Title with menu for creator
-                        HStack {
-                            Text(event.title)
-                                .font(.title)
-                                .fontWeight(.bold)
-                            
-                            if isEventCreator {
-                                Spacer()
-                                Menu {
-                                    Button(action: { showEditSheet = true }) {
-                                        Label("Edit", systemImage: "pencil")
-                                    }
-                                    Button(role: .destructive, action: { showDeleteAlert = true }) {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                } label: {
-                                    Image(systemName: "ellipsis")
-                                            .foregroundColor(.gray)
-                                        .padding(8)
-                                }
-                            }
-                        }
-                        
-                        // Date and Time
-                                VStack(alignment: .leading, spacing: 4) {
-                            Text("Date & Time")
-                                .font(.headline)
-                                        .foregroundColor(.gray)
-                            Text("\(dateComponents.dayOfWeek), \(dateComponents.month) \(dateComponents.day), \(dateComponents.year)")
-                                .font(.body)
-                            Text(dateComponents.time)
-                                .font(.body)
-                        }
-                        
-                        // Location
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Location")
-                                .font(.headline)
-                                .foregroundColor(.gray)
-                            Text(event.location)
-                                .font(.body)
-                        }
-                        
-                        // Description
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Description")
-                                .font(.headline)
-                                .foregroundColor(.gray)
-                            Text(event.description)
-                                .font(.body)
-                        }
-                        
-                        // Event Link
-                        if let eventLink = event.eventLink, !eventLink.isEmpty {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Event Link")
-                                    .font(.headline)
-                                    .foregroundColor(.gray)
-                                Button(action: {
-                                    handleURLTap(eventLink)
-                                }) {
-                                    Text(eventLink)
-                                        .font(.body)
-                                        .foregroundColor(.blue)
-                                        .underline()
-                                }
-                            }
-                        }
-                        
-                        // Hashtags
-                        if let hashtags = event.hashtags, !hashtags.isEmpty {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Hashtags")
-                                    .font(.headline)
-                                    .foregroundColor(.gray)
-                                Text(hashtags)
-                                    .font(.body)
-                            }
-                        }
-                        
-                        // Attendance
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Attendance")
-                                .font(.headline)
-                                .foregroundColor(.gray)
-                            Text("\(event.attendees.count) attending")
-                                .font(.body)
-                        }
-                        
-                        // RSVP Button
-                        if let userId = userRepository.currentUser?.id {
-                            Button(action: {
-                                Task {
-                                    do {
-                                        try await eventRepository.toggleEventAttendance(
-                                            eventId: event.id ?? "",
-                                            userId: userId
-                                        )
-                                    } catch {
-                                        showError = true
-                                        errorMessage = error.localizedDescription
-                                    }
-                                }
-                            }) {
-                                Text(event.attendees.contains(userId) ? "Cancel RSVP" : "RSVP")
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(event.attendees.contains(userId) ? Color.red : Color.black)
-                                    .cornerRadius(10)
-                            }
-                            .padding(.top, 20)
-                        }
-                    }
-                    .padding()
-                }
-            } else {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showEditSheet) {
-            if let event = event {
-                EditEventView(eventRepository: eventRepository, event: event)
-            }
-        }
-        .alert("Delete Event", isPresented: $showDeleteAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("Delete", role: .destructive) {
-                Task {
-                    do {
-                        if let eventId = event?.id {
-                            try await eventRepository.deleteEvent(eventId: eventId)
-                            dismiss()
-                        }
-                    } catch {
-                        showError = true
-                        errorMessage = error.localizedDescription
-                    }
-                }
-            }
-        } message: {
-            Text("Are you sure you want to delete this event? This action cannot be undone.")
-        }
-        .alert("Error", isPresented: $showError) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text(errorMessage)
-        }
-    }
-}
-
-struct EventsView: View {
-    @StateObject private var eventRepository = EventRepository()
-    @StateObject private var userRepository = UserRepository()
-    @State private var showAddEventSheet = false
-    @State private var showError = false
-    @State private var errorMessage = ""
-    @State private var searchText = ""
-    
-    var filteredEvents: [Event] {
-        if searchText.isEmpty {
-            return eventRepository.events
-        }
-        return eventRepository.events.filter { event in
-            event.title.localizedCaseInsensitiveContains(searchText) ||
-            event.location.localizedCaseInsensitiveContains(searchText)
-        }
-    }
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Search Bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
-                    TextField("Search", text: $searchText)
-                        .textFieldStyle(.plain)
-                }
-                .padding(8)
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
-                .padding()
-                
-                if filteredEvents.isEmpty {
-                                VStack {
-                        Image(systemName: "calendar")
-                            .font(.system(size: 50))
-                            .foregroundColor(.gray)
-                        Text("No events scheduled")
-                            .foregroundColor(.gray)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 16) {
-                            ForEach(filteredEvents) { event in
-                                NavigationLink(destination: EventDetailView(userRepository: userRepository, eventRepository: eventRepository, eventId: event.id ?? "")) {
-                                    EventListItem(event: event)
-                                        .padding(.horizontal)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                Divider()
-                                    .padding(.horizontal)
-                            }
-                        }
-                    }
-                }
-            }
-            .navigationTitle("Events")
-            .sheet(isPresented: $showAddEventSheet, onDismiss: {
-                Task {
-                    do {
-                        try await eventRepository.fetchEvents()
-                    } catch {
-                        showError = true
-                        errorMessage = error.localizedDescription
-                    }
-                }
-            }) {
-                AddEventView(eventRepository: eventRepository, userRepository: userRepository)
-            }
-            .alert("Error", isPresented: $showError) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text(errorMessage)
-            }
-            .task {
-                do {
-                    try await eventRepository.fetchEvents()
-                } catch {
-                    showError = true
-                    errorMessage = error.localizedDescription
-                }
-            }
-            .onAppear {
-                print("EventsView appeared")
-                print("Current user: \(userRepository.currentUser?.id ?? "nil")")
-                Task {
-                    do {
-                        try await eventRepository.fetchEvents()
-                    } catch {
-                        showError = true
-                        errorMessage = error.localizedDescription
-                    }
-                }
-            }
-            .overlay(
-            Button(action: {
-                    print("Add event button tapped")
-                    print("Current user: \(userRepository.currentUser?.id ?? "nil")")
-                    if let currentUser = userRepository.currentUser {
-                        print("User is logged in: \(currentUser.firstName) \(currentUser.lastName)")
-                        showAddEventSheet = true
-                    } else {
-                        print("No user logged in")
-                        showError = true
-                        errorMessage = "Please log in to create events"
-                    }
-            }) {
-                Image(systemName: "plus")
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .frame(width: 60, height: 60)
-                    .background(Color.black)
-                    .clipShape(Circle())
-                    .shadow(radius: 4)
-            }
-            .padding(.trailing, 20)
-                .padding(.bottom, 20),
-                alignment: .bottomTrailing
-            )
-        }
-    }
-}
-
-struct EventListItem: View {
-    let event: Event
-    
-    private var dateComponents: (month: String, day: String, dayOfWeek: String, time: String) {
-        let calendar = Calendar.current
-        let date = event.date
-        let month = calendar.shortMonthSymbols[calendar.component(.month, from: date) - 1].uppercased()
-        let day = String(calendar.component(.day, from: date))
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE"
-        let dayOfWeek = formatter.string(from: date)
-        formatter.dateFormat = "h:mm a"
-        let time = formatter.string(from: date)
-        return (month, day, dayOfWeek, time)
-    }
-    
-    var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            // Date Box
-            VStack {
-                Text(dateComponents.month)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                Text(dateComponents.day)
-                    .font(.title)
-                    .fontWeight(.bold)
-            }
-            .frame(width: 60)
-            .padding(8)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-            )
-            
-            // Event Details
-            VStack(alignment: .leading, spacing: 4) {
-                Text(event.title)
-                    .font(.headline)
-                Text("\(dateComponents.dayOfWeek), \(dateComponents.month) \(dateComponents.day), \(dateComponents.time)")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                Text(event.location)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-        }
-        .padding(.vertical, 8)
-    }
-}
-
 struct MessagesView: View {
     var body: some View {
         Text("Messages")
@@ -688,7 +163,7 @@ struct ProfileView: View {
     
     var body: some View {
         ZStack {
-        ScrollView {
+            ScrollView {
                 VStack(spacing: 0) {
                     // Profile Header with Cover Photo
                     ZStack(alignment: .bottom) {
@@ -704,12 +179,12 @@ struct ProfileView: View {
                         
                         // Profile Picture
                         VStack {
-                    Circle()
-                        .fill(Color.gray.opacity(0.3))
+                            Circle()
+                                .fill(Color.gray.opacity(0.3))
                                 .frame(width: 120, height: 120)
-                        .overlay(
-                            Image(systemName: "person.fill")
-                                .foregroundColor(.gray)
+                                .overlay(
+                                    Image(systemName: "person.fill")
+                                        .foregroundColor(.gray)
                                         .font(.system(size: 50))
                                 )
                                 .offset(y: 60)
@@ -729,7 +204,7 @@ struct ProfileView: View {
                                 if let jobTitle = currentUser.jobTitle, let company = currentUser.company {
                                     Text("\(jobTitle) at \(company)")
                                         .font(.title3)
-                            .foregroundColor(.gray)
+                                        .foregroundColor(.gray)
                                 } else {
                                     Text("No job information available")
                                         .font(.title3)
@@ -743,18 +218,18 @@ struct ProfileView: View {
                                 } else {
                                     Text("No location information available")
                                         .font(.title3)
-                            .foregroundColor(.gray)
-                    }
+                                        .foregroundColor(.gray)
+                                }
                             } else {
                                 Text("Loading...")
                                     .font(.title)
                                     .fontWeight(.bold)
-                }
+                            }
                         }
                         .padding(.top, 60)
-                
+                        
                         // Quick Stats
-                HStack(spacing: 30) {
+                        HStack(spacing: 30) {
                             if let currentUser = userRepository.currentUser {
                                 if let careerField = currentUser.careerField {
                                     InfoColumn(title: "Industry", value: careerField)
@@ -762,7 +237,7 @@ struct ProfileView: View {
                                     InfoColumn(title: "Industry", value: "Not specified")
                                 }
                                 
-                    InfoColumn(title: "Experience", value: yearsExperience)
+                                InfoColumn(title: "Experience", value: yearsExperience)
                                 
                                 if let status = currentUser.status {
                                     InfoColumn(title: "Status", value: status)
@@ -774,29 +249,29 @@ struct ProfileView: View {
                                 InfoColumn(title: "Experience", value: "Loading...")
                                 InfoColumn(title: "Status", value: "Loading...")
                             }
-                }
-                .padding(.horizontal, 20)
-                
-                // About Section
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("About")
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // About Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("About")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                        .padding(.horizontal, 20)
-                    
-                    Text(bio)
+                                .padding(.horizontal, 20)
+                            
+                            Text(bio)
                                 .font(.title3)
-                        .foregroundColor(.gray)
-                        .padding(.horizontal, 20)
-                }
-                
+                                .foregroundColor(.gray)
+                                .padding(.horizontal, 20)
+                        }
+                        
                         // Recent Posts Section
-                VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 10) {
                             Text("Recent Posts")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                        .padding(.horizontal, 20)
-                    
+                                .padding(.horizontal, 20)
+                            
                             if recentPosts.isEmpty {
                                 Text("No recent posts")
                                     .font(.title3)
@@ -804,7 +279,7 @@ struct ProfileView: View {
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .padding(.vertical, 20)
                             } else {
-                    VStack(spacing: 15) {
+                                VStack(spacing: 15) {
                                     ForEach(recentPosts) { post in
                                         PostCard(post: post, postRepository: postRepository)
                                     }
@@ -825,9 +300,9 @@ struct ProfileView: View {
                                 // First row: Initiated, Line #, Ship
                                 HStack(spacing: 30) {
                                     VStack(alignment: .leading, spacing: 8) {
-                                Text("Initiated")
+                                        Text("Initiated")
                                             .font(.title3)
-                                    .fontWeight(.medium)
+                                            .fontWeight(.medium)
                                         if let currentUser = userRepository.currentUser,
                                            let semester = currentUser.semester,
                                            let year = currentUser.year {
@@ -840,14 +315,14 @@ struct ProfileView: View {
                                         } else {
                                             Text("Not specified")
                                                 .font(.title3)
-                                    .foregroundColor(.gray)
+                                                .foregroundColor(.gray)
                                         }
-                            }
-                            
+                                    }
+                                    
                                     VStack(alignment: .leading, spacing: 8) {
-                                Text("Line #")
+                                        Text("Line #")
                                             .font(.title3)
-                                    .fontWeight(.medium)
+                                            .fontWeight(.medium)
                                         if let currentUser = userRepository.currentUser,
                                            let lineNumber = currentUser.lineNumber {
                                             Text(lineNumber)
@@ -856,125 +331,125 @@ struct ProfileView: View {
                                         } else {
                                             Text("Not specified")
                                                 .font(.title3)
-                                    .foregroundColor(.gray)
+                                                .foregroundColor(.gray)
                                         }
-                            }
-                            
+                                    }
+                                    
                                     VStack(alignment: .leading, spacing: 8) {
-                                Text("Ship")
+                                        Text("Ship")
                                             .font(.title3)
-                                    .fontWeight(.medium)
-                                Text(shipName)
+                                            .fontWeight(.medium)
+                                        Text(shipName)
                                             .font(.title3)
-                                    .foregroundColor(.gray)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                                
                                 Divider()
                                     .padding(.horizontal, 20)
                                 
                                 // Second row: Line Name and Positions
                                 VStack(alignment: .leading, spacing: 25) {
-                        VStack(alignment: .leading, spacing: 8) {
-                                    Text("Line Name")
-                                            .font(.title3)
-                                        .fontWeight(.medium)
-                                    Text(lineName)
-                                            .font(.title3)
-                                        .foregroundColor(.gray)
-                                }
-                                
                                     VStack(alignment: .leading, spacing: 8) {
-                                    Text("Positions")
+                                        Text("Line Name")
                                             .font(.title3)
-                                        .fontWeight(.medium)
-                                    HStack {
-                                        ForEach(positions, id: \.self) { position in
-                                            Text(position)
+                                            .fontWeight(.medium)
+                                        Text(lineName)
+                                            .font(.title3)
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("Positions")
+                                            .font(.title3)
+                                            .fontWeight(.medium)
+                                        HStack {
+                                            ForEach(positions, id: \.self) { position in
+                                                Text(position)
                                                     .font(.title3)
-                                                .foregroundColor(.gray)
-                                            if position != positions.last {
-                                                Text("•")
                                                     .foregroundColor(.gray)
+                                                if position != positions.last {
+                                                    Text("•")
+                                                        .foregroundColor(.gray)
                                                         .padding(.horizontal, 4)
+                                                }
                                             }
                                         }
                                     }
                                 }
+                                .padding(.horizontal, 20)
                             }
+                            .padding(.vertical, 20)
+                            .background(Color.gray.opacity(0.05))
+                            .cornerRadius(15)
                             .padding(.horizontal, 20)
                         }
-                            .padding(.vertical, 20)
-                    .background(Color.gray.opacity(0.05))
-                            .cornerRadius(15)
-                    .padding(.horizontal, 20)
-                }
                         .padding(.vertical, 10)
-                
-                // Skills Section
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Skills & Expertise")
+                        
+                        // Skills Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Skills & Expertise")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                        .padding(.horizontal, 20)
-                    
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(skills, id: \.self) { skill in
-                                Text(skill)
+                                .padding(.horizontal, 20)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 10) {
+                                    ForEach(skills, id: \.self) { skill in
+                                        Text(skill)
                                             .font(.title3)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(Color.gray.opacity(0.1))
-                                    .cornerRadius(15)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(Color.gray.opacity(0.1))
+                                            .cornerRadius(15)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
                             }
                         }
-                        .padding(.horizontal, 20)
-                    }
-                }
-                
-                // Interests Section
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Interests & Hobbies")
+                        
+                        // Interests Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Interests & Hobbies")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                        .padding(.horizontal, 20)
-                    
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(interests, id: \.self) { interest in
-                                Text(interest)
+                                .padding(.horizontal, 20)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 10) {
+                                    ForEach(interests, id: \.self) { interest in
+                                        Text(interest)
                                             .font(.title3)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(Color.gray.opacity(0.1))
-                                    .cornerRadius(15)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(Color.gray.opacity(0.1))
+                                            .cornerRadius(15)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
                             }
                         }
-                        .padding(.horizontal, 20)
-                    }
-                }
-                
-                // Connect Section
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Connect")
+                        
+                        // Connect Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Connect")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                        .padding(.horizontal, 20)
-                        .padding(.top, 20)
-                    
-                    VStack(alignment: .leading, spacing: 12) {
+                                .padding(.horizontal, 20)
+                                .padding(.top, 20)
+                            
+                            VStack(alignment: .leading, spacing: 12) {
                                 if let currentUser = userRepository.currentUser {
-                        HStack {
+                                    HStack {
                                         if let linkedInURL = currentUser.linkedInURL {
                                             Link(destination: URL(string: linkedInURL)!) {
                                                 HStack(spacing: 8) {
-                            Image(systemName: "link")
-                                .foregroundColor(.blue)
+                                                    Image(systemName: "link")
+                                                        .foregroundColor(.blue)
                                                     Text("LinkedIn Profile")
                                                         .font(.title3)
-                                .foregroundColor(.blue)
+                                                        .foregroundColor(.blue)
                                                 }
                                             }
                                         } else {
@@ -1000,41 +475,41 @@ struct ProfileView: View {
                                     
                                     Link(destination: URL(string: "https://instagram.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!) {
                                         HStack(spacing: 8) {
-                            Image(systemName: "link")
-                                .foregroundColor(.blue)
+                                            Image(systemName: "link")
+                                                .foregroundColor(.blue)
                                             Text("Instagram")
                                                 .font(.title3)
-                                .foregroundColor(.blue)
-                                            Spacer()
-                                        }
-                        }
-                        
-                                    Link(destination: URL(string: "https://twitter.com/\(twitter.replacingOccurrences(of: "@", with: ""))")!) {
-                                        HStack(spacing: 8) {
-                            Image(systemName: "link")
-                                .foregroundColor(.blue)
-                                            Text("Twitter")
-                                                .font(.title3)
-                                .foregroundColor(.blue)
-                                            Spacer()
-                                        }
-                        }
-                        
-                                    Link(destination: URL(string: "https://snapchat.com/add/\(snapchat.replacingOccurrences(of: "@", with: ""))")!) {
-                                        HStack(spacing: 8) {
-                            Image(systemName: "link")
-                                .foregroundColor(.blue)
-                                            Text("Snapchat")
-                                                .font(.title3)
-                                .foregroundColor(.blue)
+                                                .foregroundColor(.blue)
                                             Spacer()
                                         }
                                     }
+                                    
+                                    Link(destination: URL(string: "https://twitter.com/\(twitter.replacingOccurrences(of: "@", with: ""))")!) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "link")
+                                                .foregroundColor(.blue)
+                                            Text("Twitter")
+                                                .font(.title3)
+                                                .foregroundColor(.blue)
+                                            Spacer()
+                                        }
+                                    }
+                                    
+                                    Link(destination: URL(string: "https://snapchat.com/add/\(snapchat.replacingOccurrences(of: "@", with: ""))")!) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "link")
+                                                .foregroundColor(.blue)
+                                            Text("Snapchat")
+                                                .font(.title3)
+                                                .foregroundColor(.blue)
+                                            Spacer()
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 4)
                         }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 4)
-                }
                         
                         // Logout Button
                         Button(action: {
@@ -1052,8 +527,8 @@ struct ProfileView: View {
                         .padding(.vertical, 30)
                     }
                 }
-        }
-        .background(Color(.systemBackground))
+            }
+            .background(Color(.systemBackground))
             
             NavigationLink(destination: LoginView().navigationBarBackButtonHidden(true), isActive: $navigateToLogin) {
                 EmptyView()
