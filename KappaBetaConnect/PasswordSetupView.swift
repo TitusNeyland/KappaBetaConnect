@@ -26,10 +26,10 @@ struct PasswordSetupView: View {
                     ZStack(alignment: .trailing) {
                         if showPassword {
                             TextField("Password", text: $password)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .customTextField()
                         } else {
                             SecureField("Password", text: $password)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .customTextField()
                         }
                         
                         Button(action: {
@@ -45,10 +45,10 @@ struct PasswordSetupView: View {
                     ZStack(alignment: .trailing) {
                         if showConfirmPassword {
                             TextField("Confirm Password", text: $confirmPassword)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .customTextField()
                         } else {
                             SecureField("Confirm Password", text: $confirmPassword)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .customTextField()
                         }
                         
                         Button(action: {
