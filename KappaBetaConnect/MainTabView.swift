@@ -1212,7 +1212,10 @@ struct ProfileView: View {
                                         if let currentUser = userRepository.currentUser,
                                            let semester = currentUser.semester,
                                            let year = currentUser.year {
-                                            Text("\(semester) \(year)")
+                                            // Convert semester to abbreviated form and year to 'YY format
+                                            let abbreviatedSemester = semester == "Fall" ? "FA" : "SPR"
+                                            let abbreviatedYear = "'\(year.suffix(2))"
+                                            Text("\(abbreviatedSemester) \(abbreviatedYear)")
                                                 .font(.title3)
                                                 .foregroundColor(.gray)
                                         } else {
