@@ -4,7 +4,7 @@ struct MainTabView: View {
     @State private var selectedTab = 0
     @EnvironmentObject private var authManager: AuthManager
     
-    let tabs = ["Home", "Directory", "Events", "Messages", "Profile"]
+    let tabs = ["Home", "Feed", "Directory", "Events", "Messages", "Profile"]
     
     // Add these properties
     @State private var scrollProxy: ScrollViewProxy? = nil
@@ -51,18 +51,21 @@ struct MainTabView: View {
                 HomeView()
                     .tag(0)
                 
-                DirectoryView()
+                FeedView()
                     .tag(1)
                 
-                EventsView()
+                DirectoryView()
                     .tag(2)
                 
-                MessagesView()
+                EventsView()
                     .tag(3)
+                
+                MessagesView()
+                    .tag(4)
                 
                 ProfileView()
                     .environmentObject(authManager)
-                    .tag(4)
+                    .tag(5)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .onChange(of: selectedTab) { newValue in
@@ -1315,6 +1318,116 @@ struct FlowLayout<Content: View>: View {
                     }
             }
         }
+    }
+}
+
+// Add FeedView
+struct FeedView: View {
+    @State private var showNewPostSheet = false
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Placeholder content
+                        ForEach(0..<5) { _ in
+                            PostCard()
+                        }
+                    }
+                    .padding()
+                }
+            }
+            .navigationTitle("Feed")
+            .overlay(
+                Button(action: {
+                    showNewPostSheet = true
+                }) {
+                    Image(systemName: "plus")
+                        .font(.title2)
+                        .foregroundColor(.white)
+                        .frame(width: 60, height: 60)
+                        .background(Color.black)
+                        .clipShape(Circle())
+                        .shadow(radius: 4)
+                }
+                .padding(.trailing, 20)
+                .padding(.bottom, 20),
+                alignment: .bottomTrailing
+            )
+        }
+    }
+}
+
+// Add PostCard view
+struct PostCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // User info
+            HStack {
+                Circle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Image(systemName: "person.fill")
+                            .foregroundColor(.gray)
+                    )
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("John Doe")
+                        .font(.headline)
+                    Text("2 hours ago")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+                
+                Menu {
+                    Button(action: {}) {
+                        Label("Report", systemImage: "flag")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundColor(.gray)
+                }
+            }
+            
+            // Post content
+            Text("This is a sample post content. Looking forward to connecting with more brothers!")
+                .font(.body)
+            
+            // Interaction buttons
+            HStack(spacing: 20) {
+                Button(action: {}) {
+                    HStack {
+                        Image(systemName: "heart")
+                        Text("Like")
+                    }
+                    .foregroundColor(.gray)
+                }
+                
+                Button(action: {}) {
+                    HStack {
+                        Image(systemName: "bubble.right")
+                        Text("Comment")
+                    }
+                    .foregroundColor(.gray)
+                }
+                
+                Button(action: {}) {
+                    HStack {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Share")
+                    }
+                    .foregroundColor(.gray)
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
 }
 
