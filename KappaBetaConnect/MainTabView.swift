@@ -1196,15 +1196,17 @@ struct ProfileView: View {
                         }
                         
                         // Brotherhood Details Section
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 20) {
                             Text("Brotherhood Details")
                                 .font(.title2)
                                 .fontWeight(.bold)
                                 .padding(.horizontal, 20)
+                                .padding(.bottom, 10)
                             
-                            VStack(spacing: 15) {
-                                HStack(spacing: 20) {
-                                    VStack(alignment: .leading) {
+                            VStack(spacing: 25) {
+                                // First row: Initiated, Line #, Ship
+                                HStack(spacing: 30) {
+                                    VStack(alignment: .leading, spacing: 8) {
                                         Text("Initiated")
                                             .font(.title3)
                                             .fontWeight(.medium)
@@ -1224,7 +1226,7 @@ struct ProfileView: View {
                                         }
                                     }
                                     
-                                    VStack(alignment: .leading) {
+                                    VStack(alignment: .leading, spacing: 8) {
                                         Text("Line #")
                                             .font(.title3)
                                             .fontWeight(.medium)
@@ -1240,7 +1242,7 @@ struct ProfileView: View {
                                         }
                                     }
                                     
-                                    VStack(alignment: .leading) {
+                                    VStack(alignment: .leading, spacing: 8) {
                                         Text("Ship")
                                             .font(.title3)
                                             .fontWeight(.medium)
@@ -1251,44 +1253,46 @@ struct ProfileView: View {
                                 }
                                 .padding(.horizontal, 20)
                                 
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack(alignment: .top) {
-                                        VStack(alignment: .leading) {
-                                            Text("Line Name")
-                                                .font(.title3)
-                                                .fontWeight(.medium)
-                                            Text(lineName)
-                                                .font(.title3)
-                                                .foregroundColor(.gray)
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        VStack(alignment: .leading) {
-                                            Text("Positions")
-                                                .font(.title3)
-                                                .fontWeight(.medium)
-                                            HStack {
-                                                ForEach(positions, id: \.self) { position in
-                                                    Text(position)
-                                                        .font(.title3)
+                                Divider()
+                                    .padding(.horizontal, 20)
+                                
+                                // Second row: Line Name and Positions
+                                VStack(alignment: .leading, spacing: 25) {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("Line Name")
+                                            .font(.title3)
+                                            .fontWeight(.medium)
+                                        Text(lineName)
+                                            .font(.title3)
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("Positions")
+                                            .font(.title3)
+                                            .fontWeight(.medium)
+                                        HStack {
+                                            ForEach(positions, id: \.self) { position in
+                                                Text(position)
+                                                    .font(.title3)
+                                                    .foregroundColor(.gray)
+                                                if position != positions.last {
+                                                    Text("•")
                                                         .foregroundColor(.gray)
-                                                    if position != positions.last {
-                                                        Text("•")
-                                                            .foregroundColor(.gray)
-                                                    }
+                                                        .padding(.horizontal, 4)
                                                 }
                                             }
                                         }
                                     }
-                                    .padding(.horizontal, 20)
                                 }
+                                .padding(.horizontal, 20)
                             }
-                            .padding(.vertical, 10)
+                            .padding(.vertical, 20)
                             .background(Color.gray.opacity(0.05))
-                            .cornerRadius(10)
+                            .cornerRadius(15)
                             .padding(.horizontal, 20)
                         }
+                        .padding(.vertical, 10)
                         
                         // Skills Section
                         VStack(alignment: .leading, spacing: 10) {
