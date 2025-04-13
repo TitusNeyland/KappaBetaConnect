@@ -1054,7 +1054,6 @@ struct ProfileView: View {
     // Sample data - replace with actual user data
     let yearsExperience = "5 years"
     let lineName = "INDEUCED IN2ENT"
-    let lineNumber = "2"
     let shipName = "12 INVADERS"
     let positions = ["Assistant Secretary"]
     let skills = ["iOS Development", "Swift", "SwiftUI", "UI/UX Design", "Project Management"]
@@ -1229,9 +1228,16 @@ struct ProfileView: View {
                                         Text("Line #")
                                             .font(.title3)
                                             .fontWeight(.medium)
-                                        Text("#\(lineNumber)")
-                                            .font(.title3)
-                                            .foregroundColor(.gray)
+                                        if let currentUser = userRepository.currentUser,
+                                           let lineNumber = currentUser.lineNumber {
+                                            Text(lineNumber)
+                                                .font(.title3)
+                                                .foregroundColor(.gray)
+                                        } else {
+                                            Text("Not specified")
+                                                .font(.title3)
+                                                .foregroundColor(.gray)
+                                        }
                                     }
                                     
                                     VStack(alignment: .leading) {
