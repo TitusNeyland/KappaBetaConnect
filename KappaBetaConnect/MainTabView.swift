@@ -1043,6 +1043,14 @@ struct MessagesView: View {
 }
 
 struct ProfileView: View {
+    @StateObject private var postRepository = PostRepository()
+    @EnvironmentObject private var authManager: AuthManager
+    @State private var showLogoutAlert = false
+    @State private var navigateToLogin = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    // Sample data - replace with actual user data
     let userName = "Titus Neyland"
     let jobTitle = "Software Engineer"
     let company = "Dillard's Inc."
@@ -1059,258 +1067,292 @@ struct ProfileView: View {
     let interests = ["Technology", "Gaming", "Art", "Travel"]
     let bio = "Passionate software engineer with a focus on iOS development. Creating innovative solutions and mentoring junior developers. Always excited to learn new technologies and contribute to meaningful projects."
     let linkedin = "linkedin.com/in/titusneyland"
-    
-    // Add new properties for social media
     let instagram = "@username"
     let twitter = "@username"
     let snapchat = "@username"
     
-    // Add environment object for AuthManager
-    @EnvironmentObject private var authManager: AuthManager
-    // State to control showing alert
-    @State private var showLogoutAlert = false
-    // State to control navigation back to login
-    @State private var navigateToLogin = false
+    private var recentPosts: [Post] {
+        Array(postRepository.posts.prefix(3))
+    }
     
     var body: some View {
         ZStack {
-            // Main content
             ScrollView {
-                VStack(spacing: 25) {
-                    // Profile Header
-                    HStack(spacing: 15) {
-                        Circle()
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(width: 110, height: 110)
+                VStack(spacing: 0) {
+                    // Profile Header with Cover Photo
+                    ZStack(alignment: .bottom) {
+                        // Cover Photo
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(height: 200)
                             .overlay(
-                                Image(systemName: "person.fill")
+                                Image(systemName: "photo")
+                                    .font(.system(size: 50))
                                     .foregroundColor(.gray)
-                                    .font(.system(size: 40))
                             )
                         
-                        VStack(alignment: .leading, spacing: 4) {
+                        // Profile Picture
+                        VStack {
+                            Circle()
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(width: 120, height: 120)
+                                .overlay(
+                                    Image(systemName: "person.fill")
+                                        .foregroundColor(.gray)
+                                        .font(.system(size: 50))
+                                )
+                                .offset(y: 60)
+                                .shadow(radius: 5)
+                        }
+                    }
+                    
+                    // Profile Info
+                    VStack(spacing: 20) {
+                        // Name and Title
+                        VStack(spacing: 4) {
                             Text(userName)
-                                .font(.title2)
-                                .fontWeight(.semibold)
+                                .font(.title)
+                                .fontWeight(.bold)
                             
-                            Text("\(jobTitle), \(company)")
-                                .font(.subheadline)
+                            Text("\(jobTitle) at \(company)")
+                                .font(.title3)
                                 .foregroundColor(.gray)
                             
                             Text(location)
-                                .font(.subheadline)
+                                .font(.title3)
                                 .foregroundColor(.gray)
                         }
-                        Spacer()
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    
-                    // Professional Info Section
-                    HStack(spacing: 30) {
-                        InfoColumn(title: "Industry", value: industry)
-                        InfoColumn(title: "Experience", value: yearsExperience)
-                        InfoColumn(title: "Status", value: alumniStatus)
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    // About Section
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("About")
-                            .font(.headline)
-                            .padding(.horizontal, 20)
+                        .padding(.top, 60)
                         
-                        Text(bio)
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                            .padding(.horizontal, 20)
-                    }
-                    
-                    // Brotherhood Details Section
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Brotherhood Details")
-                            .font(.headline)
-                            .padding(.horizontal, 20)
+                        // Quick Stats
+                        HStack(spacing: 30) {
+                            InfoColumn(title: "Industry", value: industry)
+                            InfoColumn(title: "Experience", value: yearsExperience)
+                            InfoColumn(title: "Status", value: alumniStatus)
+                        }
+                        .padding(.horizontal, 20)
                         
-                        VStack(spacing: 15) {
-                            // First Row: Initiation and Line Info
-                            HStack(spacing: 20) {
-                                VStack(alignment: .leading) {
-                                    Text("Initiated")
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
-                                    Text("Fall \(initiationYear)")
-                                        .font(.subheadline)
-                                        .foregroundColor(.gray)
-                                }
-                                
-                                VStack(alignment: .leading) {
-                                    Text("Line #")
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
-                                    Text("#\(lineNumber)")
-                                        .font(.subheadline)
-                                        .foregroundColor(.gray)
-                                }
-                                
-                                VStack(alignment: .leading) {
-                                    Text("Ship")
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
-                                    Text(shipName)
-                                        .font(.subheadline)
-                                        .foregroundColor(.gray)
-                                }
-                            }
-                            .padding(.horizontal, 20)
+                        // About Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("About")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 20)
                             
-                            // Second Row: Line Name and Positions
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack(alignment: .top) {
-                                    VStack(alignment: .leading) {
-                                        Text("Line Name")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                        Text(lineName)
-                                            .font(.subheadline)
-                                            .foregroundColor(.gray)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    VStack(alignment: .leading) {
-                                        Text("Positions")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                        HStack {
-                                            ForEach(positions, id: \.self) { position in
-                                                Text(position)
-                                                    .font(.subheadline)
-                                                    .foregroundColor(.gray)
-                                                if position != positions.last {
-                                                    Text("•")
-                                                        .foregroundColor(.gray)
-                                                }
-                                            }
-                                        }
+                            Text(bio)
+                                .font(.title3)
+                                .foregroundColor(.gray)
+                                .padding(.horizontal, 20)
+                        }
+                        
+                        // Recent Posts Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Recent Posts")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 20)
+                            
+                            if recentPosts.isEmpty {
+                                Text("No recent posts")
+                                    .font(.title3)
+                                    .foregroundColor(.gray)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.vertical, 20)
+                            } else {
+                                VStack(spacing: 15) {
+                                    ForEach(recentPosts) { post in
+                                        PostCard(post: post, postRepository: postRepository)
                                     }
                                 }
                                 .padding(.horizontal, 20)
                             }
                         }
-                        .padding(.vertical, 10)
-                        .background(Color.gray.opacity(0.05))
-                        .cornerRadius(10)
-                        .padding(.horizontal, 20)
-                    }
-                    
-                    // Skills Section
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Skills & Expertise")
-                            .font(.headline)
-                            .padding(.horizontal, 20)
                         
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 10) {
-                                ForEach(skills, id: \.self) { skill in
-                                    Text(skill)
-                                        .font(.subheadline)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(Color.gray.opacity(0.1))
-                                        .cornerRadius(15)
+                        // Brotherhood Details Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Brotherhood Details")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 20)
+                            
+                            VStack(spacing: 15) {
+                                HStack(spacing: 20) {
+                                    VStack(alignment: .leading) {
+                                        Text("Initiated")
+                                            .font(.title3)
+                                            .fontWeight(.medium)
+                                        Text("Fall \(initiationYear)")
+                                            .font(.title3)
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    VStack(alignment: .leading) {
+                                        Text("Line #")
+                                            .font(.title3)
+                                            .fontWeight(.medium)
+                                        Text("#\(lineNumber)")
+                                            .font(.title3)
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    VStack(alignment: .leading) {
+                                        Text("Ship")
+                                            .font(.title3)
+                                            .fontWeight(.medium)
+                                        Text(shipName)
+                                            .font(.title3)
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                                
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(alignment: .top) {
+                                        VStack(alignment: .leading) {
+                                            Text("Line Name")
+                                                .font(.title3)
+                                                .fontWeight(.medium)
+                                            Text(lineName)
+                                                .font(.title3)
+                                                .foregroundColor(.gray)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        VStack(alignment: .leading) {
+                                            Text("Positions")
+                                                .font(.title3)
+                                                .fontWeight(.medium)
+                                            HStack {
+                                                ForEach(positions, id: \.self) { position in
+                                                    Text(position)
+                                                        .font(.title3)
+                                                        .foregroundColor(.gray)
+                                                    if position != positions.last {
+                                                        Text("•")
+                                                            .foregroundColor(.gray)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .padding(.horizontal, 20)
                                 }
                             }
-                            .padding(.horizontal, 20)
-                        }
-                    }
-                    
-                    // Interests Section
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Interests & Hobbies")
-                            .font(.headline)
-                            .padding(.horizontal, 20)
-                        
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 10) {
-                                ForEach(interests, id: \.self) { interest in
-                                    Text(interest)
-                                        .font(.subheadline)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(Color.gray.opacity(0.1))
-                                        .cornerRadius(15)
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                        }
-                    }
-                    
-                    // Connect Section
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Connect")
-                            .font(.headline)
-                            .padding(.horizontal, 20)
-                            .padding(.top, 20)
-                        
-                        VStack(alignment: .leading, spacing: 12) {
-                            // LinkedIn
-                            HStack {
-                                Image(systemName: "link")
-                                    .foregroundColor(.blue)
-                                Link("LinkedIn Profile", destination: URL(string: linkedin)!)
-                                    .foregroundColor(.blue)
-                            }
-                            
-                            // Instagram
-                            HStack {
-                                Image(systemName: "link")
-                                    .foregroundColor(.blue)
-                                Link("Instagram", destination: URL(string: "https://instagram.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!)
-                                    .foregroundColor(.blue)
-                            }
-                            
-                            // Twitter/X
-                            HStack {
-                                Image(systemName: "link")
-                                    .foregroundColor(.blue)
-                                Link("Twitter", destination: URL(string: "https://twitter.com/\(twitter.replacingOccurrences(of: "@", with: ""))")!)
-                                    .foregroundColor(.blue)
-                            }
-                            
-                            // Snapchat
-                            HStack {
-                                Image(systemName: "link")
-                                    .foregroundColor(.blue)
-                                Link("Snapchat", destination: URL(string: "https://snapchat.com/add/\(snapchat.replacingOccurrences(of: "@", with: ""))")!)
-                                    .foregroundColor(.blue)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 4)
-                    }
-                    
-                    // Logout Button
-                    Button(action: {
-                        showLogoutAlert = true
-                    }) {
-                        Text("Logout")
-                            .fontWeight(.medium)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.red)
+                            .padding(.vertical, 10)
+                            .background(Color.gray.opacity(0.05))
                             .cornerRadius(10)
+                            .padding(.horizontal, 20)
+                        }
+                        
+                        // Skills Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Skills & Expertise")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 20)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 10) {
+                                    ForEach(skills, id: \.self) { skill in
+                                        Text(skill)
+                                            .font(.title3)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(Color.gray.opacity(0.1))
+                                            .cornerRadius(15)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                            }
+                        }
+                        
+                        // Interests Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Interests & Hobbies")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 20)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 10) {
+                                    ForEach(interests, id: \.self) { interest in
+                                        Text(interest)
+                                            .font(.title3)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(Color.gray.opacity(0.1))
+                                            .cornerRadius(15)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                            }
+                        }
+                        
+                        // Connect Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Connect")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 20)
+                                .padding(.top, 20)
+                            
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Image(systemName: "link")
+                                        .foregroundColor(.blue)
+                                    Link("LinkedIn Profile", destination: URL(string: linkedin)!)
+                                        .font(.title3)
+                                        .foregroundColor(.blue)
+                                }
+                                
+                                HStack {
+                                    Image(systemName: "link")
+                                        .foregroundColor(.blue)
+                                    Link("Instagram", destination: URL(string: "https://instagram.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!)
+                                        .font(.title3)
+                                        .foregroundColor(.blue)
+                                }
+                                
+                                HStack {
+                                    Image(systemName: "link")
+                                        .foregroundColor(.blue)
+                                    Link("Twitter", destination: URL(string: "https://twitter.com/\(twitter.replacingOccurrences(of: "@", with: ""))")!)
+                                        .font(.title3)
+                                        .foregroundColor(.blue)
+                                }
+                                
+                                HStack {
+                                    Image(systemName: "link")
+                                        .foregroundColor(.blue)
+                                    Link("Snapchat", destination: URL(string: "https://snapchat.com/add/\(snapchat.replacingOccurrences(of: "@", with: ""))")!)
+                                        .font(.title3)
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 4)
+                        }
+                        
+                        // Logout Button
+                        Button(action: {
+                            showLogoutAlert = true
+                        }) {
+                            Text("Logout")
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.red)
+                                .cornerRadius(10)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 30)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 30)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, 20)
             }
             .background(Color(.systemBackground))
             
-            // Hidden NavigationLink that will trigger when navigateToLogin is true
             NavigationLink(destination: LoginView().navigationBarBackButtonHidden(true), isActive: $navigateToLogin) {
                 EmptyView()
             }
@@ -1328,6 +1370,14 @@ struct ProfileView: View {
         } message: {
             Text("Are you sure you want to log out?")
         }
+        .task {
+            do {
+                try await postRepository.fetchPosts()
+            } catch {
+                showError = true
+                errorMessage = error.localizedDescription
+            }
+        }
     }
 }
 
@@ -1339,10 +1389,10 @@ struct InfoColumn: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.subheadline)
+                .font(.title3)
                 .foregroundColor(.gray)
             Text(value)
-                .font(.subheadline)
+                .font(.title3)
                 .fontWeight(.medium)
         }
     }
