@@ -181,6 +181,8 @@ class UserRepository: ObservableObject {
         if let lineNumber = user.lineNumber { dict["lineNumber"] = lineNumber }
         if let semester = user.semester { dict["semester"] = semester }
         if let year = user.year { dict["year"] = year }
+        if let status = user.status { dict["status"] = status }
+        if let graduationYear = user.graduationYear { dict["graduationYear"] = graduationYear }
         
         return dict
     }
@@ -216,6 +218,8 @@ class UserRepository: ObservableObject {
             lineNumber: dict["lineNumber"] as? String,
             semester: dict["semester"] as? String,
             year: dict["year"] as? String,
+            status: dict["status"] as? String,
+            graduationYear: dict["graduationYear"] as? String,
             profileImageURL: dict["profileImageURL"] as? String,
             linkedInURL: dict["linkedInURL"] as? String,
             isActive: isActive
