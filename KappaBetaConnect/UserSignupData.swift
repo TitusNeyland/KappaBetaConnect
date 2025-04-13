@@ -8,6 +8,8 @@ class UserSignupData: ObservableObject {
     @Published var suffix: String = ""
     @Published var email: String = ""
     @Published var phoneNumber: String = ""
+    @Published var city: String = ""
+    @Published var state: String = ""
     
     // Security
     @Published var password: String = ""
@@ -22,6 +24,8 @@ class UserSignupData: ObservableObject {
     @Published var lineNumber: String = ""
     @Published var semester: String = ""
     @Published var year: String = ""
+    @Published var status: String = ""
+    @Published var graduationYear: String = ""
     
     func createUser() -> User {
         return User(
@@ -31,6 +35,8 @@ class UserSignupData: ObservableObject {
             suffix: suffix.isEmpty ? nil : suffix,
             email: email,
             phoneNumber: phoneNumber,
+            city: city.isEmpty ? nil : city,
+            state: state.isEmpty ? nil : state,
             password: password,
             careerField: careerField.isEmpty ? nil : careerField,
             major: major.isEmpty ? nil : major,
@@ -38,7 +44,9 @@ class UserSignupData: ObservableObject {
             company: company.isEmpty ? nil : company,
             lineNumber: lineNumber.isEmpty ? nil : lineNumber,
             semester: semester.isEmpty ? nil : semester,
-            year: year.isEmpty ? nil : year
+            year: year.isEmpty ? nil : year,
+            status: status.isEmpty ? nil : status,
+            graduationYear: graduationYear.isEmpty ? nil : graduationYear
         )
     }
 } 

@@ -23,7 +23,14 @@ struct AddEventView: View {
                         Text("Event Name")
                             .foregroundColor(.gray)
                         TextField("Enter event name", text: $eventName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .textFieldStyle(.plain)
+                            .frame(minHeight: 55)
+                            .font(.system(size: 18))
+                            .padding(.horizontal, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color(.systemGray4), lineWidth: 1)
+                            )
                     }
                     
                     // Date and Time
@@ -39,7 +46,14 @@ struct AddEventView: View {
                         Text("Location")
                             .foregroundColor(.gray)
                         TextField("Enter location", text: $location)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .textFieldStyle(.plain)
+                            .frame(minHeight: 55)
+                            .font(.system(size: 18))
+                            .padding(.horizontal, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color(.systemGray4), lineWidth: 1)
+                            )
                     }
                     
                     // Event Link
@@ -47,7 +61,14 @@ struct AddEventView: View {
                         Text("Event Link")
                             .foregroundColor(.gray)
                         TextField("Enter event link", text: $eventLink)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .textFieldStyle(.plain)
+                            .frame(minHeight: 55)
+                            .font(.system(size: 18))
+                            .padding(.horizontal, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color(.systemGray4), lineWidth: 1)
+                            )
                             .keyboardType(.URL)
                             .autocapitalization(.none)
                     }
@@ -58,7 +79,9 @@ struct AddEventView: View {
                             .foregroundColor(.gray)
                         TextEditor(text: $description)
                             .frame(height: 100)
-                            .overlay(
+                            .font(.system(size: 18))
+                            .padding(8)
+                            .background(
                                 RoundedRectangle(cornerRadius: 8)
                                     .stroke(Color(.systemGray4), lineWidth: 1)
                             )
@@ -69,7 +92,14 @@ struct AddEventView: View {
                         Text("Hashtags")
                             .foregroundColor(.gray)
                         TextField("Enter hashtags (separated by spaces)", text: $hashtags)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .textFieldStyle(.plain)
+                            .frame(minHeight: 55)
+                            .font(.system(size: 18))
+                            .padding(.horizontal, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color(.systemGray4), lineWidth: 1)
+                            )
                     }
                     
                     // Create Event Button
