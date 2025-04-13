@@ -62,17 +62,23 @@ struct ProfileSetupView: View {
                     
                     VStack(spacing: 15) {
                         // Career Field Picker
-                        Picker("", selection: $userData.careerField) {
-                            Text("Career Field").tag("")
-                            ForEach(careerFields, id: \.self) { field in
-                                Text(field).tag(field)
+                        HStack {
+                            Text("Career Field")
+                                .foregroundColor(.gray)
+                            Spacer()
+                            Picker("Career Field", selection: $userData.careerField) {
+                                Text("Select Career Field").tag("")
+                                ForEach(careerFields, id: \.self) { field in
+                                    Text(field).tag(field)
+                                }
                             }
+                            .pickerStyle(.menu)
+                            .tint(.black)
                         }
-                        .pickerStyle(.menu)
-                        .tint(.black)
-                        .frame(minHeight: 55)
-                        .padding(.horizontal, 12)
-                        .background(
+                        .padding()
+                        .background(Color(.systemBackground))
+                        .cornerRadius(8)
+                        .overlay(
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color(.systemGray4), lineWidth: 1)
                         )

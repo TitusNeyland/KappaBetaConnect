@@ -82,7 +82,7 @@ struct User: Identifiable, Codable {
         self.city = city
         self.state = state
         self.password = password
-        
+        self.careerField = careerField
         self.major = major
         self.jobTitle = jobTitle
         self.company = company
