@@ -186,8 +186,8 @@ struct HomeView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Welcome back,")
-                            .font(.title)
-                            .fontWeight(.semibold)
+                        .font(.title)
+                        .fontWeight(.semibold)
                         if let firstName = userRepository.currentUser?.firstName {
                             Text("\(firstName)!")
                                 .font(.title)
@@ -195,7 +195,7 @@ struct HomeView: View {
                                 .foregroundColor(.black)
                         }
                     }
-                    .padding(.leading, 20)
+                        .padding(.leading, 20)
                     
                     Spacer()
                     
@@ -254,45 +254,45 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 10)
                 } else {
-                    VStack(spacing: 20) {
+                VStack(spacing: 20) {
                         ForEach(upcomingEvents) { event in
                             NavigationLink(destination: EventDetailView(userRepository: UserRepository(), eventRepository: eventRepository, eventId: event.id ?? "")) {
-                                HStack {
-                                    // Date column
+                        HStack {
+                            // Date column
                                     let calendar = Calendar.current
                                     let month = calendar.shortMonthSymbols[calendar.component(.month, from: event.date) - 1].uppercased()
                                     let day = String(calendar.component(.day, from: event.date))
                                     
-                                    VStack(alignment: .center) {
+                            VStack(alignment: .center) {
                                         Text(month)
-                                            .font(.system(size: 14, weight: .medium))
+                                    .font(.system(size: 14, weight: .medium))
                                         Text(day)
-                                            .font(.system(size: 24, weight: .bold))
-                                    }
-                                    .frame(width: 50)
-                                    
-                                    // Event details
-                                    VStack(alignment: .leading) {
+                                    .font(.system(size: 24, weight: .bold))
+                            }
+                            .frame(width: 50)
+                            
+                            // Event details
+                            VStack(alignment: .leading) {
                                         Text(event.title)
-                                            .font(.system(size: 18, weight: .semibold))
+                                    .font(.system(size: 18, weight: .semibold))
                                             .foregroundColor(.primary)
-                                        Text(event.location)
-                                            .font(.system(size: 14))
-                                            .foregroundColor(.gray)
-                                    }
-                                    .padding(.leading, 10)
-                                    
-                                    Spacer()
-                                    
-                                    // Chevron indicator
-                                    Image(systemName: "chevron.right")
-                                        .foregroundColor(.gray)
-                                        .padding(.trailing, 10)
-                                }
+                                Text(event.location)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.leading, 10)
+                            
+                            Spacer()
+                            
+                            // Chevron indicator
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.gray)
+                                .padding(.trailing, 10)
+                        }
                             }
                             .buttonStyle(PlainButtonStyle())
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 20)
                         }
                     }
                 }
@@ -361,19 +361,19 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
                 } else {
-                    VStack(spacing: 15) {
+                VStack(spacing: 15) {
                         ForEach(recentActivities, id: \.time) { activity in
-                            HStack {
-                                Text(activity.name)
-                                    .fontWeight(.semibold)
-                                + Text(" \(activity.action)")
-                                
-                                Spacer()
-                                
+                        HStack {
+                            Text(activity.name)
+                                .fontWeight(.semibold)
+                            + Text(" \(activity.action)")
+                            
+                            Spacer()
+                            
                                 Text(activity.time.timeAgoDisplay())
-                                    .foregroundColor(.gray)
-                            }
-                            .padding(.horizontal, 20)
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.horizontal, 20)
                         }
                     }
                 }
@@ -405,9 +405,9 @@ struct DirectoryView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
+        VStack(spacing: 0) {
                 // Search Bar
-                HStack {
+            HStack {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.gray)
                     TextField("Search by name...", text: $searchText)
@@ -482,7 +482,7 @@ struct UserCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+                HStack {
                 Text("\(user.firstName) \(user.lastName)")
                     .font(.headline)
                 Spacer()
@@ -507,7 +507,7 @@ struct UserCard: View {
         }
         .padding()
         .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(10)
+                .cornerRadius(10)
     }
 }
 
@@ -595,7 +595,7 @@ struct EditEventView: View {
                     }
                     
                     // Update Event Button
-                    Button(action: {
+                Button(action: {
                         Task {
                             await updateEvent()
                         }
@@ -704,7 +704,7 @@ struct EventDetailView: View {
     var body: some View {
         Group {
             if let event = event, let dateComponents = dateComponents {
-                ScrollView {
+            ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         // Title with menu for creator
                         HStack {
@@ -723,17 +723,17 @@ struct EventDetailView: View {
                                     }
                                 } label: {
                                     Image(systemName: "ellipsis")
-                                        .foregroundColor(.gray)
+                                            .foregroundColor(.gray)
                                         .padding(8)
                                 }
                             }
                         }
                         
                         // Date and Time
-                        VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: 4) {
                             Text("Date & Time")
                                 .font(.headline)
-                                .foregroundColor(.gray)
+                                        .foregroundColor(.gray)
                             Text("\(dateComponents.dayOfWeek), \(dateComponents.month) \(dateComponents.day), \(dateComponents.year)")
                                 .font(.body)
                             Text(dateComponents.time)
@@ -893,7 +893,7 @@ struct EventsView: View {
                 .padding()
                 
                 if filteredEvents.isEmpty {
-                    VStack {
+                                VStack {
                         Image(systemName: "calendar")
                             .font(.system(size: 50))
                             .foregroundColor(.gray)
@@ -956,7 +956,7 @@ struct EventsView: View {
                 }
             }
             .overlay(
-                Button(action: {
+            Button(action: {
                     print("Add event button tapped")
                     print("Current user: \(userRepository.currentUser?.id ?? "nil")")
                     if let currentUser = userRepository.currentUser {
@@ -967,16 +967,16 @@ struct EventsView: View {
                         showError = true
                         errorMessage = "Please log in to create events"
                     }
-                }) {
-                    Image(systemName: "plus")
-                        .font(.title2)
-                        .foregroundColor(.white)
-                        .frame(width: 60, height: 60)
-                        .background(Color.black)
-                        .clipShape(Circle())
-                        .shadow(radius: 4)
-                }
-                .padding(.trailing, 20)
+            }) {
+                Image(systemName: "plus")
+                    .font(.title2)
+                    .foregroundColor(.white)
+                    .frame(width: 60, height: 60)
+                    .background(Color.black)
+                    .clipShape(Circle())
+                    .shadow(radius: 4)
+            }
+            .padding(.trailing, 20)
                 .padding(.bottom, 20),
                 alignment: .bottomTrailing
             )
@@ -1071,7 +1071,7 @@ struct ProfileView: View {
     
     var body: some View {
         ZStack {
-            ScrollView {
+        ScrollView {
                 VStack(spacing: 0) {
                     // Profile Header with Cover Photo
                     ZStack(alignment: .bottom) {
@@ -1087,12 +1087,12 @@ struct ProfileView: View {
                         
                         // Profile Picture
                         VStack {
-                            Circle()
-                                .fill(Color.gray.opacity(0.3))
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
                                 .frame(width: 120, height: 120)
-                                .overlay(
-                                    Image(systemName: "person.fill")
-                                        .foregroundColor(.gray)
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.gray)
                                         .font(.system(size: 50))
                                 )
                                 .offset(y: 60)
@@ -1112,7 +1112,7 @@ struct ProfileView: View {
                                 if let jobTitle = currentUser.jobTitle, let company = currentUser.company {
                                     Text("\(jobTitle) at \(company)")
                                         .font(.title3)
-                                        .foregroundColor(.gray)
+                            .foregroundColor(.gray)
                                 } else {
                                     Text("No job information available")
                                         .font(.title3)
@@ -1126,18 +1126,18 @@ struct ProfileView: View {
                                 } else {
                                     Text("No location information available")
                                         .font(.title3)
-                                        .foregroundColor(.gray)
-                                }
+                            .foregroundColor(.gray)
+                    }
                             } else {
                                 Text("Loading...")
                                     .font(.title)
                                     .fontWeight(.bold)
-                            }
+                }
                         }
                         .padding(.top, 60)
-                        
+                
                         // Quick Stats
-                        HStack(spacing: 30) {
+                HStack(spacing: 30) {
                             if let currentUser = userRepository.currentUser {
                                 if let careerField = currentUser.careerField {
                                     InfoColumn(title: "Industry", value: careerField)
@@ -1145,7 +1145,7 @@ struct ProfileView: View {
                                     InfoColumn(title: "Industry", value: "Not specified")
                                 }
                                 
-                                InfoColumn(title: "Experience", value: yearsExperience)
+                    InfoColumn(title: "Experience", value: yearsExperience)
                                 
                                 if let status = currentUser.status {
                                     InfoColumn(title: "Status", value: status)
@@ -1157,29 +1157,29 @@ struct ProfileView: View {
                                 InfoColumn(title: "Experience", value: "Loading...")
                                 InfoColumn(title: "Status", value: "Loading...")
                             }
-                        }
-                        .padding(.horizontal, 20)
-                        
-                        // About Section
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("About")
+                }
+                .padding(.horizontal, 20)
+                
+                // About Section
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("About")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                                .padding(.horizontal, 20)
-                            
-                            Text(bio)
+                        .padding(.horizontal, 20)
+                    
+                    Text(bio)
                                 .font(.title3)
-                                .foregroundColor(.gray)
-                                .padding(.horizontal, 20)
-                        }
-                        
+                        .foregroundColor(.gray)
+                        .padding(.horizontal, 20)
+                }
+                
                         // Recent Posts Section
-                        VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 10) {
                             Text("Recent Posts")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                                .padding(.horizontal, 20)
-                            
+                        .padding(.horizontal, 20)
+                    
                             if recentPosts.isEmpty {
                                 Text("No recent posts")
                                     .font(.title3)
@@ -1187,7 +1187,7 @@ struct ProfileView: View {
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .padding(.vertical, 20)
                             } else {
-                                VStack(spacing: 15) {
+                    VStack(spacing: 15) {
                                     ForEach(recentPosts) { post in
                                         PostCard(post: post, postRepository: postRepository)
                                     }
@@ -1208,9 +1208,9 @@ struct ProfileView: View {
                                 // First row: Initiated, Line #, Ship
                                 HStack(spacing: 30) {
                                     VStack(alignment: .leading, spacing: 8) {
-                                        Text("Initiated")
+                                Text("Initiated")
                                             .font(.title3)
-                                            .fontWeight(.medium)
+                                    .fontWeight(.medium)
                                         if let currentUser = userRepository.currentUser,
                                            let semester = currentUser.semester,
                                            let year = currentUser.year {
@@ -1223,14 +1223,14 @@ struct ProfileView: View {
                                         } else {
                                             Text("Not specified")
                                                 .font(.title3)
-                                                .foregroundColor(.gray)
+                                    .foregroundColor(.gray)
                                         }
-                                    }
-                                    
+                            }
+                            
                                     VStack(alignment: .leading, spacing: 8) {
-                                        Text("Line #")
+                                Text("Line #")
                                             .font(.title3)
-                                            .fontWeight(.medium)
+                                    .fontWeight(.medium)
                                         if let currentUser = userRepository.currentUser,
                                            let lineNumber = currentUser.lineNumber {
                                             Text(lineNumber)
@@ -1239,125 +1239,125 @@ struct ProfileView: View {
                                         } else {
                                             Text("Not specified")
                                                 .font(.title3)
-                                                .foregroundColor(.gray)
+                                    .foregroundColor(.gray)
                                         }
-                                    }
-                                    
+                            }
+                            
                                     VStack(alignment: .leading, spacing: 8) {
-                                        Text("Ship")
+                                Text("Ship")
                                             .font(.title3)
-                                            .fontWeight(.medium)
-                                        Text(shipName)
+                                    .fontWeight(.medium)
+                                Text(shipName)
                                             .font(.title3)
-                                            .foregroundColor(.gray)
-                                    }
-                                }
-                                .padding(.horizontal, 20)
-                                
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        
                                 Divider()
                                     .padding(.horizontal, 20)
                                 
                                 // Second row: Line Name and Positions
                                 VStack(alignment: .leading, spacing: 25) {
+                        VStack(alignment: .leading, spacing: 8) {
+                                    Text("Line Name")
+                                            .font(.title3)
+                                        .fontWeight(.medium)
+                                    Text(lineName)
+                                            .font(.title3)
+                                        .foregroundColor(.gray)
+                                }
+                                
                                     VStack(alignment: .leading, spacing: 8) {
-                                        Text("Line Name")
+                                    Text("Positions")
                                             .font(.title3)
-                                            .fontWeight(.medium)
-                                        Text(lineName)
-                                            .font(.title3)
-                                            .foregroundColor(.gray)
-                                    }
-                                    
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Positions")
-                                            .font(.title3)
-                                            .fontWeight(.medium)
-                                        HStack {
-                                            ForEach(positions, id: \.self) { position in
-                                                Text(position)
+                                        .fontWeight(.medium)
+                                    HStack {
+                                        ForEach(positions, id: \.self) { position in
+                                            Text(position)
                                                     .font(.title3)
+                                                .foregroundColor(.gray)
+                                            if position != positions.last {
+                                                Text("•")
                                                     .foregroundColor(.gray)
-                                                if position != positions.last {
-                                                    Text("•")
-                                                        .foregroundColor(.gray)
                                                         .padding(.horizontal, 4)
-                                                }
                                             }
                                         }
                                     }
                                 }
-                                .padding(.horizontal, 20)
                             }
-                            .padding(.vertical, 20)
-                            .background(Color.gray.opacity(0.05))
-                            .cornerRadius(15)
                             .padding(.horizontal, 20)
                         }
+                            .padding(.vertical, 20)
+                    .background(Color.gray.opacity(0.05))
+                            .cornerRadius(15)
+                    .padding(.horizontal, 20)
+                }
                         .padding(.vertical, 10)
-                        
-                        // Skills Section
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Skills & Expertise")
+                
+                // Skills Section
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Skills & Expertise")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                                .padding(.horizontal, 20)
-                            
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 10) {
-                                    ForEach(skills, id: \.self) { skill in
-                                        Text(skill)
+                        .padding(.horizontal, 20)
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(skills, id: \.self) { skill in
+                                Text(skill)
                                             .font(.title3)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(Color.gray.opacity(0.1))
-                                            .cornerRadius(15)
-                                    }
-                                }
-                                .padding(.horizontal, 20)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.gray.opacity(0.1))
+                                    .cornerRadius(15)
                             }
                         }
-                        
-                        // Interests Section
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Interests & Hobbies")
+                        .padding(.horizontal, 20)
+                    }
+                }
+                
+                // Interests Section
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Interests & Hobbies")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                                .padding(.horizontal, 20)
-                            
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 10) {
-                                    ForEach(interests, id: \.self) { interest in
-                                        Text(interest)
+                        .padding(.horizontal, 20)
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(interests, id: \.self) { interest in
+                                Text(interest)
                                             .font(.title3)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(Color.gray.opacity(0.1))
-                                            .cornerRadius(15)
-                                    }
-                                }
-                                .padding(.horizontal, 20)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.gray.opacity(0.1))
+                                    .cornerRadius(15)
                             }
                         }
-                        
-                        // Connect Section
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Connect")
+                        .padding(.horizontal, 20)
+                    }
+                }
+                
+                // Connect Section
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Connect")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                                .padding(.horizontal, 20)
-                                .padding(.top, 20)
-                            
-                            VStack(alignment: .leading, spacing: 12) {
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                    
+                    VStack(alignment: .leading, spacing: 12) {
                                 if let currentUser = userRepository.currentUser {
-                                    HStack {
+                        HStack {
                                         if let linkedInURL = currentUser.linkedInURL {
                                             Link(destination: URL(string: linkedInURL)!) {
                                                 HStack(spacing: 8) {
-                                                    Image(systemName: "link")
-                                                        .foregroundColor(.blue)
+                            Image(systemName: "link")
+                                .foregroundColor(.blue)
                                                     Text("LinkedIn Profile")
                                                         .font(.title3)
-                                                        .foregroundColor(.blue)
+                                .foregroundColor(.blue)
                                                 }
                                             }
                                         } else {
@@ -1383,41 +1383,41 @@ struct ProfileView: View {
                                     
                                     Link(destination: URL(string: "https://instagram.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!) {
                                         HStack(spacing: 8) {
-                                            Image(systemName: "link")
-                                                .foregroundColor(.blue)
+                            Image(systemName: "link")
+                                .foregroundColor(.blue)
                                             Text("Instagram")
                                                 .font(.title3)
-                                                .foregroundColor(.blue)
+                                .foregroundColor(.blue)
                                             Spacer()
                                         }
-                                    }
-                                    
+                        }
+                        
                                     Link(destination: URL(string: "https://twitter.com/\(twitter.replacingOccurrences(of: "@", with: ""))")!) {
                                         HStack(spacing: 8) {
-                                            Image(systemName: "link")
-                                                .foregroundColor(.blue)
+                            Image(systemName: "link")
+                                .foregroundColor(.blue)
                                             Text("Twitter")
                                                 .font(.title3)
-                                                .foregroundColor(.blue)
+                                .foregroundColor(.blue)
                                             Spacer()
                                         }
-                                    }
-                                    
+                        }
+                        
                                     Link(destination: URL(string: "https://snapchat.com/add/\(snapchat.replacingOccurrences(of: "@", with: ""))")!) {
                                         HStack(spacing: 8) {
-                                            Image(systemName: "link")
-                                                .foregroundColor(.blue)
+                            Image(systemName: "link")
+                                .foregroundColor(.blue)
                                             Text("Snapchat")
                                                 .font(.title3)
-                                                .foregroundColor(.blue)
+                                .foregroundColor(.blue)
                                             Spacer()
                                         }
                                     }
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 4)
                         }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
+                }
                         
                         // Logout Button
                         Button(action: {
@@ -1435,8 +1435,8 @@ struct ProfileView: View {
                         .padding(.vertical, 30)
                     }
                 }
-            }
-            .background(Color(.systemBackground))
+        }
+        .background(Color(.systemBackground))
             
             NavigationLink(destination: LoginView().navigationBarBackButtonHidden(true), isActive: $navigateToLogin) {
                 EmptyView()
