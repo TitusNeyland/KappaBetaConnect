@@ -1050,6 +1050,8 @@ struct ProfileView: View {
     @State private var navigateToLogin = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var showLinkedInEditSheet = false
+    @State private var newLinkedInURL = ""
     
     // Sample data - replace with actual user data
     let yearsExperience = "5 years"
@@ -1059,7 +1061,6 @@ struct ProfileView: View {
     let skills = ["iOS Development", "Swift", "SwiftUI", "UI/UX Design", "Project Management"]
     let interests = ["Technology", "Gaming", "Art", "Travel"]
     let bio = "Passionate software engineer with a focus on iOS development. Creating innovative solutions and mentoring junior developers. Always excited to learn new technologies and contribute to meaningful projects."
-    let linkedin = "linkedin.com/in/titusneyland"
     let instagram = "@username"
     let twitter = "@username"
     let snapchat = "@username"
@@ -1347,36 +1348,71 @@ struct ProfileView: View {
                                 .padding(.top, 20)
                             
                             VStack(alignment: .leading, spacing: 12) {
-                                HStack {
-                                    Image(systemName: "link")
-                                        .foregroundColor(.blue)
-                                    Link("LinkedIn Profile", destination: URL(string: linkedin)!)
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
-                                }
-                                
-                                HStack {
-                                    Image(systemName: "link")
-                                        .foregroundColor(.blue)
-                                    Link("Instagram", destination: URL(string: "https://instagram.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!)
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
-                                }
-                                
-                                HStack {
-                                    Image(systemName: "link")
-                                        .foregroundColor(.blue)
-                                    Link("Twitter", destination: URL(string: "https://twitter.com/\(twitter.replacingOccurrences(of: "@", with: ""))")!)
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
-                                }
-                                
-                                HStack {
-                                    Image(systemName: "link")
-                                        .foregroundColor(.blue)
-                                    Link("Snapchat", destination: URL(string: "https://snapchat.com/add/\(snapchat.replacingOccurrences(of: "@", with: ""))")!)
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
+                                if let currentUser = userRepository.currentUser {
+                                    HStack {
+                                        if let linkedInURL = currentUser.linkedInURL {
+                                            Link(destination: URL(string: linkedInURL)!) {
+                                                HStack(spacing: 8) {
+                                                    Image(systemName: "link")
+                                                        .foregroundColor(.blue)
+                                                    Text("LinkedIn Profile")
+                                                        .font(.title3)
+                                                        .foregroundColor(.blue)
+                                                }
+                                            }
+                                        } else {
+                                            Text("Add LinkedIn Profile")
+                                                .font(.title3)
+                                                .foregroundColor(.gray)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: {
+                                            if let linkedInURL = currentUser.linkedInURL {
+                                                newLinkedInURL = linkedInURL
+                                            } else {
+                                                newLinkedInURL = "https://linkedin.com/in/"
+                                            }
+                                            showLinkedInEditSheet = true
+                                        }) {
+                                            Image(systemName: "pencil")
+                                                .foregroundColor(.blue)
+                                        }
+                                    }
+                                    
+                                    Link(destination: URL(string: "https://instagram.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "link")
+                                                .foregroundColor(.blue)
+                                            Text("Instagram")
+                                                .font(.title3)
+                                                .foregroundColor(.blue)
+                                            Spacer()
+                                        }
+                                    }
+                                    
+                                    Link(destination: URL(string: "https://twitter.com/\(twitter.replacingOccurrences(of: "@", with: ""))")!) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "link")
+                                                .foregroundColor(.blue)
+                                            Text("Twitter")
+                                                .font(.title3)
+                                                .foregroundColor(.blue)
+                                            Spacer()
+                                        }
+                                    }
+                                    
+                                    Link(destination: URL(string: "https://snapchat.com/add/\(snapchat.replacingOccurrences(of: "@", with: ""))")!) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "link")
+                                                .foregroundColor(.blue)
+                                            Text("Snapchat")
+                                                .font(.title3)
+                                                .foregroundColor(.blue)
+                                            Spacer()
+                                        }
+                                    }
                                 }
                             }
                             .padding(.horizontal, 20)
@@ -1425,6 +1461,78 @@ struct ProfileView: View {
             } catch {
                 showError = true
                 errorMessage = error.localizedDescription
+            }
+        }
+        .sheet(isPresented: $showLinkedInEditSheet) {
+            NavigationView {
+                VStack(spacing: 20) {
+                    Text("Enter your LinkedIn URL")
+                        .font(.headline)
+                        .padding(.top)
+                    
+                    TextField("https://linkedin.com/in/username", text: $newLinkedInURL)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .autocapitalization(.none)
+                        .keyboardType(.URL)
+                        .padding(.horizontal)
+                        .frame(height: 50)
+                        .font(.title3)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(.systemGray4))
+                        )
+                        .padding(.horizontal)
+                    
+                    Text("Example: https://linkedin.com/in/username")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    
+                    Spacer()
+                }
+                .navigationTitle("Edit LinkedIn URL")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") {
+                            showLinkedInEditSheet = false
+                        }
+                    }
+                    
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Save") {
+                            Task {
+                                do {
+                                    if var user = userRepository.currentUser {
+                                        // Format the URL properly before saving
+                                        var formattedURL = newLinkedInURL.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        
+                                        // If URL is not empty, ensure it has proper formatting
+                                        if !formattedURL.isEmpty {
+                                            // Add https:// if no scheme is present
+                                            if !formattedURL.lowercased().hasPrefix("http") {
+                                                formattedURL = "https://" + formattedURL
+                                            }
+                                            
+                                            // Validate the URL
+                                            guard URL(string: formattedURL) != nil else {
+                                                showError = true
+                                                errorMessage = "Please enter a valid URL"
+                                                return
+                                            }
+                                        }
+                                        
+                                        user.linkedInURL = formattedURL.isEmpty ? nil : formattedURL
+                                        try await userRepository.updateUser(user)
+                                        showLinkedInEditSheet = false
+                                    }
+                                } catch {
+                                    showError = true
+                                    errorMessage = error.localizedDescription
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
