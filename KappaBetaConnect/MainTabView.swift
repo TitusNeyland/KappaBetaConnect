@@ -1052,9 +1052,7 @@ struct ProfileView: View {
     @State private var errorMessage = ""
     
     // Sample data - replace with actual user data
-    let industry = "Technology"
     let yearsExperience = "5 years"
-    let alumniStatus = "Alumni"
     let initiationYear = "2021"
     let lineName = "INDEUCED IN2ENT"
     let lineNumber = "2"
@@ -1141,9 +1139,25 @@ struct ProfileView: View {
                         
                         // Quick Stats
                         HStack(spacing: 30) {
-                            InfoColumn(title: "Industry", value: industry)
-                            InfoColumn(title: "Experience", value: yearsExperience)
-                            InfoColumn(title: "Status", value: alumniStatus)
+                            if let currentUser = userRepository.currentUser {
+                                if let careerField = currentUser.careerField {
+                                    InfoColumn(title: "Industry", value: careerField)
+                                } else {
+                                    InfoColumn(title: "Industry", value: "Not specified")
+                                }
+                                
+                                InfoColumn(title: "Experience", value: yearsExperience)
+                                
+                                if let status = currentUser.status {
+                                    InfoColumn(title: "Status", value: status)
+                                } else {
+                                    InfoColumn(title: "Status", value: "Not specified")
+                                }
+                            } else {
+                                InfoColumn(title: "Industry", value: "Loading...")
+                                InfoColumn(title: "Experience", value: "Loading...")
+                                InfoColumn(title: "Status", value: "Loading...")
+                            }
                         }
                         .padding(.horizontal, 20)
                         
