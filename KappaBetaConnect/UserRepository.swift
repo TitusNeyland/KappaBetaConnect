@@ -172,6 +172,8 @@ class UserRepository: ObservableObject {
         // Add optional fields if they have values
         if let prefix = user.prefix { dict["prefix"] = prefix }
         if let suffix = user.suffix { dict["suffix"] = suffix }
+        if let city = user.city { dict["city"] = city }
+        if let state = user.state { dict["state"] = state }
         if let careerField = user.careerField { dict["careerField"] = careerField }
         if let major = user.major { dict["major"] = major }
         if let jobTitle = user.jobTitle { dict["jobTitle"] = jobTitle }
@@ -210,6 +212,8 @@ class UserRepository: ObservableObject {
             suffix: dict["suffix"] as? String,
             email: email,
             phoneNumber: phoneNumber,
+            city: dict["city"] as? String,
+            state: dict["state"] as? String,
             password: password,
             careerField: dict["careerField"] as? String,
             major: dict["major"] as? String,
