@@ -1044,6 +1044,7 @@ struct MessagesView: View {
 
 struct ProfileView: View {
     @StateObject private var postRepository = PostRepository()
+    @StateObject private var userRepository = UserRepository()
     @EnvironmentObject private var authManager: AuthManager
     @State private var showLogoutAlert = false
     @State private var navigateToLogin = false
@@ -1051,7 +1052,6 @@ struct ProfileView: View {
     @State private var errorMessage = ""
     
     // Sample data - replace with actual user data
-    let userName = "Titus Neyland"
     let jobTitle = "Software Engineer"
     let company = "Dillard's Inc."
     let location = "Little Rock, AR"
@@ -1110,9 +1110,15 @@ struct ProfileView: View {
                     VStack(spacing: 20) {
                         // Name and Title
                         VStack(spacing: 4) {
-                            Text(userName)
-                                .font(.title)
-                                .fontWeight(.bold)
+                            if let currentUser = userRepository.currentUser {
+                                Text("\(currentUser.firstName) \(currentUser.lastName)")
+                                    .font(.title)
+                                    .fontWeight(.bold)
+                            } else {
+                                Text("Loading...")
+                                    .font(.title)
+                                    .fontWeight(.bold)
+                            }
                             
                             Text("\(jobTitle) at \(company)")
                                 .font(.title3)
