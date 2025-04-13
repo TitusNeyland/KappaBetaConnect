@@ -79,6 +79,38 @@ struct MainTabView: View {
     }
 }
 
+// Add this extension before the HomeView
+extension Date {
+    func timeAgoDisplay() -> String {
+        let calendar = Calendar.current
+        let now = Date()
+        let components = calendar.dateComponents([.second, .minute, .hour, .day, .weekOfYear, .month, .year], from: self, to: now)
+        
+        if let years = components.year, years > 0 {
+            return years == 1 ? "1yr ago" : "\(years)yrs ago"
+        }
+        if let months = components.month, months > 0 {
+            return months == 1 ? "1mo ago" : "\(months)mo ago"
+        }
+        if let weeks = components.weekOfYear, weeks > 0 {
+            return weeks == 1 ? "1w ago" : "\(weeks)w ago"
+        }
+        if let days = components.day, days > 0 {
+            return days == 1 ? "1d ago" : "\(days)d ago"
+        }
+        if let hours = components.hour, hours > 0 {
+            return hours == 1 ? "1h ago" : "\(hours)h ago"
+        }
+        if let minutes = components.minute, minutes > 0 {
+            return minutes == 1 ? "1m ago" : "\(minutes)m ago"
+        }
+        if let seconds = components.second, seconds > 0 {
+            return seconds < 5 ? "now" : "\(seconds)s ago"
+        }
+        return "now"
+    }
+}
+
 // Placeholder Views
 struct HomeView: View {
     // Sample data for new members - replace with actual data later
@@ -92,6 +124,7 @@ struct HomeView: View {
     
     @StateObject private var eventRepository = EventRepository()
     @StateObject private var userRepository = UserRepository()
+    @StateObject private var postRepository = PostRepository()
     
     var upcomingEvents: [Event] {
         let now = Date()
@@ -108,12 +141,27 @@ struct HomeView: View {
         (name: "Edward Evans", title: "Company")
     ]
     
-    // Add recent activity data
-    let recentActivities = [
-        (name: "Chris Ferrell", action: "added a photo", time: "2h ago"),
-        (name: "Kieran J Williams", action: "commented on a post", time: "5h ago"),
-        (name: "John Tatum", action: "joined the group", time: "1d ago")
-    ]
+    private var recentActivities: [(name: String, action: String, time: Date)] {
+        var activities: [(name: String, action: String, time: Date)] = []
+        
+        // Add post creation activities
+        activities.append(contentsOf: postRepository.posts.map { post in
+            (name: post.authorName, action: "created a post", time: post.timestamp)
+        })
+        
+        // Add comment activities
+        for post in postRepository.posts {
+            activities.append(contentsOf: post.comments.map { comment in
+                (name: comment.authorName, action: "commented on a post", time: comment.timestamp)
+            })
+        }
+        
+        // Sort by timestamp (newest first) and take the first 3
+        return activities
+            .sorted(by: { $0.time > $1.time })
+            .prefix(3)
+            .map { $0 }
+    }
     
     var body: some View {
         ScrollView {
@@ -290,19 +338,26 @@ struct HomeView: View {
                     .padding(.top, 40)
                     .padding(.bottom, 15)
                 
-                VStack(spacing: 15) {
-                    ForEach(recentActivities, id: \.name) { activity in
-                        HStack {
-                            Text(activity.name)
-                                .fontWeight(.semibold)
-                            + Text(" \(activity.action)")
-                            
-                            Spacer()
-                            
-                            Text(activity.time)
-                                .foregroundColor(.gray)
-                        }
+                if recentActivities.isEmpty {
+                    Text("No recent activity")
+                        .foregroundColor(.gray)
+                        .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
+                } else {
+                    VStack(spacing: 15) {
+                        ForEach(recentActivities, id: \.time) { activity in
+                            HStack {
+                                Text(activity.name)
+                                    .fontWeight(.semibold)
+                                + Text(" \(activity.action)")
+                                
+                                Spacer()
+                                
+                                Text(activity.time.timeAgoDisplay())
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.horizontal, 20)
+                        }
                     }
                 }
                 
@@ -313,8 +368,9 @@ struct HomeView: View {
             Task {
                 do {
                     try await eventRepository.fetchEvents()
+                    try await postRepository.fetchPosts()
                 } catch {
-                    print("Error fetching events: \(error.localizedDescription)")
+                    print("Error fetching data: \(error.localizedDescription)")
                 }
             }
         }
