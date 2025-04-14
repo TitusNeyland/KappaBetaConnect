@@ -64,31 +64,31 @@ struct ProfileView: View {
                         VStack(spacing: 4) {
                             if let currentUser = userRepository.currentUser {
                                 Text("\(currentUser.firstName) \(currentUser.lastName)")
-                                    .font(.title)
+                                    .font(.title2)
                                     .fontWeight(.bold)
                                 
                                 if let jobTitle = currentUser.jobTitle, let company = currentUser.company {
                                     Text("\(jobTitle) at \(company)")
-                                        .font(.title3)
+                                        .font(.subheadline)
                                         .foregroundColor(.gray)
                                 } else {
                                     Text("No job information available")
-                                        .font(.title3)
+                                        .font(.subheadline)
                                         .foregroundColor(.gray)
                                 }
                                 
                                 if let city = currentUser.city, let state = currentUser.state {
                                     Text("\(city), \(state)")
-                                        .font(.title3)
+                                        .font(.subheadline)
                                         .foregroundColor(.gray)
                                 } else {
                                     Text("No location information available")
-                                        .font(.title3)
+                                        .font(.subheadline)
                                         .foregroundColor(.gray)
                                 }
                             } else {
                                 Text("Loading...")
-                                    .font(.title)
+                                    .font(.title2)
                                     .fontWeight(.bold)
                             }
                         }
@@ -121,12 +121,11 @@ struct ProfileView: View {
                         // About Section
                         VStack(alignment: .leading, spacing: 10) {
                             Text("About")
-                                .font(.title2)
-                                .fontWeight(.bold)
+                                .font(.headline)
                                 .padding(.horizontal, 20)
                             
                             Text(bio)
-                                .font(.title3)
+                                .font(.subheadline)
                                 .foregroundColor(.gray)
                                 .padding(.horizontal, 20)
                         }
@@ -134,13 +133,12 @@ struct ProfileView: View {
                         // Recent Posts Section
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Recent Posts")
-                                .font(.title2)
-                                .fontWeight(.bold)
+                                .font(.headline)
                                 .padding(.horizontal, 20)
                             
                             if recentPosts.isEmpty {
                                 Text("No recent posts")
-                                    .font(.title3)
+                                    .font(.subheadline)
                                     .foregroundColor(.gray)
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .padding(.vertical, 20)
@@ -157,8 +155,7 @@ struct ProfileView: View {
                         // Brotherhood Details Section
                         VStack(alignment: .leading, spacing: 20) {
                             Text("Brotherhood Details")
-                                .font(.title2)
-                                .fontWeight(.bold)
+                                .font(.headline)
                                 .padding(.horizontal, 20)
                                 .padding(.bottom, 10)
                             
@@ -167,7 +164,7 @@ struct ProfileView: View {
                                 HStack(spacing: 30) {
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text("Initiated")
-                                            .font(.title3)
+                                            .font(.subheadline)
                                             .fontWeight(.medium)
                                         if let currentUser = userRepository.currentUser,
                                            let semester = currentUser.semester,
@@ -176,37 +173,37 @@ struct ProfileView: View {
                                             let abbreviatedSemester = semester == "Fall" ? "FA" : "SPR"
                                             let abbreviatedYear = "'\(year.suffix(2))"
                                             Text("\(abbreviatedSemester) \(abbreviatedYear)")
-                                                .font(.title3)
+                                                .font(.subheadline)
                                                 .foregroundColor(.gray)
                                         } else {
                                             Text("Not specified")
-                                                .font(.title3)
+                                                .font(.subheadline)
                                                 .foregroundColor(.gray)
                                         }
                                     }
                                     
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text("Line #")
-                                            .font(.title3)
+                                            .font(.subheadline)
                                             .fontWeight(.medium)
                                         if let currentUser = userRepository.currentUser,
                                            let lineNumber = currentUser.lineNumber {
                                             Text(lineNumber)
-                                                .font(.title3)
+                                                .font(.subheadline)
                                                 .foregroundColor(.gray)
                                         } else {
                                             Text("Not specified")
-                                                .font(.title3)
+                                                .font(.subheadline)
                                                 .foregroundColor(.gray)
                                         }
                                     }
                                     
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text("Ship")
-                                            .font(.title3)
+                                            .font(.subheadline)
                                             .fontWeight(.medium)
                                         Text(shipName)
-                                            .font(.title3)
+                                            .font(.subheadline)
                                             .foregroundColor(.gray)
                                     }
                                 }
@@ -219,21 +216,21 @@ struct ProfileView: View {
                                 VStack(alignment: .leading, spacing: 25) {
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text("Line Name")
-                                            .font(.title3)
+                                            .font(.subheadline)
                                             .fontWeight(.medium)
                                         Text(lineName)
-                                            .font(.title3)
+                                            .font(.subheadline)
                                             .foregroundColor(.gray)
                                     }
                                     
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text("Positions")
-                                            .font(.title3)
+                                            .font(.subheadline)
                                             .fontWeight(.medium)
                                         HStack {
                                             ForEach(positions, id: \.self) { position in
                                                 Text(position)
-                                                    .font(.title3)
+                                                    .font(.subheadline)
                                                     .foregroundColor(.gray)
                                                 if position != positions.last {
                                                     Text("•")
@@ -256,15 +253,14 @@ struct ProfileView: View {
                         // Skills Section
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Skills & Expertise")
-                                .font(.title2)
-                                .fontWeight(.bold)
+                                .font(.headline)
                                 .padding(.horizontal, 20)
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 10) {
                                     ForEach(skills, id: \.self) { skill in
                                         Text(skill)
-                                            .font(.title3)
+                                            .font(.subheadline)
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 6)
                                             .background(Color.gray.opacity(0.1))
@@ -278,15 +274,14 @@ struct ProfileView: View {
                         // Interests Section
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Interests & Hobbies")
-                                .font(.title2)
-                                .fontWeight(.bold)
+                                .font(.headline)
                                 .padding(.horizontal, 20)
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 10) {
                                     ForEach(interests, id: \.self) { interest in
                                         Text(interest)
-                                            .font(.title3)
+                                            .font(.subheadline)
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 6)
                                             .background(Color.gray.opacity(0.1))
@@ -300,8 +295,7 @@ struct ProfileView: View {
                         // Connect Section
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Connect")
-                                .font(.title2)
-                                .fontWeight(.bold)
+                                .font(.headline)
                                 .padding(.horizontal, 20)
                                 .padding(.top, 20)
                             
@@ -314,13 +308,13 @@ struct ProfileView: View {
                                                     Image(systemName: "link")
                                                         .foregroundColor(.blue)
                                                     Text("LinkedIn Profile")
-                                                        .font(.title3)
+                                                        .font(.subheadline)
                                                         .foregroundColor(.blue)
                                                 }
                                             }
                                         } else {
                                             Text("Add LinkedIn Profile")
-                                                .font(.title3)
+                                                .font(.subheadline)
                                                 .foregroundColor(.gray)
                                         }
                                         
@@ -344,7 +338,7 @@ struct ProfileView: View {
                                             Image(systemName: "link")
                                                 .foregroundColor(.blue)
                                             Text("Instagram")
-                                                .font(.title3)
+                                                .font(.subheadline)
                                                 .foregroundColor(.blue)
                                             Spacer()
                                         }
@@ -355,7 +349,7 @@ struct ProfileView: View {
                                             Image(systemName: "link")
                                                 .foregroundColor(.blue)
                                             Text("Twitter")
-                                                .font(.title3)
+                                                .font(.subheadline)
                                                 .foregroundColor(.blue)
                                             Spacer()
                                         }
@@ -366,7 +360,7 @@ struct ProfileView: View {
                                             Image(systemName: "link")
                                                 .foregroundColor(.blue)
                                             Text("Snapchat")
-                                                .font(.title3)
+                                                .font(.subheadline)
                                                 .foregroundColor(.blue)
                                             Spacer()
                                         }
@@ -504,10 +498,10 @@ struct InfoColumn: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.title3)
+                .font(.subheadline)
                 .foregroundColor(.gray)
             Text(value)
-                .font(.title3)
+                .font(.subheadline)
                 .fontWeight(.medium)
         }
     }
