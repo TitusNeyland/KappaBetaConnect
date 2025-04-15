@@ -357,14 +357,17 @@ struct PostCommentsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(recentComments) { comment in
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(comment.authorName)
-                            .font(.caption)
-                            .fontWeight(.medium)
+                        HStack {
+                            Text(comment.authorName)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                            Spacer()
+                            Text(comment.timestamp.timeAgoDisplay())
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
                         Text(comment.content)
                             .font(.caption)
-                        Text(comment.timestamp.timeAgoDisplay())
-                            .font(.caption2)
-                            .foregroundColor(.gray)
                     }
                 }
                 
