@@ -130,4 +130,14 @@ class PostRepository: ObservableObject {
             }
         }
     }
+    
+    func deletePost(postId: String) async throws {
+        // Delete the post from Firestore
+        try await db.collection("posts").document(postId).delete()
+        
+        // Remove the post from the local posts array
+        if let index = posts.firstIndex(where: { $0.id == postId }) {
+            posts.remove(at: index)
+        }
+    }
 } 

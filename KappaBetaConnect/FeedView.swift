@@ -6,37 +6,52 @@ struct FeedView: View {
     @State private var showNewPostSheet = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var showToast = false
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: 20) {
-                        ForEach(postRepository.posts) { post in
-                            PostCard(post: post, postRepository: postRepository)
+            ZStack {
+                VStack(spacing: 0) {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            ForEach(postRepository.posts) { post in
+                                PostCard(post: post, postRepository: postRepository)
+                            }
                         }
+                        .padding()
                     }
-                    .padding()
+                }
+                .navigationTitle("Feed")
+                .overlay(
+                    Button(action: {
+                        showNewPostSheet = true
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.title2)
+                            .foregroundColor(.white)
+                            .frame(width: 60, height: 60)
+                            .background(Color.black)
+                            .clipShape(Circle())
+                            .shadow(radius: 4)
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 20),
+                    alignment: .bottomTrailing
+                )
+                
+                // Centered Toast
+                if showToast {
+                    Toast(message: "Post uploaded successfully", isShowing: $showToast)
                 }
             }
-            .navigationTitle("Feed")
-            .overlay(
-                Button(action: {
-                    showNewPostSheet = true
-                }) {
-                    Image(systemName: "plus")
-                        .font(.title2)
-                        .foregroundColor(.white)
-                        .frame(width: 60, height: 60)
-                        .background(Color.black)
-                        .clipShape(Circle())
-                        .shadow(radius: 4)
+            .sheet(isPresented: $showNewPostSheet, onDismiss: {
+                // Show toast when returning from successful post creation
+                if !showError {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        showToast = true
+                    }
                 }
-                .padding(.trailing, 20)
-                .padding(.bottom, 20),
-                alignment: .bottomTrailing
-            )
-            .sheet(isPresented: $showNewPostSheet) {
+            }) {
                 CreatePostSheet(
                     postRepository: postRepository,
                     showError: $showError,

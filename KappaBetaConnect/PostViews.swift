@@ -1,5 +1,34 @@
 import SwiftUI
 
+// Toast View
+struct Toast: View {
+    let message: String
+    @Binding var isShowing: Bool
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(.green)
+            Text(message)
+                .foregroundColor(.white)
+                .font(.system(size: 16, weight: .semibold))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color.black.opacity(0.8))
+        .cornerRadius(25)
+        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+        .transition(.scale.combined(with: .opacity))
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation(.easeOut) {
+                    isShowing = false
+                }
+            }
+        }
+    }
+}
+
 // Create Post Sheet View
 struct CreatePostSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -100,7 +129,6 @@ struct CreatePostSheet: View {
                     authorName: "\(currentUser.firstName) \(currentUser.lastName)"
                 )
                 dismiss()
-                newPostContent = ""
             } catch {
                 showError = true
                 errorMessage = error.localizedDescription
@@ -114,13 +142,26 @@ struct UserHeaderView: View {
     
     var body: some View {
         HStack {
-            Circle()
-                .fill(Color.gray.opacity(0.3))
+            if let profileImageURL = user.profileImageURL,
+               let url = URL(string: profileImageURL) {
+                AsyncImage(url: url) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    ProgressView()
+                }
                 .frame(width: 40, height: 40)
-                .overlay(
-                    Image(systemName: "person.fill")
-                        .foregroundColor(.gray)
-                )
+                .clipShape(Circle())
+            } else {
+                Circle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Image(systemName: "person.fill")
+                            .foregroundColor(.gray)
+                    )
+            }
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(user.firstName) \(user.lastName)")
@@ -254,6 +295,7 @@ struct PostUserInfoView: View {
     let post: Post
     let profileImageURL: String?
     let isCurrentUser: Bool
+    let onDelete: () -> Void
     
     var body: some View {
         HStack {
@@ -290,8 +332,8 @@ struct PostUserInfoView: View {
             
             Menu {
                 if isCurrentUser {
-                    Button(role: .destructive, action: {}) {
-                        Label("Delete", systemImage: "trash")
+                    Button(role: .destructive, action: onDelete) {
+                        Label("Delete Post", systemImage: "trash")
                     }
                 } else {
                     Button(action: {}) {
@@ -357,14 +399,17 @@ struct PostCommentsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(recentComments) { comment in
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(comment.authorName)
-                            .font(.caption)
-                            .fontWeight(.medium)
+                        HStack {
+                            Text(comment.authorName)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                            Spacer()
+                            Text(comment.timestamp.timeAgoDisplay())
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
                         Text(comment.content)
                             .font(.caption)
-                        Text(comment.timestamp.formatted(date: .abbreviated, time: .shortened))
-                            .font(.caption2)
-                            .foregroundColor(.gray)
                     }
                 }
                 
@@ -450,6 +495,7 @@ struct PostCard: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var authorProfileImageURL: String?
+    @State private var showDeleteAlert = false
     
     private var isLiked: Bool {
         guard let userId = authManager.currentUser?.id else { return false }
@@ -480,7 +526,8 @@ struct PostCard: View {
             PostUserInfoView(
                 post: post,
                 profileImageURL: authorProfileImageURL,
-                isCurrentUser: isCurrentUser
+                isCurrentUser: isCurrentUser,
+                onDelete: { showDeleteAlert = true }
             )
             
             Text(createAttributedContent())
@@ -521,6 +568,14 @@ struct PostCard: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        .alert("Delete Post", isPresented: $showDeleteAlert) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                deletePost()
+            }
+        } message: {
+            Text("Are you sure you want to delete this post? This action cannot be undone.")
+        }
         .sheet(isPresented: $showCommentSheet) {
             CommentsSheetView(
                 post: post,
@@ -599,6 +654,17 @@ struct PostCard: View {
             } catch {
                 showError = true
                 errorMessage = error.localizedDescription
+            }
+        }
+    }
+    
+    private func deletePost() {
+        Task {
+            do {
+                try await postRepository.deletePost(postId: post.id ?? "")
+            } catch {
+                showError = true
+                errorMessage = "Failed to delete post: \(error.localizedDescription)"
             }
         }
     }
