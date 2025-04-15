@@ -393,45 +393,60 @@ struct ProfileView: View {
                             .padding(.top, 20)
                             
                             if let currentUser = userRepository.currentUser {
-                                HStack(spacing: 20) {
+                                HStack(spacing: 15) {
                                     if let linkedInURL = currentUser.linkedInURL {
                                         Link(destination: URL(string: linkedInURL)!) {
-                                            VStack {
+                                            VStack(spacing: 4) {
                                                 Image(systemName: "person.2.fill")
+                                                    .font(.system(size: 14))
                                                     .foregroundColor(.black)
                                                 Text("LinkedIn")
-                                                    .font(.subheadline)
+                                                    .font(.system(size: 11))
                                                     .foregroundColor(.black)
                                             }
                                         }
                                     }
                                     
                                     Link(destination: URL(string: "https://instagram.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!) {
-                                        VStack {
+                                        VStack(spacing: 4) {
                                             Image(systemName: "camera.fill")
+                                                    .font(.system(size: 14))
                                                     .foregroundColor(.black)
                                             Text("Instagram")
-                                                .font(.subheadline)
+                                                .font(.system(size: 11))
                                                 .foregroundColor(.black)
                                         }
                                     }
                                     
                                     Link(destination: URL(string: "https://twitter.com/\(twitter.replacingOccurrences(of: "@", with: ""))")!) {
-                                        VStack {
+                                        VStack(spacing: 4) {
                                             Image(systemName: "message.fill")
+                                                    .font(.system(size: 14))
                                                     .foregroundColor(.black)
-                                            Text("Twitter")
-                                                .font(.subheadline)
+                                            Text("X")
+                                                .font(.system(size: 11))
                                                 .foregroundColor(.black)
                                         }
                                     }
                                     
                                     Link(destination: URL(string: "https://snapchat.com/add/\(snapchat.replacingOccurrences(of: "@", with: ""))")!) {
-                                        VStack {
+                                        VStack(spacing: 4) {
                                             Image(systemName: "camera.viewfinder")
+                                                    .font(.system(size: 14))
                                                     .foregroundColor(.black)
                                             Text("Snapchat")
-                                                .font(.subheadline)
+                                                .font(.system(size: 11))
+                                                .foregroundColor(.black)
+                                        }
+                                    }
+                                    
+                                    Link(destination: URL(string: "https://facebook.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!) {
+                                        VStack(spacing: 4) {
+                                            Image(systemName: "person.circle.fill")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.black)
+                                            Text("Facebook")
+                                                .font(.system(size: 11))
                                                 .foregroundColor(.black)
                                         }
                                     }
