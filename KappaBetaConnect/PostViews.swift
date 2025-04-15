@@ -1,5 +1,31 @@
 import SwiftUI
 
+// Toast View
+struct Toast: View {
+    let message: String
+    @Binding var isShowing: Bool
+    
+    var body: some View {
+        HStack {
+            Text(message)
+                .foregroundColor(.white)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+        }
+        .background(Color.black.opacity(0.8))
+        .cornerRadius(20)
+        .padding(.bottom, 20)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation {
+                    isShowing = false
+                }
+            }
+        }
+    }
+}
+
 // Create Post Sheet View
 struct CreatePostSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -100,7 +126,6 @@ struct CreatePostSheet: View {
                     authorName: "\(currentUser.firstName) \(currentUser.lastName)"
                 )
                 dismiss()
-                newPostContent = ""
             } catch {
                 showError = true
                 errorMessage = error.localizedDescription
