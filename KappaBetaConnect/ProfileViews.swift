@@ -1,4 +1,31 @@
 import SwiftUI
+import FirebaseStorage
+import PhotosUI
+
+class ImageService {
+    static let shared = ImageService()
+    private let storage = Storage.storage(url: "gs://kappa-beta-connect.firebasestorage.app")
+    
+    func uploadProfileImage(_ image: UIImage, userId: String) async throws -> URL {
+        // Convert image to data
+        guard let imageData = image.jpegData(compressionQuality: 0.5) else {
+            throw NSError(domain: "ImageService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to data"])
+        }
+        
+        // Create storage reference
+        let storageRef = storage.reference().child("profile_images/\(userId).jpg")
+        
+        // Upload the image
+        let metadata = StorageMetadata()
+        metadata.contentType = "image/jpeg"
+        
+        _ = try await storageRef.putDataAsync(imageData, metadata: metadata)
+        
+        // Get the download URL
+        let downloadURL = try await storageRef.downloadURL()
+        return downloadURL
+    }
+}
 
 struct ProfileView: View {
     @StateObject private var postRepository = PostRepository()
@@ -10,6 +37,9 @@ struct ProfileView: View {
     @State private var errorMessage = ""
     @State private var showLinkedInEditSheet = false
     @State private var newLinkedInURL = ""
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var selectedImage: UIImage?
+    @State private var isUploading = false
     
     // Sample data - replace with actual user data
     let yearsExperience = "5 years"
@@ -45,16 +75,47 @@ struct ProfileView: View {
                         
                         // Profile Picture
                         VStack {
-                            Circle()
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: 120, height: 120)
-                                .overlay(
-                                    Image(systemName: "person.fill")
-                                        .foregroundColor(.gray)
-                                        .font(.system(size: 50))
-                                )
-                                .offset(y: 60)
-                                .shadow(radius: 5)
+                            ZStack {
+                                if let selectedImage = selectedImage {
+                                    Image(uiImage: selectedImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 120, height: 120)
+                                        .clipShape(Circle())
+                                } else if let currentUser = userRepository.currentUser,
+                                          let profileImageURL = currentUser.profileImageURL,
+                                          let url = URL(string: profileImageURL) {
+                                    AsyncImage(url: url) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    } placeholder: {
+                                        ProgressView()
+                                    }
+                                    .frame(width: 120, height: 120)
+                                    .clipShape(Circle())
+                                } else {
+                                    Circle()
+                                        .fill(Color.gray.opacity(0.3))
+                                        .frame(width: 120, height: 120)
+                                        .overlay(
+                                            Image(systemName: "person.fill")
+                                                .foregroundColor(.gray)
+                                                .font(.system(size: 50))
+                                        )
+                                }
+                                
+                                PhotosPicker(selection: $selectedItem, matching: .images) {
+                                    Image(systemName: "camera.circle.fill")
+                                        .font(.system(size: 30))
+                                        .foregroundColor(.blue)
+                                        .background(Color.white)
+                                        .clipShape(Circle())
+                                }
+                                .offset(x: 40, y: 40)
+                            }
+                            .offset(y: 60)
+                            .shadow(radius: 5)
                         }
                     }
                     
@@ -390,8 +451,25 @@ struct ProfileView: View {
             }
             .background(Color(.systemBackground))
             
+            if isUploading {
+                ProgressView("Uploading image...")
+                    .padding()
+                    .background(Color(.systemBackground))
+                    .cornerRadius(10)
+                    .shadow(radius: 5)
+            }
+            
             NavigationLink(destination: LoginView().navigationBarBackButtonHidden(true), isActive: $navigateToLogin) {
                 EmptyView()
+            }
+        }
+        .onChange(of: selectedItem) { newItem in
+            Task {
+                if let data = try? await newItem?.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    selectedImage = image
+                    await uploadProfileImage(image)
+                }
             }
         }
         .alert("Logout", isPresented: $showLogoutAlert) {
@@ -487,6 +565,23 @@ struct ProfileView: View {
                 }
             }
         }
+    }
+    
+    private func uploadProfileImage(_ image: UIImage) async {
+        guard let userId = userRepository.currentUser?.id else { return }
+        
+        isUploading = true
+        do {
+            let imageURL = try await ImageService.shared.uploadProfileImage(image, userId: userId)
+            if var user = userRepository.currentUser {
+                user.profileImageURL = imageURL.absoluteString
+                try await userRepository.updateUser(user)
+            }
+        } catch {
+            showError = true
+            errorMessage = "Failed to upload profile image: \(error.localizedDescription)"
+        }
+        isUploading = false
     }
 }
 
