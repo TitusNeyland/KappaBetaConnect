@@ -397,42 +397,42 @@ struct ProfileView: View {
                                     if let linkedInURL = currentUser.linkedInURL {
                                         Link(destination: URL(string: linkedInURL)!) {
                                             VStack {
-                                                Image(systemName: "link")
-                                                    .foregroundColor(.blue)
+                                                Image(systemName: "person.2.fill")
+                                                    .foregroundColor(.black)
                                                 Text("LinkedIn")
                                                     .font(.subheadline)
-                                                    .foregroundColor(.blue)
+                                                    .foregroundColor(.black)
                                             }
                                         }
                                     }
                                     
                                     Link(destination: URL(string: "https://instagram.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!) {
                                         VStack {
-                                            Image(systemName: "link")
-                                                .foregroundColor(.blue)
+                                            Image(systemName: "camera.fill")
+                                                    .foregroundColor(.black)
                                             Text("Instagram")
                                                 .font(.subheadline)
-                                                .foregroundColor(.blue)
+                                                .foregroundColor(.black)
                                         }
                                     }
                                     
                                     Link(destination: URL(string: "https://twitter.com/\(twitter.replacingOccurrences(of: "@", with: ""))")!) {
                                         VStack {
-                                            Image(systemName: "link")
-                                                .foregroundColor(.blue)
+                                            Image(systemName: "message.fill")
+                                                    .foregroundColor(.black)
                                             Text("Twitter")
                                                 .font(.subheadline)
-                                                .foregroundColor(.blue)
+                                                .foregroundColor(.black)
                                         }
                                     }
                                     
                                     Link(destination: URL(string: "https://snapchat.com/add/\(snapchat.replacingOccurrences(of: "@", with: ""))")!) {
                                         VStack {
-                                            Image(systemName: "link")
-                                                .foregroundColor(.blue)
+                                            Image(systemName: "camera.viewfinder")
+                                                    .foregroundColor(.black)
                                             Text("Snapchat")
                                                 .font(.subheadline)
-                                                .foregroundColor(.blue)
+                                                .foregroundColor(.black)
                                         }
                                     }
                                 }
