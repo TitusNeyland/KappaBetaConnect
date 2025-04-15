@@ -371,83 +371,78 @@ struct ProfileView: View {
                         }
                         
                         // Connect Section
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Connect")
-                                .font(.headline)
-                                .padding(.horizontal, 20)
-                                .padding(.top, 20)
+                        VStack(alignment: .center, spacing: 10) {
+                            HStack(spacing: 10) {
+                                Rectangle()
+                                    .frame(height: 1)
+                                    .foregroundColor(.gray)
+                                
+                                VStack(spacing: 0) {
+                                    Text("CONNECT")
+                                        .font(.headline)
+                                        .foregroundColor(.gray)
+                                    Text("WITH ME")
+                                        .font(.headline)
+                                        .foregroundColor(.gray)
+                                }
+                                
+                                Rectangle()
+                                    .frame(height: 1)
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.top, 20)
                             
-                            VStack(alignment: .leading, spacing: 12) {
-                                if let currentUser = userRepository.currentUser {
-                                    HStack {
-                                        if let linkedInURL = currentUser.linkedInURL {
-                                            Link(destination: URL(string: linkedInURL)!) {
-                                                HStack(spacing: 8) {
-                                                    Image(systemName: "link")
-                                                        .foregroundColor(.blue)
-                                                    Text("LinkedIn Profile")
-                                                        .font(.subheadline)
-                                                        .foregroundColor(.blue)
-                                                }
+                            if let currentUser = userRepository.currentUser {
+                                HStack(spacing: 20) {
+                                    if let linkedInURL = currentUser.linkedInURL {
+                                        Link(destination: URL(string: linkedInURL)!) {
+                                            VStack {
+                                                Image(systemName: "link")
+                                                    .foregroundColor(.blue)
+                                                Text("LinkedIn")
+                                                    .font(.subheadline)
+                                                    .foregroundColor(.blue)
                                             }
-                                        } else {
-                                            Text("Add LinkedIn Profile")
-                                                .font(.subheadline)
-                                                .foregroundColor(.gray)
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        Button(action: {
-                                            if let linkedInURL = currentUser.linkedInURL {
-                                                newLinkedInURL = linkedInURL
-                                            } else {
-                                                newLinkedInURL = "https://linkedin.com/in/"
-                                            }
-                                            showLinkedInEditSheet = true
-                                        }) {
-                                            Image(systemName: "pencil")
-                                                .foregroundColor(.blue)
                                         }
                                     }
                                     
                                     Link(destination: URL(string: "https://instagram.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!) {
-                                        HStack(spacing: 8) {
+                                        VStack {
                                             Image(systemName: "link")
                                                 .foregroundColor(.blue)
                                             Text("Instagram")
                                                 .font(.subheadline)
                                                 .foregroundColor(.blue)
-                                            Spacer()
                                         }
                                     }
                                     
                                     Link(destination: URL(string: "https://twitter.com/\(twitter.replacingOccurrences(of: "@", with: ""))")!) {
-                                        HStack(spacing: 8) {
+                                        VStack {
                                             Image(systemName: "link")
                                                 .foregroundColor(.blue)
                                             Text("Twitter")
                                                 .font(.subheadline)
                                                 .foregroundColor(.blue)
-                                            Spacer()
                                         }
                                     }
                                     
                                     Link(destination: URL(string: "https://snapchat.com/add/\(snapchat.replacingOccurrences(of: "@", with: ""))")!) {
-                                        HStack(spacing: 8) {
+                                        VStack {
                                             Image(systemName: "link")
                                                 .foregroundColor(.blue)
                                             Text("Snapchat")
                                                 .font(.subheadline)
                                                 .foregroundColor(.blue)
-                                            Spacer()
                                         }
                                     }
                                 }
+                                .frame(maxWidth: .infinity)
+                                .padding(.horizontal, 20)
+                                .padding(.top, 10)
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 4)
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 20)
                         
                         // Logout Button
                         Button(action: {
