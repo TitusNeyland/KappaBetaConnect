@@ -110,6 +110,13 @@ class UserRepository: ObservableObject {
         
         let docRef = db.collection(usersCollection).document(userId)
         try await docRef.setData(userData)
+        
+        // Update the currentUser property on the main thread
+        DispatchQueue.main.async {
+            if self.currentUser?.id == userId {
+                self.currentUser = updatedUser
+            }
+        }
     }
     
     func deleteUser(withId id: String) async throws {
@@ -178,6 +185,7 @@ class UserRepository: ObservableObject {
         if let major = user.major { dict["major"] = major }
         if let jobTitle = user.jobTitle { dict["jobTitle"] = jobTitle }
         if let company = user.company { dict["company"] = company }
+        if let bio = user.bio { dict["bio"] = bio }
         if let profileImageURL = user.profileImageURL { dict["profileImageURL"] = profileImageURL }
         if let linkedInURL = user.linkedInURL { dict["linkedInURL"] = linkedInURL }
         if let lineNumber = user.lineNumber { dict["lineNumber"] = lineNumber }
@@ -219,6 +227,7 @@ class UserRepository: ObservableObject {
             major: dict["major"] as? String,
             jobTitle: dict["jobTitle"] as? String,
             company: dict["company"] as? String,
+            bio: dict["bio"] as? String,
             lineNumber: dict["lineNumber"] as? String,
             semester: dict["semester"] as? String,
             year: dict["year"] as? String,
@@ -228,5 +237,99 @@ class UserRepository: ObservableObject {
             linkedInURL: dict["linkedInURL"] as? String,
             isActive: isActive
         )
+    }
+    
+    func toFirestoreData(user: User) -> [String: Any] {
+        var data: [String: Any] = [
+            "firstName": user.firstName,
+            "lastName": user.lastName,
+            "email": user.email,
+            "phoneNumber": user.phoneNumber,
+            "password": user.password,
+            "createdAt": user.createdAt,
+            "updatedAt": user.updatedAt,
+            "isActive": user.isActive
+        ]
+        
+        // Optional fields
+        if let prefix = user.prefix { data["prefix"] = prefix }
+        if let suffix = user.suffix { data["suffix"] = suffix }
+        if let city = user.city { data["city"] = city }
+        if let state = user.state { data["state"] = state }
+        if let careerField = user.careerField { data["careerField"] = careerField }
+        if let major = user.major { data["major"] = major }
+        if let jobTitle = user.jobTitle { data["jobTitle"] = jobTitle }
+        if let company = user.company { data["company"] = company }
+        if let bio = user.bio { data["bio"] = bio }
+        if let lineNumber = user.lineNumber { data["lineNumber"] = lineNumber }
+        if let semester = user.semester { data["semester"] = semester }
+        if let year = user.year { data["year"] = year }
+        if let status = user.status { data["status"] = status }
+        if let graduationYear = user.graduationYear { data["graduationYear"] = graduationYear }
+        if let profileImageURL = user.profileImageURL { data["profileImageURL"] = profileImageURL }
+        if let linkedInURL = user.linkedInURL { data["linkedInURL"] = linkedInURL }
+        
+        return data
+    }
+    
+    func fromFirestoreData(_ data: [String: Any], id: String) -> User? {
+        guard let firstName = data["firstName"] as? String,
+              let lastName = data["lastName"] as? String,
+              let email = data["email"] as? String,
+              let phoneNumber = data["phoneNumber"] as? String,
+              let password = data["password"] as? String,
+              let createdAt = (data["createdAt"] as? Timestamp)?.dateValue(),
+              let updatedAt = (data["updatedAt"] as? Timestamp)?.dateValue(),
+              let isActive = data["isActive"] as? Bool else {
+            return nil
+        }
+        
+        let prefix = data["prefix"] as? String
+        let suffix = data["suffix"] as? String
+        let city = data["city"] as? String
+        let state = data["state"] as? String
+        let careerField = data["careerField"] as? String
+        let major = data["major"] as? String
+        let jobTitle = data["jobTitle"] as? String
+        let company = data["company"] as? String
+        let bio = data["bio"] as? String
+        let lineNumber = data["lineNumber"] as? String
+        let semester = data["semester"] as? String
+        let year = data["year"] as? String
+        let status = data["status"] as? String
+        let graduationYear = data["graduationYear"] as? String
+        let profileImageURL = data["profileImageURL"] as? String
+        let linkedInURL = data["linkedInURL"] as? String
+        
+        var user = User(
+            id: id,
+            prefix: prefix,
+            firstName: firstName,
+            lastName: lastName,
+            suffix: suffix,
+            email: email,
+            phoneNumber: phoneNumber,
+            city: city,
+            state: state,
+            password: password,
+            careerField: careerField,
+            major: major,
+            jobTitle: jobTitle,
+            company: company,
+            bio: bio,
+            lineNumber: lineNumber,
+            semester: semester,
+            year: year,
+            status: status,
+            graduationYear: graduationYear,
+            profileImageURL: profileImageURL,
+            linkedInURL: linkedInURL,
+            isActive: isActive
+        )
+        
+        user.createdAt = createdAt
+        user.updatedAt = updatedAt
+        
+        return user
     }
 } 
