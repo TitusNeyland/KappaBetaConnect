@@ -249,28 +249,215 @@ struct PostGuidelinesView: View {
     }
 }
 
+// User Info Section
+struct PostUserInfoView: View {
+    let post: Post
+    let profileImageURL: String?
+    let isCurrentUser: Bool
+    
+    var body: some View {
+        HStack {
+            if let profileImageURL = profileImageURL,
+               let url = URL(string: profileImageURL) {
+                AsyncImage(url: url) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    ProgressView()
+                }
+                .frame(width: 40, height: 40)
+                .clipShape(Circle())
+            } else {
+                Circle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Image(systemName: "person.fill")
+                            .foregroundColor(.gray)
+                    )
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(post.authorName)
+                    .font(.headline)
+                Text(post.timestamp.formatted(date: .abbreviated, time: .shortened))
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            Menu {
+                if isCurrentUser {
+                    Button(role: .destructive, action: {}) {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } else {
+                    Button(action: {}) {
+                        Label("Report", systemImage: "flag")
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .foregroundColor(.gray)
+            }
+        }
+    }
+}
+
+// Interaction Buttons Section
+struct PostInteractionButtonsView: View {
+    let post: Post
+    let isLiked: Bool
+    let onLike: () -> Void
+    let onComment: () -> Void
+    let onShare: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 20) {
+            Button(action: onLike) {
+                HStack {
+                    Image(systemName: isLiked ? "heart.fill" : "heart")
+                    Text("Like")
+                }
+                .foregroundColor(isLiked ? .red : .gray)
+            }
+            
+            Button(action: onComment) {
+                HStack {
+                    Image(systemName: "bubble.right")
+                    Text("Comment")
+                }
+                .foregroundColor(.gray)
+            }
+            
+            Button(action: onShare) {
+                HStack {
+                    Image(systemName: "square.and.arrow.up")
+                    Text("Share")
+                }
+                .foregroundColor(.gray)
+            }
+        }
+    }
+}
+
+// Comments Section
+struct PostCommentsView: View {
+    let post: Post
+    let onViewAllComments: () -> Void
+    
+    private var recentComments: [Comment] {
+        Array(post.comments.suffix(2).reversed())
+    }
+    
+    var body: some View {
+        if !post.comments.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(recentComments) { comment in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(comment.authorName)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                        Text(comment.content)
+                            .font(.caption)
+                        Text(comment.timestamp.formatted(date: .abbreviated, time: .shortened))
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                    }
+                }
+                
+                if post.comments.count > 2 {
+                    Button(action: onViewAllComments) {
+                        Text("View all \(post.comments.count) comments")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+            .padding(.top, 8)
+        }
+    }
+}
+
+// Comments Sheet View
+struct CommentsSheetView: View {
+    let post: Post
+    @Binding var showSheet: Bool
+    @Binding var newComment: String
+    let onComment: () -> Void
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        ForEach(post.comments.reversed()) { comment in
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(comment.authorName)
+                                        .font(.headline)
+                                    Spacer()
+                                    Text(comment.timestamp.formatted(date: .abbreviated, time: .shortened))
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
+                                Text(comment.content)
+                                    .font(.body)
+                            }
+                            .padding(.horizontal)
+                            Divider()
+                        }
+                    }
+                    .padding(.vertical)
+                }
+                
+                HStack {
+                    TextField("Add a comment...", text: $newComment)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    
+                    Button(action: onComment) {
+                        Text("Post")
+                            .fontWeight(.medium)
+                    }
+                    .disabled(newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                .padding()
+            }
+            .navigationTitle("Comments")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        showSheet = false
+                    }
+                }
+            }
+        }
+    }
+}
+
 // PostCard View
 struct PostCard: View {
     let post: Post
     let postRepository: PostRepository
+    @StateObject private var userRepository = UserRepository()
     @EnvironmentObject private var authManager: AuthManager
     @State private var showCommentSheet = false
     @State private var newComment = ""
     @State private var showShareSheet = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var authorProfileImageURL: String?
     
     private var isLiked: Bool {
         guard let userId = authManager.currentUser?.id else { return false }
         return post.likes.contains(userId)
     }
     
-    private var recentComments: [Comment] {
-        Array(post.comments.suffix(2).reversed())
-    }
-    
-    private var allComments: [Comment] {
-        Array(post.comments.reversed())
+    private var isCurrentUser: Bool {
+        post.authorId == authManager.currentUser?.id
     }
     
     private func createAttributedContent() -> AttributedString {
@@ -290,43 +477,12 @@ struct PostCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // User info
-            HStack {
-                Circle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 40, height: 40)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .foregroundColor(.gray)
-                    )
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(post.authorName)
-                        .font(.headline)
-                    Text(post.timestamp.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-                
-                Spacer()
-                
-                Menu {
-                    if post.authorId == authManager.currentUser?.id {
-                        Button(role: .destructive, action: {}) {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    } else {
-                        Button(action: {}) {
-                            Label("Report", systemImage: "flag")
-                        }
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .foregroundColor(.gray)
-                }
-            }
+            PostUserInfoView(
+                post: post,
+                profileImageURL: authorProfileImageURL,
+                isCurrentUser: isCurrentUser
+            )
             
-            // Post content with clickable links
             Text(createAttributedContent())
                 .font(.body)
                 .environment(\.openURL, OpenURLAction { url in
@@ -334,7 +490,6 @@ struct PostCard: View {
                     return .systemAction
                 })
             
-            // Interaction counts
             HStack(spacing: 20) {
                 Text("\(post.likes.count) likes")
                     .font(.caption)
@@ -349,123 +504,30 @@ struct PostCard: View {
                     .foregroundColor(.gray)
             }
             
-            // Interaction buttons
-            HStack(spacing: 20) {
-                Button(action: {
-                    handleLike()
-                }) {
-                    HStack {
-                        Image(systemName: isLiked ? "heart.fill" : "heart")
-                        Text("Like")
-                    }
-                    .foregroundColor(isLiked ? .red : .gray)
-                }
-                
-                Button(action: {
-                    showCommentSheet = true
-                }) {
-                    HStack {
-                        Image(systemName: "bubble.right")
-                        Text("Comment")
-                    }
-                    .foregroundColor(.gray)
-                }
-                
-                Button(action: {
-                    showShareSheet = true
-                }) {
-                    HStack {
-                        Image(systemName: "square.and.arrow.up")
-                        Text("Share")
-                    }
-                    .foregroundColor(.gray)
-                }
-            }
+            PostInteractionButtonsView(
+                post: post,
+                isLiked: isLiked,
+                onLike: handleLike,
+                onComment: { showCommentSheet = true },
+                onShare: { showShareSheet = true }
+            )
             
-            // Recent comments (show last 2)
-            if !post.comments.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(recentComments) { comment in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(comment.authorName)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                            Text(comment.content)
-                                .font(.caption)
-                            Text(comment.timestamp.formatted(date: .abbreviated, time: .shortened))
-                                .font(.caption2)
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    
-                    if post.comments.count > 2 {
-                        Button(action: {
-                            showCommentSheet = true
-                        }) {
-                            Text("View all \(post.comments.count) comments")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                        }
-                    }
-                }
-                .padding(.top, 8)
-            }
+            PostCommentsView(
+                post: post,
+                onViewAllComments: { showCommentSheet = true }
+            )
         }
         .padding()
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
         .sheet(isPresented: $showCommentSheet) {
-            NavigationView {
-                VStack {
-                    // Existing comments
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 16) {
-                            ForEach(allComments) { comment in
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack {
-                                        Text(comment.authorName)
-                                            .font(.headline)
-                                        Spacer()
-                                        Text(comment.timestamp.formatted(date: .abbreviated, time: .shortened))
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
-                                    }
-                                    Text(comment.content)
-                                        .font(.body)
-                                }
-                                .padding(.horizontal)
-                                Divider()
-                            }
-                        }
-                        .padding(.vertical)
-                    }
-                    
-                    // New comment input
-                    HStack {
-                        TextField("Add a comment...", text: $newComment)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                        
-                        Button(action: {
-                            handleComment()
-                        }) {
-                            Text("Post")
-                                .fontWeight(.medium)
-                        }
-                        .disabled(newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                    .padding()
-                }
-                .navigationTitle("Comments")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Done") {
-                            showCommentSheet = false
-                        }
-                    }
-                }
-            }
+            CommentsSheetView(
+                post: post,
+                showSheet: $showCommentSheet,
+                newComment: $newComment,
+                onComment: handleComment
+            )
         }
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(items: [post.content])
@@ -474,6 +536,14 @@ struct PostCard: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage)
+        }
+        .task {
+            do {
+                let user = try await userRepository.getUser(withId: post.authorId)
+                authorProfileImageURL = user?.profileImageURL
+            } catch {
+                print("Error fetching user profile image: \(error.localizedDescription)")
+            }
         }
     }
     
