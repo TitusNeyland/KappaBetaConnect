@@ -371,83 +371,93 @@ struct ProfileView: View {
                         }
                         
                         // Connect Section
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Connect")
-                                .font(.headline)
-                                .padding(.horizontal, 20)
-                                .padding(.top, 20)
+                        VStack(alignment: .center, spacing: 10) {
+                            HStack(spacing: 10) {
+                                Rectangle()
+                                    .frame(height: 1)
+                                    .foregroundColor(.gray)
+                                
+                                VStack(spacing: 0) {
+                                    Text("CONNECT")
+                                        .font(.headline)
+                                        .foregroundColor(.gray)
+                                    Text("WITH ME")
+                                        .font(.headline)
+                                        .foregroundColor(.gray)
+                                }
+                                
+                                Rectangle()
+                                    .frame(height: 1)
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.top, 20)
                             
-                            VStack(alignment: .leading, spacing: 12) {
-                                if let currentUser = userRepository.currentUser {
-                                    HStack {
-                                        if let linkedInURL = currentUser.linkedInURL {
-                                            Link(destination: URL(string: linkedInURL)!) {
-                                                HStack(spacing: 8) {
-                                                    Image(systemName: "link")
-                                                        .foregroundColor(.blue)
-                                                    Text("LinkedIn Profile")
-                                                        .font(.subheadline)
-                                                        .foregroundColor(.blue)
-                                                }
+                            if let currentUser = userRepository.currentUser {
+                                HStack(spacing: 15) {
+                                    if let linkedInURL = currentUser.linkedInURL {
+                                        Link(destination: URL(string: linkedInURL)!) {
+                                            VStack(spacing: 4) {
+                                                Image(systemName: "person.2.fill")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.black)
+                                                Text("LinkedIn")
+                                                    .font(.system(size: 11))
+                                                    .foregroundColor(.black)
                                             }
-                                        } else {
-                                            Text("Add LinkedIn Profile")
-                                                .font(.subheadline)
-                                                .foregroundColor(.gray)
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        Button(action: {
-                                            if let linkedInURL = currentUser.linkedInURL {
-                                                newLinkedInURL = linkedInURL
-                                            } else {
-                                                newLinkedInURL = "https://linkedin.com/in/"
-                                            }
-                                            showLinkedInEditSheet = true
-                                        }) {
-                                            Image(systemName: "pencil")
-                                                .foregroundColor(.blue)
                                         }
                                     }
                                     
                                     Link(destination: URL(string: "https://instagram.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!) {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "link")
-                                                .foregroundColor(.blue)
+                                        VStack(spacing: 4) {
+                                            Image(systemName: "camera.fill")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.black)
                                             Text("Instagram")
-                                                .font(.subheadline)
-                                                .foregroundColor(.blue)
-                                            Spacer()
+                                                .font(.system(size: 11))
+                                                .foregroundColor(.black)
                                         }
                                     }
                                     
                                     Link(destination: URL(string: "https://twitter.com/\(twitter.replacingOccurrences(of: "@", with: ""))")!) {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "link")
-                                                .foregroundColor(.blue)
-                                            Text("Twitter")
-                                                .font(.subheadline)
-                                                .foregroundColor(.blue)
-                                            Spacer()
+                                        VStack(spacing: 4) {
+                                            Image(systemName: "message.fill")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.black)
+                                            Text("X")
+                                                .font(.system(size: 11))
+                                                .foregroundColor(.black)
                                         }
                                     }
                                     
                                     Link(destination: URL(string: "https://snapchat.com/add/\(snapchat.replacingOccurrences(of: "@", with: ""))")!) {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "link")
-                                                .foregroundColor(.blue)
+                                        VStack(spacing: 4) {
+                                            Image(systemName: "camera.viewfinder")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.black)
                                             Text("Snapchat")
-                                                .font(.subheadline)
-                                                .foregroundColor(.blue)
-                                            Spacer()
+                                                .font(.system(size: 11))
+                                                .foregroundColor(.black)
+                                        }
+                                    }
+                                    
+                                    Link(destination: URL(string: "https://facebook.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!) {
+                                        VStack(spacing: 4) {
+                                            Image(systemName: "person.circle.fill")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.black)
+                                            Text("Facebook")
+                                                .font(.system(size: 11))
+                                                .foregroundColor(.black)
                                         }
                                     }
                                 }
+                                .frame(maxWidth: .infinity)
+                                .padding(.horizontal, 20)
+                                .padding(.top, 10)
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 4)
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 20)
                         
                         // Logout Button
                         Button(action: {
