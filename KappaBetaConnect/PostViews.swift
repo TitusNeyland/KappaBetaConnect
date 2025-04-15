@@ -362,7 +362,7 @@ struct PostCommentsView: View {
                             .fontWeight(.medium)
                         Text(comment.content)
                             .font(.caption)
-                        Text(comment.timestamp.formatted(date: .abbreviated, time: .shortened))
+                        Text(comment.timestamp.timeAgoDisplay())
                             .font(.caption2)
                             .foregroundColor(.gray)
                     }
