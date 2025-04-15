@@ -22,6 +22,7 @@ struct User: Identifiable, Codable {
     var major: String?
     var jobTitle: String?
     var company: String?
+    var bio: String?
     
     // Initiation Information
     var lineNumber: String?
@@ -43,7 +44,7 @@ struct User: Identifiable, Codable {
         case id
         case prefix, firstName, lastName, suffix, email, phoneNumber, city, state
         case password
-        case careerField, major, jobTitle, company
+        case careerField, major, jobTitle, company, bio
         case lineNumber, semester, year, status, graduationYear
         case createdAt, updatedAt, isActive
         case profileImageURL, linkedInURL
@@ -63,6 +64,7 @@ struct User: Identifiable, Codable {
          major: String? = nil, 
          jobTitle: String? = nil, 
          company: String? = nil,
+         bio: String? = nil,
          lineNumber: String? = nil,
          semester: String? = nil,
          year: String? = nil,
@@ -86,6 +88,7 @@ struct User: Identifiable, Codable {
         self.major = major
         self.jobTitle = jobTitle
         self.company = company
+        self.bio = bio
         self.lineNumber = lineNumber
         self.semester = semester
         self.year = year

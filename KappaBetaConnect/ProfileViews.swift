@@ -37,6 +37,7 @@ struct ProfileView: View {
     @State private var errorMessage = ""
     @State private var showLinkedInEditSheet = false
     @State private var newLinkedInURL = ""
+    @State private var showBioEditSheet = false
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var isUploading = false
@@ -181,14 +182,30 @@ struct ProfileView: View {
                         
                         // About Section
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("About")
-                                .font(.headline)
-                                .padding(.horizontal, 20)
+                            HStack {
+                                Text("About")
+                                    .font(.headline)
+                                Spacer()
+                                Button(action: {
+                                    showBioEditSheet = true
+                                }) {
+                                    Image(systemName: "pencil")
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                            .padding(.horizontal, 20)
                             
-                            Text(bio)
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                                .padding(.horizontal, 20)
+                            if let currentUser = userRepository.currentUser {
+                                Text(currentUser.bio ?? "No bio available")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                    .padding(.horizontal, 20)
+                            } else {
+                                Text("Loading...")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                    .padding(.horizontal, 20)
+                            }
                         }
                         
                         // Recent Posts Section
@@ -564,6 +581,9 @@ struct ProfileView: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showBioEditSheet) {
+            BioEditView(userRepository: userRepository, currentBio: userRepository.currentUser?.bio)
         }
     }
     
