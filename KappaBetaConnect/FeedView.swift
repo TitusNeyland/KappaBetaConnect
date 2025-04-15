@@ -10,7 +10,7 @@ struct FeedView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
+            ZStack {
                 VStack(spacing: 0) {
                     ScrollView {
                         VStack(spacing: 20) {
@@ -39,10 +39,9 @@ struct FeedView: View {
                     alignment: .bottomTrailing
                 )
                 
-                // Toast
+                // Centered Toast
                 if showToast {
                     Toast(message: "Post uploaded successfully", isShowing: $showToast)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
             .sheet(isPresented: $showNewPostSheet, onDismiss: {

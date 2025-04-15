@@ -6,19 +6,22 @@ struct Toast: View {
     @Binding var isShowing: Bool
     
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(.green)
             Text(message)
                 .foregroundColor(.white)
-                .padding(.horizontal)
-                .padding(.vertical, 8)
+                .font(.system(size: 16, weight: .semibold))
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .background(Color.black.opacity(0.8))
-        .cornerRadius(20)
-        .padding(.bottom, 20)
-        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .cornerRadius(25)
+        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+        .transition(.scale.combined(with: .opacity))
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                withAnimation {
+                withAnimation(.easeOut) {
                     isShowing = false
                 }
             }
