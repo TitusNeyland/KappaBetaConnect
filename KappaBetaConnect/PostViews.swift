@@ -267,6 +267,7 @@ struct PostUserInfoView: View {
     let post: Post
     let profileImageURL: String?
     let isCurrentUser: Bool
+    let onDelete: () -> Void
     
     var body: some View {
         HStack {
@@ -303,8 +304,8 @@ struct PostUserInfoView: View {
             
             Menu {
                 if isCurrentUser {
-                    Button(role: .destructive, action: {}) {
-                        Label("Delete", systemImage: "trash")
+                    Button(role: .destructive, action: onDelete) {
+                        Label("Delete Post", systemImage: "trash")
                     }
                 } else {
                     Button(action: {}) {
@@ -466,6 +467,7 @@ struct PostCard: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var authorProfileImageURL: String?
+    @State private var showDeleteAlert = false
     
     private var isLiked: Bool {
         guard let userId = authManager.currentUser?.id else { return false }
@@ -496,7 +498,8 @@ struct PostCard: View {
             PostUserInfoView(
                 post: post,
                 profileImageURL: authorProfileImageURL,
-                isCurrentUser: isCurrentUser
+                isCurrentUser: isCurrentUser,
+                onDelete: { showDeleteAlert = true }
             )
             
             Text(createAttributedContent())
@@ -537,6 +540,14 @@ struct PostCard: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        .alert("Delete Post", isPresented: $showDeleteAlert) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                deletePost()
+            }
+        } message: {
+            Text("Are you sure you want to delete this post? This action cannot be undone.")
+        }
         .sheet(isPresented: $showCommentSheet) {
             CommentsSheetView(
                 post: post,
@@ -615,6 +626,17 @@ struct PostCard: View {
             } catch {
                 showError = true
                 errorMessage = error.localizedDescription
+            }
+        }
+    }
+    
+    private func deletePost() {
+        Task {
+            do {
+                try await postRepository.deletePost(postId: post.id ?? "")
+            } catch {
+                showError = true
+                errorMessage = "Failed to delete post: \(error.localizedDescription)"
             }
         }
     }
