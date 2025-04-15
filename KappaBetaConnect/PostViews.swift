@@ -114,13 +114,26 @@ struct UserHeaderView: View {
     
     var body: some View {
         HStack {
-            Circle()
-                .fill(Color.gray.opacity(0.3))
+            if let profileImageURL = user.profileImageURL,
+               let url = URL(string: profileImageURL) {
+                AsyncImage(url: url) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    ProgressView()
+                }
                 .frame(width: 40, height: 40)
-                .overlay(
-                    Image(systemName: "person.fill")
-                        .foregroundColor(.gray)
-                )
+                .clipShape(Circle())
+            } else {
+                Circle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Image(systemName: "person.fill")
+                            .foregroundColor(.gray)
+                    )
+            }
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(user.firstName) \(user.lastName)")
