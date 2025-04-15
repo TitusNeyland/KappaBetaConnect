@@ -8,6 +8,8 @@ struct DirectoryView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var searchTask: Task<Void, Never>?
+    @FocusState private var isSearchFocused: Bool
+    @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
         NavigationStack {
@@ -18,6 +20,7 @@ struct DirectoryView: View {
                         .foregroundColor(.gray)
                     TextField("Search by name...", text: $searchText)
                         .textFieldStyle(.plain)
+                        .focused($isSearchFocused)
                         .onChange(of: searchText) { _ in
                             // Cancel any existing search task
                             searchTask?.cancel()
@@ -67,6 +70,11 @@ struct DirectoryView: View {
             }
             .task {
                 await searchUsers()
+            }
+            .onChange(of: scenePhase) { newPhase in
+                if newPhase != .active {
+                    isSearchFocused = false
+                }
             }
         }
     }

@@ -33,6 +33,8 @@ struct MainTabView: View {
                             .onTapGesture {
                                 withAnimation(.easeInOut) {
                                     selectedTab = index
+                                    // Dismiss keyboard when changing tabs
+                                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                                 }
                             }
                         }
@@ -72,6 +74,8 @@ struct MainTabView: View {
                 // Scroll to keep selected tab in view
                 withAnimation {
                     scrollProxy?.scrollTo(newValue, anchor: .center)
+                    // Dismiss keyboard when changing tabs
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 }
             }
         }
