@@ -52,6 +52,11 @@ class AuthManager: ObservableObject {
         let authResult = try await Auth.auth().signIn(withEmail: email, password: password)
         let userId = authResult.user.uid
         
+        DispatchQueue.main.async {
+            self.isAuthenticated = true
+            self.userId = userId
+        }
+        
         if let user = try await userRepository.getUser(withId: userId) {
             DispatchQueue.main.async {
                 self.currentUser = user
