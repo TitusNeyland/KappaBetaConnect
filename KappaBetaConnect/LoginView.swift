@@ -47,8 +47,13 @@ struct LoginView: View {
                     login()
                 }) {
                     if isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        HStack {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            Text("Logging in...")
+                                .foregroundColor(.white)
+                                .padding(.leading, 8)
+                        }
                     } else {
                         Text("Login")
                             .foregroundColor(.white)
@@ -59,6 +64,7 @@ struct LoginView: View {
                 .background(Color.black)
                 .cornerRadius(10)
                 .disabled(isLoading)
+                .animation(.easeInOut, value: isLoading)
                 
                 Button("Forgot Password?") {
                     // Handle forgot password action
