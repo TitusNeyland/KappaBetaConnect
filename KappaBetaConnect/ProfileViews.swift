@@ -42,6 +42,22 @@ struct ProfileView: View {
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var isUploading = false
+    @State private var userPosts: [Post] = []
+    
+    // Optional parameter to view a different user's profile
+    var userId: String?
+    
+    private var displayedUserId: String {
+        userId ?? authManager.currentUser?.id ?? ""
+    }
+    
+    private var isCurrentUserProfile: Bool {
+        userId == nil || userId == authManager.currentUser?.id
+    }
+    
+    private var recentPosts: [Post] {
+        Array(userPosts.prefix(3))
+    }
     
     // Sample data - replace with actual user data
     let yearsExperience = "5 years"
@@ -53,10 +69,6 @@ struct ProfileView: View {
     let instagram = "@username"
     let twitter = "@username"
     let snapchat = "@username"
-    
-    private var recentPosts: [Post] {
-        Array(postRepository.posts.prefix(3))
-    }
     
     var body: some View {
         ZStack {
@@ -214,7 +226,7 @@ struct ProfileView: View {
                                 .font(.headline)
                                 .padding(.horizontal, 20)
                             
-                            if recentPosts.isEmpty {
+                            if userPosts.isEmpty {
                                 Text("No recent posts")
                                     .font(.subheadline)
                                     .foregroundColor(.gray)
@@ -509,12 +521,15 @@ struct ProfileView: View {
             Text("Are you sure you want to log out?")
         }
         .task {
-            do {
-                try await postRepository.fetchPosts()
-            } catch {
-                showError = true
-                errorMessage = error.localizedDescription
+            await fetchUserPosts()
+        }
+        .onChange(of: displayedUserId) { _ in
+            Task {
+                await fetchUserPosts()
             }
+        }
+        .refreshable {
+            await fetchUserPosts()
         }
         .sheet(isPresented: $showLinkedInEditSheet) {
             NavigationView {
@@ -611,6 +626,25 @@ struct ProfileView: View {
             errorMessage = "Failed to upload profile image: \(error.localizedDescription)"
         }
         isUploading = false
+    }
+    
+    private func fetchUserPosts() async {
+        guard !displayedUserId.isEmpty else { return }
+        
+        do {
+            print("Fetching posts for user: \(displayedUserId)")
+            let posts = try await postRepository.fetchPostsByAuthor(authorId: displayedUserId)
+            print("Found \(posts.count) posts")
+            await MainActor.run {
+                self.userPosts = posts
+            }
+        } catch {
+            print("Error fetching posts: \(error)")
+            await MainActor.run {
+                showError = true
+                errorMessage = "Failed to load posts: \(error.localizedDescription)"
+            }
+        }
     }
 }
 

@@ -17,6 +17,19 @@ class PostRepository: ObservableObject {
         }
     }
     
+    func fetchPostsByAuthor(authorId: String) async throws -> [Post] {
+        let snapshot = try await db.collection("posts")
+            .whereField("authorId", isEqualTo: authorId)
+            .order(by: "timestamp", descending: true)
+            .getDocuments()
+        
+        return try snapshot.documents.compactMap { document in
+            var post = try document.data(as: Post.self)
+            post.id = document.documentID
+            return post
+        }
+    }
+    
     func fetchPost(postId: String) async throws {
         let document = try await db.collection("posts").document(postId).getDocument()
         guard var updatedPost = try? document.data(as: Post.self) else { return }
