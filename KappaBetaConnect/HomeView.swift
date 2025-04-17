@@ -13,6 +13,8 @@ struct HomeView: View {
     @StateObject private var eventRepository = EventRepository()
     @StateObject private var userRepository = UserRepository()
     @StateObject private var postRepository = PostRepository()
+    @EnvironmentObject private var authManager: AuthManager
+    @State private var recommendedUsers: [User] = []
     
     var upcomingEvents: [Event] {
         let now = Date()
@@ -53,7 +55,7 @@ struct HomeView: View {
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 20) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Welcome back,")
@@ -175,47 +177,55 @@ struct HomeView: View {
                     .padding(.top, 40)
                 
                 VStack(spacing: 15) {
-                    ForEach(recommendedConnections, id: \.name) { connection in
-                        HStack {
-                            // Profile picture and details
+                    ForEach(recommendedUsers) { user in
+                        NavigationLink(destination: ProfileView(userId: user.id)) {
                             HStack {
-                                Circle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .frame(width: 50, height: 50)
-                                    .overlay(
-                                        Image(systemName: "person.fill")
-                                            .foregroundColor(.gray)
-                                            .font(.system(size: 24))
-                                    )
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(connection.name)
-                                        .font(.system(size: 16, weight: .semibold))
-                                    Text(connection.title)
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.gray)
+                                // Profile picture and details
+                                HStack {
+                                    if let profileImageURL = user.profileImageURL,
+                                       let url = URL(string: profileImageURL) {
+                                        AsyncImage(url: url) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                        } placeholder: {
+                                            ProgressView()
+                                        }
+                                        .frame(width: 50, height: 50)
+                                        .clipShape(Circle())
+                                    } else {
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(width: 50, height: 50)
+                                            .overlay(
+                                                Image(systemName: "person.fill")
+                                                    .foregroundColor(.gray)
+                                                    .font(.system(size: 24))
+                                            )
+                                    }
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("\(user.firstName) \(user.lastName)")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.primary)
+                                        
+                                        if let commonality = getMainCommonality(currentUser: authManager.currentUser, otherUser: user) {
+                                            Text(commonality)
+                                                .font(.system(size: 14))
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                    .padding(.leading, 8)
                                 }
-                                .padding(.leading, 8)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.gray)
+                                    .font(.system(size: 14, weight: .semibold))
                             }
-                            
-                            Spacer()
-                            
-                            // Connect button
-                            Button(action: {
-                                // Handle connect action
-                            }) {
-                                Text("Connect")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.black)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .stroke(Color.black, lineWidth: 1)
-                                    )
-                            }
+                            .padding(.horizontal, 20)
                         }
-                        .padding(.horizontal, 20)
                     }
                 }
                 
@@ -262,5 +272,103 @@ struct HomeView: View {
                 }
             }
         }
+        .task {
+            await fetchRecommendedUsers()
+        }
+    }
+    
+    private func fetchRecommendedUsers() async {
+        guard let currentUser = authManager.currentUser else { return }
+        
+        do {
+            let allUsers = try await userRepository.searchUsers(byName: "")
+            let recommendations = allUsers
+                .filter { $0.id != currentUser.id } // Exclude current user
+                .map { user -> (User, Double) in
+                    let score = calculateSimilarityScore(currentUser: currentUser, otherUser: user)
+                    return (user, score)
+                }
+                .sorted { $0.1 > $1.1 } // Sort by similarity score
+                .prefix(5) // Get top 5 recommendations
+                .map { $0.0 } // Get just the users
+            
+            await MainActor.run {
+                self.recommendedUsers = Array(recommendations)
+            }
+        } catch {
+            print("Error fetching recommended users: \(error)")
+        }
+    }
+    
+    private func calculateSimilarityScore(currentUser: User, otherUser: User) -> Double {
+        var score = 0.0
+        
+        // Same city and state (highest weight)
+        if currentUser.city == otherUser.city && currentUser.state == otherUser.state {
+            score += 5.0
+        }
+        
+        // Same career field
+        if currentUser.careerField == otherUser.careerField {
+            score += 4.0
+        }
+        
+        // Same company
+        if currentUser.company == otherUser.company {
+            score += 4.0
+        }
+        
+        // Same major
+        if currentUser.major == otherUser.major {
+            score += 3.0
+        }
+        
+        // Same line number
+        if currentUser.lineNumber == otherUser.lineNumber {
+            score += 3.0
+        }
+        
+        // Same initiation semester/year
+        if currentUser.semester == otherUser.semester && currentUser.year == otherUser.year {
+            score += 2.0
+        }
+        
+        // Shared interests
+        if let currentInterests = currentUser.interests,
+           let otherInterests = otherUser.interests {
+            let commonInterests = Set(currentInterests).intersection(Set(otherInterests))
+            score += Double(commonInterests.count)
+        }
+        
+        return score
+    }
+    
+    private func getMainCommonality(currentUser: User?, otherUser: User) -> String? {
+        guard let currentUser = currentUser else { return nil }
+        
+        // Check commonalities in priority order
+        if currentUser.company == otherUser.company {
+            return "Works at \(otherUser.company ?? "")"
+        }
+        
+        if currentUser.careerField == otherUser.careerField {
+            return "Same industry: \(otherUser.careerField ?? "")"
+        }
+        
+        if currentUser.city == otherUser.city && currentUser.state == otherUser.state {
+            return "Located in \(otherUser.city ?? ""), \(otherUser.state ?? "")"
+        }
+        
+        if currentUser.lineNumber == otherUser.lineNumber {
+            return "Line \(otherUser.lineNumber ?? "")"
+        }
+        
+        if let currentInterests = currentUser.interests,
+           let otherInterests = otherUser.interests,
+           let commonInterest = Set(currentInterests).intersection(Set(otherInterests)).first {
+            return "Shares interest in \(commonInterest)"
+        }
+        
+        return nil
     }
 } 
