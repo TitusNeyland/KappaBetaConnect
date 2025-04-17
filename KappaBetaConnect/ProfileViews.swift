@@ -75,65 +75,52 @@ struct ProfileView: View {
         ZStack {
             ScrollView {
                 VStack(spacing: 0) {
-                    // Profile Header with Cover Photo
-                    ZStack(alignment: .bottom) {
-                        // Cover Photo
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(height: 200)
-                            .overlay(
-                                Image(systemName: "photo")
-                                    .font(.system(size: 50))
-                                    .foregroundColor(.gray)
-                            )
-                        
-                        // Profile Picture
-                        VStack {
-                            ZStack {
-                                if let selectedImage = selectedImage {
-                                    Image(uiImage: selectedImage)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 120, height: 120)
-                                        .clipShape(Circle())
-                                } else if let user = displayedUser ?? userRepository.currentUser,
-                                          let profileImageURL = user.profileImageURL,
-                                          let url = URL(string: profileImageURL) {
-                                    AsyncImage(url: url) { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                    } placeholder: {
-                                        ProgressView()
-                                    }
+                    // Profile Picture
+                    VStack {
+                        ZStack {
+                            if let selectedImage = selectedImage {
+                                Image(uiImage: selectedImage)
+                                    .resizable()
+                                    .scaledToFill()
                                     .frame(width: 120, height: 120)
                                     .clipShape(Circle())
-                                } else {
-                                    Circle()
-                                        .fill(Color.gray.opacity(0.3))
-                                        .frame(width: 120, height: 120)
-                                        .overlay(
-                                            Image(systemName: "person.fill")
-                                                .foregroundColor(.gray)
-                                                .font(.system(size: 50))
-                                        )
+                            } else if let user = displayedUser ?? userRepository.currentUser,
+                                      let profileImageURL = user.profileImageURL,
+                                      let url = URL(string: profileImageURL) {
+                                AsyncImage(url: url) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    ProgressView()
                                 }
-                                
-                                if isCurrentUserProfile {
-                                    PhotosPicker(selection: $selectedItem, matching: .images) {
-                                        Image(systemName: "camera.circle.fill")
-                                            .font(.system(size: 30))
-                                            .foregroundColor(.blue)
-                                            .background(Color.white)
-                                            .clipShape(Circle())
-                                    }
-                                    .offset(x: 40, y: 40)
-                                }
+                                .frame(width: 120, height: 120)
+                                .clipShape(Circle())
+                            } else {
+                                Circle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .frame(width: 120, height: 120)
+                                    .overlay(
+                                        Image(systemName: "person.fill")
+                                            .foregroundColor(.gray)
+                                            .font(.system(size: 50))
+                                    )
                             }
-                            .offset(y: 60)
-                            .shadow(radius: 5)
+                            
+                            if isCurrentUserProfile {
+                                PhotosPicker(selection: $selectedItem, matching: .images) {
+                                    Image(systemName: "camera.circle.fill")
+                                        .font(.system(size: 30))
+                                        .foregroundColor(.blue)
+                                        .background(Color.white)
+                                        .clipShape(Circle())
+                                }
+                                .offset(x: 40, y: 40)
+                            }
                         }
+                        .shadow(radius: 5)
                     }
+                    .padding(.top, 20)
                     
                     // Profile Info
                     VStack(spacing: 20) {
@@ -169,7 +156,7 @@ struct ProfileView: View {
                                     .fontWeight(.bold)
                             }
                         }
-                        .padding(.top, 60)
+                        .padding(.top, 10)
                         
                         // Quick Stats
                         HStack(spacing: 30) {
@@ -351,11 +338,13 @@ struct ProfileView: View {
                                 Text("Interests & Hobbies")
                                     .font(.headline)
                                 Spacer()
-                                Button(action: {
-                                    showInterestsEditSheet = true
-                                }) {
-                                    Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(.black)
+                                if isCurrentUserProfile {
+                                    Button(action: {
+                                        showInterestsEditSheet = true
+                                    }) {
+                                        Image(systemName: "plus.circle.fill")
+                                            .foregroundColor(.black)
+                                    }
                                 }
                             }
                             .padding(.horizontal, 20)
@@ -374,7 +363,7 @@ struct ProfileView: View {
                                                 .cornerRadius(15)
                                         }
                                     } else {
-                                        Text("Add your interests here")
+                                        Text(isCurrentUserProfile ? "Add your interests here" : "No interests listed")
                                             .font(.subheadline)
                                             .foregroundColor(.gray)
                                             .padding(.horizontal, 12)
