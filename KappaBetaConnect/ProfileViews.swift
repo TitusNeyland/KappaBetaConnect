@@ -38,6 +38,7 @@ struct ProfileView: View {
     @State private var showLinkedInEditSheet = false
     @State private var newLinkedInURL = ""
     @State private var showBioEditSheet = false
+    @State private var showInterestsEditSheet = false
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var isUploading = false
@@ -47,7 +48,7 @@ struct ProfileView: View {
     let lineName = "INDEUCED IN2ENT"
     let shipName = "12 INVADERS"
     let positions = ["Assistant Secretary"]
-    let interests = ["Technology", "Gaming", "Art", "Travel"]
+    @State private var interests: [String] = ["Technology", "Gaming", "Art", "Travel"]
     let bio = "Passionate software engineer with a focus on iOS development. Creating innovative solutions and mentoring junior developers. Always excited to learn new technologies and contribute to meaningful projects."
     let instagram = "@username"
     let twitter = "@username"
@@ -329,9 +330,18 @@ struct ProfileView: View {
                         
                         // Interests Section
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Interests & Hobbies")
-                                .font(.headline)
-                                .padding(.horizontal, 20)
+                            HStack {
+                                Text("Interests & Hobbies")
+                                    .font(.headline)
+                                Spacer()
+                                Button(action: {
+                                    showInterestsEditSheet = true
+                                }) {
+                                    Image(systemName: "plus.circle.fill")
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                            .padding(.horizontal, 20)
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 10) {
@@ -573,6 +583,9 @@ struct ProfileView: View {
         .sheet(isPresented: $showBioEditSheet) {
             BioEditView(userRepository: userRepository, currentBio: userRepository.currentUser?.bio)
         }
+        .sheet(isPresented: $showInterestsEditSheet) {
+            InterestsEditView(interests: $interests)
+        }
     }
     
     private func uploadProfileImage(_ image: UIImage) async {
@@ -652,6 +665,120 @@ struct FlowLayout<Content: View>: View {
                         return result
                     }
             }
+        }
+    }
+}
+
+struct InterestsEditView: View {
+    @Binding var interests: [String]
+    @Environment(\.dismiss) private var dismiss
+    @State private var newInterest = ""
+    @State private var selectedInterests: Set<String> = []
+    
+    private let predefinedInterests = [
+        "Technology", "Gaming", "Art", "Travel", "Music", "Sports",
+        "Reading", "Cooking", "Photography", "Fitness", "Movies",
+        "Hiking", "Dancing", "Writing", "Coding", "Design",
+        "Entrepreneurship", "Volunteering", "Fashion", "Cars"
+    ]
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                // Custom Interest Input
+                HStack {
+                    TextField("Add custom interest", text: $newInterest)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    
+                    Button(action: addCustomInterest) {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundColor(.blue)
+                            .font(.title2)
+                    }
+                    .disabled(newInterest.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                .padding(.horizontal)
+                
+                // Predefined Interests
+                ScrollView {
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], spacing: 10) {
+                        ForEach(predefinedInterests, id: \.self) { interest in
+                            InterestToggleButton(
+                                interest: interest,
+                                isSelected: selectedInterests.contains(interest),
+                                action: { toggleInterest(interest) }
+                            )
+                        }
+                    }
+                    .padding()
+                }
+            }
+            .navigationTitle("Edit Interests")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        // Add selected predefined interests
+                        let newInterests = Array(selectedInterests)
+                        interests.append(contentsOf: newInterests)
+                        // Remove duplicates
+                        interests = Array(Set(interests))
+                        dismiss()
+                    }
+                }
+            }
+            .onAppear {
+                // Initialize selected interests with current interests
+                selectedInterests = Set(interests)
+            }
+        }
+    }
+    
+    private func addCustomInterest() {
+        let trimmedInterest = newInterest.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedInterest.isEmpty && !interests.contains(trimmedInterest) {
+            interests.append(trimmedInterest)
+            newInterest = ""
+        }
+    }
+    
+    private func toggleInterest(_ interest: String) {
+        if selectedInterests.contains(interest) {
+            selectedInterests.remove(interest)
+            interests.removeAll { $0 == interest }
+        } else {
+            selectedInterests.insert(interest)
+        }
+    }
+}
+
+struct InterestToggleButton: View {
+    let interest: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(interest)
+                .font(.subheadline)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(isSelected ? Color.blue.opacity(0.2) : Color.gray.opacity(0.1))
+                .foregroundColor(isSelected ? .blue : .primary)
+                .cornerRadius(15)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 15)
+                        .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 1)
+                )
         }
     }
 } 
