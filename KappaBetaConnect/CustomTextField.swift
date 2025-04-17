@@ -9,6 +9,7 @@ struct CustomTextField: UIViewRepresentable {
     var isSecure: Bool = false
     var allowWhitespace: Bool = true
     var autoCapitalizeFirstLetter: Bool = false
+    var autoCapitalizeWords: Bool = false
     
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -46,10 +47,23 @@ struct CustomTextField: UIViewRepresentable {
         }
         
         func textFieldDidChangeSelection(_ textField: UITextField) {
-            if let currentText = textField.text, parent.autoCapitalizeFirstLetter && !currentText.isEmpty {
-                let firstLetter = currentText.prefix(1).uppercased()
-                let restOfString = currentText.dropFirst()
-                textField.text = firstLetter + restOfString
+            if let currentText = textField.text {
+                if parent.autoCapitalizeFirstLetter && !currentText.isEmpty {
+                    if parent.autoCapitalizeWords {
+                        // Capitalize first letter of each word
+                        let words = currentText.components(separatedBy: " ")
+                        let capitalizedWords = words.map { word in
+                            guard !word.isEmpty else { return word }
+                            return word.prefix(1).uppercased() + word.dropFirst().lowercased()
+                        }
+                        textField.text = capitalizedWords.joined(separator: " ")
+                    } else {
+                        // Only capitalize first letter
+                        let firstLetter = currentText.prefix(1).uppercased()
+                        let restOfString = currentText.dropFirst()
+                        textField.text = firstLetter + restOfString
+                    }
+                }
             }
             parent.text = textField.text ?? ""
         }

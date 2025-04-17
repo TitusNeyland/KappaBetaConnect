@@ -94,7 +94,7 @@ struct SignUpView: View {
                         .padding(.top, 30)
                     
                     VStack(spacing: 15) {
-                        CustomTextField(text: $userData.city, placeholder: "City", keyboardType: .default, textContentType: .addressCity, autoCapitalizeFirstLetter: true)
+                        CustomTextField(text: $userData.city, placeholder: "City", keyboardType: .default, textContentType: .addressCity, autoCapitalizeFirstLetter: true, autoCapitalizeWords: true)
                             .customTextField()
                         
                         // State Picker
