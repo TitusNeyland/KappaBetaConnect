@@ -43,6 +43,7 @@ struct ProfileView: View {
     @State private var selectedImage: UIImage?
     @State private var isUploading = false
     @State private var userPosts: [Post] = []
+    @State private var displayedUser: User?
     
     // Optional parameter to view a different user's profile
     var userId: String?
@@ -95,8 +96,8 @@ struct ProfileView: View {
                                         .scaledToFill()
                                         .frame(width: 120, height: 120)
                                         .clipShape(Circle())
-                                } else if let currentUser = userRepository.currentUser,
-                                          let profileImageURL = currentUser.profileImageURL,
+                                } else if let user = displayedUser ?? userRepository.currentUser,
+                                          let profileImageURL = user.profileImageURL,
                                           let url = URL(string: profileImageURL) {
                                     AsyncImage(url: url) { image in
                                         image
@@ -118,14 +119,16 @@ struct ProfileView: View {
                                         )
                                 }
                                 
-                                PhotosPicker(selection: $selectedItem, matching: .images) {
-                                    Image(systemName: "camera.circle.fill")
-                                        .font(.system(size: 30))
-                                        .foregroundColor(.blue)
-                                        .background(Color.white)
-                                        .clipShape(Circle())
+                                if isCurrentUserProfile {
+                                    PhotosPicker(selection: $selectedItem, matching: .images) {
+                                        Image(systemName: "camera.circle.fill")
+                                            .font(.system(size: 30))
+                                            .foregroundColor(.blue)
+                                            .background(Color.white)
+                                            .clipShape(Circle())
+                                    }
+                                    .offset(x: 40, y: 40)
                                 }
-                                .offset(x: 40, y: 40)
                             }
                             .offset(y: 60)
                             .shadow(radius: 5)
@@ -136,12 +139,12 @@ struct ProfileView: View {
                     VStack(spacing: 20) {
                         // Name and Title
                         VStack(spacing: 4) {
-                            if let currentUser = userRepository.currentUser {
-                                Text("\(currentUser.firstName) \(currentUser.lastName)")
+                            if let user = displayedUser ?? userRepository.currentUser {
+                                Text("\(user.firstName) \(user.lastName)")
                                     .font(.title2)
                                     .fontWeight(.bold)
                                 
-                                if let jobTitle = currentUser.jobTitle, let company = currentUser.company {
+                                if let jobTitle = user.jobTitle, let company = user.company {
                                     Text("\(jobTitle) at \(company)")
                                         .font(.subheadline)
                                         .foregroundColor(.gray)
@@ -151,7 +154,7 @@ struct ProfileView: View {
                                         .foregroundColor(.gray)
                                 }
                                 
-                                if let city = currentUser.city, let state = currentUser.state {
+                                if let city = user.city, let state = user.state {
                                     Text("\(city), \(state)")
                                         .font(.subheadline)
                                         .foregroundColor(.gray)
@@ -170,8 +173,8 @@ struct ProfileView: View {
                         
                         // Quick Stats
                         HStack(spacing: 30) {
-                            if let currentUser = userRepository.currentUser {
-                                if let careerField = currentUser.careerField {
+                            if let user = displayedUser ?? userRepository.currentUser {
+                                if let careerField = user.careerField {
                                     InfoColumn(title: "Industry", value: careerField)
                                 } else {
                                     InfoColumn(title: "Industry", value: "Not specified")
@@ -179,7 +182,7 @@ struct ProfileView: View {
                                 
                                 InfoColumn(title: "Experience", value: yearsExperience)
                                 
-                                if let status = currentUser.status {
+                                if let status = user.status {
                                     InfoColumn(title: "Status", value: status)
                                 } else {
                                     InfoColumn(title: "Status", value: "Not specified")
@@ -198,17 +201,19 @@ struct ProfileView: View {
                                 Text("About")
                                     .font(.headline)
                                 Spacer()
-                                Button(action: {
-                                    showBioEditSheet = true
-                                }) {
-                                    Image(systemName: "pencil")
-                                        .foregroundColor(.black)
+                                if isCurrentUserProfile {
+                                    Button(action: {
+                                        showBioEditSheet = true
+                                    }) {
+                                        Image(systemName: "pencil")
+                                            .foregroundColor(.black)
+                                    }
                                 }
                             }
                             .padding(.horizontal, 20)
                             
-                            if let currentUser = userRepository.currentUser {
-                                Text(currentUser.bio ?? "No bio available")
+                            if let user = displayedUser ?? userRepository.currentUser {
+                                Text(user.bio ?? "No bio available")
                                     .font(.subheadline)
                                     .foregroundColor(.gray)
                                     .padding(.horizontal, 20)
@@ -256,9 +261,9 @@ struct ProfileView: View {
                                         Text("Initiated")
                                             .font(.subheadline)
                                             .fontWeight(.medium)
-                                        if let currentUser = userRepository.currentUser,
-                                           let semester = currentUser.semester,
-                                           let year = currentUser.year {
+                                        if let user = displayedUser ?? userRepository.currentUser,
+                                           let semester = user.semester,
+                                           let year = user.year {
                                             // Convert semester to abbreviated form and year to 'YY format
                                             let abbreviatedSemester = semester == "Fall" ? "FA" : "SPR"
                                             let abbreviatedYear = "'\(year.suffix(2))"
@@ -276,8 +281,8 @@ struct ProfileView: View {
                                         Text("Line #")
                                             .font(.subheadline)
                                             .fontWeight(.medium)
-                                        if let currentUser = userRepository.currentUser,
-                                           let lineNumber = currentUser.lineNumber {
+                                        if let user = displayedUser ?? userRepository.currentUser,
+                                           let lineNumber = user.lineNumber {
                                             Text(lineNumber)
                                                 .font(.subheadline)
                                                 .foregroundColor(.gray)
@@ -357,7 +362,9 @@ struct ProfileView: View {
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 10) {
-                                    if let userInterests = userRepository.currentUser?.interests, !userInterests.isEmpty {
+                                    if let user = displayedUser ?? userRepository.currentUser,
+                                       let userInterests = user.interests,
+                                       !userInterests.isEmpty {
                                         ForEach(userInterests, id: \.self) { interest in
                                             Text(interest)
                                                 .font(.subheadline)
@@ -400,9 +407,9 @@ struct ProfileView: View {
                             }
                             .padding(.top, 20)
                             
-                            if let currentUser = userRepository.currentUser {
+                            if let user = displayedUser ?? userRepository.currentUser {
                                 HStack(spacing: 15) {
-                                    if let linkedInURL = currentUser.linkedInURL {
+                                    if let linkedInURL = user.linkedInURL {
                                         Link(destination: URL(string: linkedInURL)!) {
                                             VStack(spacing: 4) {
                                                 Image(systemName: "person.2.fill")
@@ -468,19 +475,21 @@ struct ProfileView: View {
                         .padding(.horizontal, 20)
                         
                         // Logout Button
-                        Button(action: {
-                            showLogoutAlert = true
-                        }) {
-                            Text("Logout")
-                                .fontWeight(.medium)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.red)
-                                .cornerRadius(10)
+                        if isCurrentUserProfile {
+                            Button(action: {
+                                showLogoutAlert = true
+                            }) {
+                                Text("Logout")
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(Color.red)
+                                    .cornerRadius(10)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 30)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 30)
                     }
                 }
             }
@@ -521,14 +530,17 @@ struct ProfileView: View {
             Text("Are you sure you want to log out?")
         }
         .task {
+            await fetchUserData()
             await fetchUserPosts()
         }
         .onChange(of: displayedUserId) { _ in
             Task {
+                await fetchUserData()
                 await fetchUserPosts()
             }
         }
         .refreshable {
+            await fetchUserData()
             await fetchUserPosts()
         }
         .sheet(isPresented: $showLinkedInEditSheet) {
@@ -570,7 +582,7 @@ struct ProfileView: View {
                         Button("Save") {
                             Task {
                                 do {
-                                    if var user = userRepository.currentUser {
+                                    if var user = displayedUser ?? userRepository.currentUser {
                                         // Format the URL properly before saving
                                         var formattedURL = newLinkedInURL.trimmingCharacters(in: .whitespacesAndNewlines)
                                         
@@ -604,7 +616,7 @@ struct ProfileView: View {
             }
         }
         .sheet(isPresented: $showBioEditSheet) {
-            BioEditView(userRepository: userRepository, currentBio: userRepository.currentUser?.bio)
+            BioEditView(userRepository: userRepository, currentBio: displayedUser?.bio)
         }
         .sheet(isPresented: $showInterestsEditSheet) {
             InterestsEditView(interests: $interests, userRepository: userRepository)
@@ -612,12 +624,12 @@ struct ProfileView: View {
     }
     
     private func uploadProfileImage(_ image: UIImage) async {
-        guard let userId = userRepository.currentUser?.id else { return }
+        guard let userId = displayedUser?.id ?? userRepository.currentUser?.id else { return }
         
         isUploading = true
         do {
             let imageURL = try await ImageService.shared.uploadProfileImage(image, userId: userId)
-            if var user = userRepository.currentUser {
+            if var user = displayedUser ?? userRepository.currentUser {
                 user.profileImageURL = imageURL.absoluteString
                 try await userRepository.updateUser(user)
             }
@@ -643,6 +655,26 @@ struct ProfileView: View {
             await MainActor.run {
                 showError = true
                 errorMessage = "Failed to load posts: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    private func fetchUserData() async {
+        guard !displayedUserId.isEmpty else { return }
+        
+        do {
+            print("Fetching user data for: \(displayedUserId)")
+            if let user = try await userRepository.getUser(withId: displayedUserId) {
+                await MainActor.run {
+                    self.displayedUser = user
+                }
+                print("Successfully fetched user data")
+            }
+        } catch {
+            print("Error fetching user data: \(error)")
+            await MainActor.run {
+                showError = true
+                errorMessage = "Failed to load user data: \(error.localizedDescription)"
             }
         }
     }
