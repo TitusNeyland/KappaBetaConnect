@@ -38,6 +38,7 @@ struct ProfileView: View {
     @State private var showLinkedInEditSheet = false
     @State private var newLinkedInURL = ""
     @State private var showBioEditSheet = false
+    @State private var showInterestsEditSheet = false
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var isUploading = false
@@ -47,8 +48,7 @@ struct ProfileView: View {
     let lineName = "INDEUCED IN2ENT"
     let shipName = "12 INVADERS"
     let positions = ["Assistant Secretary"]
-    let skills = ["iOS Development", "Swift", "SwiftUI", "UI/UX Design", "Project Management"]
-    let interests = ["Technology", "Gaming", "Art", "Travel"]
+    @State private var interests: [String] = []
     let bio = "Passionate software engineer with a focus on iOS development. Creating innovative solutions and mentoring junior developers. Always excited to learn new technologies and contribute to meaningful projects."
     let instagram = "@username"
     let twitter = "@username"
@@ -190,7 +190,7 @@ struct ProfileView: View {
                                     showBioEditSheet = true
                                 }) {
                                     Image(systemName: "pencil")
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(.black)
                                 }
                             }
                             .padding(.horizontal, 20)
@@ -328,42 +328,38 @@ struct ProfileView: View {
                         }
                         .padding(.vertical, 10)
                         
-                        // Skills Section
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Skills & Expertise")
-                                .font(.headline)
-                                .padding(.horizontal, 20)
-                            
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 10) {
-                                    ForEach(skills, id: \.self) { skill in
-                                        Text(skill)
-                                            .font(.subheadline)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(Color.gray.opacity(0.1))
-                                            .cornerRadius(15)
-                                    }
-                                }
-                                .padding(.horizontal, 20)
-                            }
-                        }
-                        
                         // Interests Section
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Interests & Hobbies")
-                                .font(.headline)
-                                .padding(.horizontal, 20)
+                            HStack {
+                                Text("Interests & Hobbies")
+                                    .font(.headline)
+                                Spacer()
+                                Button(action: {
+                                    showInterestsEditSheet = true
+                                }) {
+                                    Image(systemName: "plus.circle.fill")
+                                        .foregroundColor(.black)
+                                }
+                            }
+                            .padding(.horizontal, 20)
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 10) {
-                                    ForEach(interests, id: \.self) { interest in
-                                        Text(interest)
+                                    if let userInterests = userRepository.currentUser?.interests, !userInterests.isEmpty {
+                                        ForEach(userInterests, id: \.self) { interest in
+                                            Text(interest)
+                                                .font(.subheadline)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 6)
+                                                .background(Color.gray.opacity(0.1))
+                                                .cornerRadius(15)
+                                        }
+                                    } else {
+                                        Text("Add your interests here")
                                             .font(.subheadline)
+                                            .foregroundColor(.gray)
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 6)
-                                            .background(Color.gray.opacity(0.1))
-                                            .cornerRadius(15)
                                     }
                                 }
                                 .padding(.horizontal, 20)
@@ -595,6 +591,9 @@ struct ProfileView: View {
         .sheet(isPresented: $showBioEditSheet) {
             BioEditView(userRepository: userRepository, currentBio: userRepository.currentUser?.bio)
         }
+        .sheet(isPresented: $showInterestsEditSheet) {
+            InterestsEditView(interests: $interests, userRepository: userRepository)
+        }
     }
     
     private func uploadProfileImage(_ image: UIImage) async {
@@ -674,6 +673,134 @@ struct FlowLayout<Content: View>: View {
                         return result
                     }
             }
+        }
+    }
+}
+
+struct InterestsEditView: View {
+    @Binding var interests: [String]
+    @Environment(\.dismiss) private var dismiss
+    @State private var newInterest = ""
+    @State private var selectedInterests: Set<String> = []
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @ObservedObject var userRepository: UserRepository
+    
+    private let predefinedInterests = [
+        "Technology", "Gaming", "Art", "Travel", "Music", "Sports",
+        "Reading", "Cooking", "Photography", "Fitness", "Movies",
+        "Hiking", "Dancing", "Writing", "Coding", "Design",
+        "Entrepreneurship", "Volunteering", "Fashion", "Cars"
+    ]
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                // Custom Interest Input
+                HStack {
+                    TextField("Add custom interest", text: $newInterest)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    
+                    Button(action: addCustomInterest) {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundColor(.black)
+                            .font(.title2)
+                    }
+                    .disabled(newInterest.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                .padding(.horizontal)
+                
+                // Predefined Interests
+                ScrollView {
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], spacing: 10) {
+                        ForEach(predefinedInterests, id: \.self) { interest in
+                            InterestToggleButton(
+                                interest: interest,
+                                isSelected: selectedInterests.contains(interest),
+                                action: { toggleInterest(interest) }
+                            )
+                        }
+                    }
+                    .padding()
+                }
+            }
+            .navigationTitle("Edit Interests")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        saveInterests()
+                    }
+                }
+            }
+            .onAppear {
+                // Initialize selected interests with current interests
+                if let userInterests = userRepository.currentUser?.interests {
+                    selectedInterests = Set(userInterests)
+                }
+            }
+        }
+    }
+    
+    private func addCustomInterest() {
+        let trimmedInterest = newInterest.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedInterest.isEmpty && !selectedInterests.contains(trimmedInterest) {
+            selectedInterests.insert(trimmedInterest)
+            newInterest = ""
+        }
+    }
+    
+    private func toggleInterest(_ interest: String) {
+        if selectedInterests.contains(interest) {
+            selectedInterests.remove(interest)
+        } else {
+            selectedInterests.insert(interest)
+        }
+    }
+    
+    private func saveInterests() {
+        Task {
+            do {
+                if var user = userRepository.currentUser {
+                    user.interests = Array(selectedInterests)
+                    try await userRepository.updateUser(user)
+                    dismiss()
+                }
+            } catch {
+                showError = true
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+}
+
+struct InterestToggleButton: View {
+    let interest: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(interest)
+                .font(.subheadline)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(isSelected ? Color.yellow.opacity(0.2) : Color.gray.opacity(0.1))
+                .foregroundColor(isSelected ? .orange : .primary)
+                .cornerRadius(15)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 15)
+                        .stroke(isSelected ? Color.orange : Color.clear, lineWidth: 1)
+                )
         }
     }
 } 
