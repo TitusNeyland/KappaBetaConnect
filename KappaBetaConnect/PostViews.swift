@@ -299,33 +299,39 @@ struct PostUserInfoView: View {
     
     var body: some View {
         HStack {
-            if let profileImageURL = profileImageURL,
-               let url = URL(string: profileImageURL) {
-                AsyncImage(url: url) { image in
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } placeholder: {
-                    ProgressView()
-                }
-                .frame(width: 40, height: 40)
-                .clipShape(Circle())
-            } else {
-                Circle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 40, height: 40)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .foregroundColor(.gray)
-                    )
-            }
+            NavigationLink(destination: ProfileView(userId: post.authorId)) {
+                HStack {
+                    // Profile Image
+                    if let profileImageURL = profileImageURL,
+                       let url = URL(string: profileImageURL) {
+                        AsyncImage(url: url) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        } placeholder: {
+                            ProgressView()
+                        }
+                        .frame(width: 40, height: 40)
+                        .clipShape(Circle())
+                    } else {
+                        Circle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 40, height: 40)
+                            .overlay(
+                                Image(systemName: "person.fill")
+                                    .foregroundColor(.gray)
+                            )
+                    }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(post.authorName)
-                    .font(.headline)
-                Text(post.timestamp.formatted(date: .abbreviated, time: .shortened))
-                    .font(.caption)
-                    .foregroundColor(.gray)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(post.authorName)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        Text(post.timestamp.formatted(date: .abbreviated, time: .shortened))
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                }
             }
             
             Spacer()
