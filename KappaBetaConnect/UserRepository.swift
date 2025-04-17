@@ -186,6 +186,7 @@ class UserRepository: ObservableObject {
         if let jobTitle = user.jobTitle { dict["jobTitle"] = jobTitle }
         if let company = user.company { dict["company"] = company }
         if let bio = user.bio { dict["bio"] = bio }
+        if let interests = user.interests { dict["interests"] = interests }
         if let profileImageURL = user.profileImageURL { dict["profileImageURL"] = profileImageURL }
         if let linkedInURL = user.linkedInURL { dict["linkedInURL"] = linkedInURL }
         if let lineNumber = user.lineNumber { dict["lineNumber"] = lineNumber }
@@ -228,6 +229,7 @@ class UserRepository: ObservableObject {
             jobTitle: dict["jobTitle"] as? String,
             company: dict["company"] as? String,
             bio: dict["bio"] as? String,
+            interests: dict["interests"] as? [String],
             lineNumber: dict["lineNumber"] as? String,
             semester: dict["semester"] as? String,
             year: dict["year"] as? String,

@@ -48,7 +48,7 @@ struct ProfileView: View {
     let lineName = "INDEUCED IN2ENT"
     let shipName = "12 INVADERS"
     let positions = ["Assistant Secretary"]
-    @State private var interests: [String] = ["Technology", "Gaming", "Art", "Travel"]
+    @State private var interests: [String] = []
     let bio = "Passionate software engineer with a focus on iOS development. Creating innovative solutions and mentoring junior developers. Always excited to learn new technologies and contribute to meaningful projects."
     let instagram = "@username"
     let twitter = "@username"
@@ -345,13 +345,21 @@ struct ProfileView: View {
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 10) {
-                                    ForEach(interests, id: \.self) { interest in
-                                        Text(interest)
+                                    if let userInterests = userRepository.currentUser?.interests, !userInterests.isEmpty {
+                                        ForEach(userInterests, id: \.self) { interest in
+                                            Text(interest)
+                                                .font(.subheadline)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 6)
+                                                .background(Color.gray.opacity(0.1))
+                                                .cornerRadius(15)
+                                        }
+                                    } else {
+                                        Text("Add your interests here")
                                             .font(.subheadline)
+                                            .foregroundColor(.gray)
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 6)
-                                            .background(Color.gray.opacity(0.1))
-                                            .cornerRadius(15)
                                     }
                                 }
                                 .padding(.horizontal, 20)
@@ -584,7 +592,7 @@ struct ProfileView: View {
             BioEditView(userRepository: userRepository, currentBio: userRepository.currentUser?.bio)
         }
         .sheet(isPresented: $showInterestsEditSheet) {
-            InterestsEditView(interests: $interests)
+            InterestsEditView(interests: $interests, userRepository: userRepository)
         }
     }
     
@@ -674,6 +682,9 @@ struct InterestsEditView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var newInterest = ""
     @State private var selectedInterests: Set<String> = []
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @ObservedObject var userRepository: UserRepository
     
     private let predefinedInterests = [
         "Technology", "Gaming", "Art", "Travel", "Music", "Sports",
@@ -727,26 +738,23 @@ struct InterestsEditView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        // Add selected predefined interests
-                        let newInterests = Array(selectedInterests)
-                        interests.append(contentsOf: newInterests)
-                        // Remove duplicates
-                        interests = Array(Set(interests))
-                        dismiss()
+                        saveInterests()
                     }
                 }
             }
             .onAppear {
                 // Initialize selected interests with current interests
-                selectedInterests = Set(interests)
+                if let userInterests = userRepository.currentUser?.interests {
+                    selectedInterests = Set(userInterests)
+                }
             }
         }
     }
     
     private func addCustomInterest() {
         let trimmedInterest = newInterest.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmedInterest.isEmpty && !interests.contains(trimmedInterest) {
-            interests.append(trimmedInterest)
+        if !trimmedInterest.isEmpty && !selectedInterests.contains(trimmedInterest) {
+            selectedInterests.insert(trimmedInterest)
             newInterest = ""
         }
     }
@@ -754,9 +762,23 @@ struct InterestsEditView: View {
     private func toggleInterest(_ interest: String) {
         if selectedInterests.contains(interest) {
             selectedInterests.remove(interest)
-            interests.removeAll { $0 == interest }
         } else {
             selectedInterests.insert(interest)
+        }
+    }
+    
+    private func saveInterests() {
+        Task {
+            do {
+                if var user = userRepository.currentUser {
+                    user.interests = Array(selectedInterests)
+                    try await userRepository.updateUser(user)
+                    dismiss()
+                }
+            } catch {
+                showError = true
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }
