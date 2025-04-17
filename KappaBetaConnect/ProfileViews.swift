@@ -47,7 +47,6 @@ struct ProfileView: View {
     let lineName = "INDEUCED IN2ENT"
     let shipName = "12 INVADERS"
     let positions = ["Assistant Secretary"]
-    let skills = ["iOS Development", "Swift", "SwiftUI", "UI/UX Design", "Project Management"]
     let interests = ["Technology", "Gaming", "Art", "Travel"]
     let bio = "Passionate software engineer with a focus on iOS development. Creating innovative solutions and mentoring junior developers. Always excited to learn new technologies and contribute to meaningful projects."
     let instagram = "@username"
@@ -327,27 +326,6 @@ struct ProfileView: View {
                             .padding(.horizontal, 20)
                         }
                         .padding(.vertical, 10)
-                        
-                        // Skills Section
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Skills & Expertise")
-                                .font(.headline)
-                                .padding(.horizontal, 20)
-                            
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 10) {
-                                    ForEach(skills, id: \.self) { skill in
-                                        Text(skill)
-                                            .font(.subheadline)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(Color.gray.opacity(0.1))
-                                            .cornerRadius(15)
-                                    }
-                                }
-                                .padding(.horizontal, 20)
-                            }
-                        }
                         
                         // Interests Section
                         VStack(alignment: .leading, spacing: 10) {
