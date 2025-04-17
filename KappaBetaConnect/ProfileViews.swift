@@ -338,7 +338,7 @@ struct ProfileView: View {
                                     showInterestsEditSheet = true
                                 }) {
                                     Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(.black)
                                 }
                             }
                             .padding(.horizontal, 20)
@@ -692,7 +692,7 @@ struct InterestsEditView: View {
                     
                     Button(action: addCustomInterest) {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundColor(.blue)
+                            .foregroundColor(.black)
                             .font(.title2)
                     }
                     .disabled(newInterest.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
