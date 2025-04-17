@@ -794,12 +794,12 @@ struct InterestToggleButton: View {
                 .font(.subheadline)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(isSelected ? Color.blue.opacity(0.2) : Color.gray.opacity(0.1))
-                .foregroundColor(isSelected ? .blue : .primary)
+                .background(isSelected ? Color.yellow.opacity(0.2) : Color.gray.opacity(0.1))
+                .foregroundColor(isSelected ? .orange : .primary)
                 .cornerRadius(15)
                 .overlay(
                     RoundedRectangle(cornerRadius: 15)
-                        .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 1)
+                        .stroke(isSelected ? Color.orange : Color.clear, lineWidth: 1)
                 )
         }
     }
