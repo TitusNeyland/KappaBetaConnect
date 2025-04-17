@@ -56,27 +56,13 @@ struct SignUpView: View {
                                     .stroke(Color(.systemGray4), lineWidth: 1)
                             )
                             
-                            TextField("First Name", text: $userData.firstName)
-                                .textFieldStyle(.plain)
-                                .frame(minHeight: 55)
-                                .font(.system(size: 18))
-                                .padding(.horizontal, 12)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color(.systemGray4), lineWidth: 1)
-                                )
+                            CustomTextField(text: $userData.firstName, placeholder: "First Name", keyboardType: .default, textContentType: .givenName, allowWhitespace: false, autoCapitalizeFirstLetter: true)
+                                .customTextField()
                         }
                         
                         HStack(spacing: 10) {
-                            TextField("Last Name", text: $userData.lastName)
-                                .textFieldStyle(.plain)
-                                .frame(minHeight: 55)
-                                .font(.system(size: 18))
-                                .padding(.horizontal, 12)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color(.systemGray4), lineWidth: 1)
-                                )
+                            CustomTextField(text: $userData.lastName, placeholder: "Last Name", keyboardType: .default, textContentType: .familyName, allowWhitespace: false, autoCapitalizeFirstLetter: true)
+                                .customTextField()
                             
                             // Suffix Picker
                             Picker("", selection: $userData.suffix) {
@@ -108,15 +94,8 @@ struct SignUpView: View {
                         .padding(.top, 30)
                     
                     VStack(spacing: 15) {
-                        TextField("City", text: $userData.city)
-                            .textFieldStyle(.plain)
-                            .frame(minHeight: 55)
-                            .font(.system(size: 18))
-                            .padding(.horizontal, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(.systemGray4), lineWidth: 1)
-                            )
+                        CustomTextField(text: $userData.city, placeholder: "City", keyboardType: .default, textContentType: .addressCity, autoCapitalizeFirstLetter: true, autoCapitalizeWords: true)
+                            .customTextField()
                         
                         // State Picker
                         HStack {
@@ -152,28 +131,11 @@ struct SignUpView: View {
                         .padding(.top, 30)
                     
                     VStack(spacing: 15) {
-                        TextField("Email", text: $userData.email)
-                            .textFieldStyle(.plain)
-                            .frame(minHeight: 55)
-                            .font(.system(size: 18))
-                            .padding(.horizontal, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(.systemGray4), lineWidth: 1)
-                            )
-                            .keyboardType(.emailAddress)
-                            .autocapitalization(.none)
+                        CustomTextField(text: $userData.email, placeholder: "Email", keyboardType: .emailAddress, textContentType: .emailAddress)
+                            .customTextField()
                         
-                        TextField("Phone Number", text: $userData.phoneNumber)
-                            .textFieldStyle(.plain)
-                            .frame(minHeight: 55)
-                            .font(.system(size: 18))
-                            .padding(.horizontal, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(.systemGray4), lineWidth: 1)
-                            )
-                            .keyboardType(.phonePad)
+                        CustomTextField(text: $userData.phoneNumber, placeholder: "Phone Number", keyboardType: .phonePad, textContentType: .telephoneNumber)
+                            .customTextField()
                     }
                     .padding(.horizontal, 30)
                 }

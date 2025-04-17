@@ -528,7 +528,7 @@ struct ProfileView: View {
                         .padding(.top)
                     
                     TextField("https://linkedin.com/in/username", text: $newLinkedInURL)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .customTextField()
                         .autocapitalization(.none)
                         .keyboardType(.URL)
                         .padding(.horizontal)

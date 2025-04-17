@@ -24,13 +24,8 @@ struct PasswordSetupView: View {
                 VStack(spacing: 15) {
                     // Password Field
                     ZStack(alignment: .trailing) {
-                        if showPassword {
-                            TextField("Password", text: $password)
-                                .customTextField()
-                        } else {
-                            SecureField("Password", text: $password)
-                                .customTextField()
-                        }
+                        CustomTextField(text: $password, placeholder: "Password", textContentType: .newPassword, isSecure: !showPassword)
+                            .customTextField()
                         
                         Button(action: {
                             showPassword.toggle()
@@ -43,13 +38,8 @@ struct PasswordSetupView: View {
                     
                     // Confirm Password Field
                     ZStack(alignment: .trailing) {
-                        if showConfirmPassword {
-                            TextField("Confirm Password", text: $confirmPassword)
-                                .customTextField()
-                        } else {
-                            SecureField("Confirm Password", text: $confirmPassword)
-                                .customTextField()
-                        }
+                        CustomTextField(text: $confirmPassword, placeholder: "Confirm Password", textContentType: .newPassword, isSecure: !showConfirmPassword)
+                            .customTextField()
                         
                         Button(action: {
                             showConfirmPassword.toggle()

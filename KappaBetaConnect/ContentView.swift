@@ -24,10 +24,12 @@ struct ContentView: View {
                     }
                 }
             }
+            .animation(.easeInOut(duration: 0.3), value: isShowingSplash)
+            .animation(.easeInOut(duration: 0.3), value: authManager.isAuthenticated)
             .onAppear {
                 // Automatically dismiss splash screen after 5 seconds
                 DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-                    withAnimation(.easeOut(duration: 0.5)) {
+                    withAnimation {
                         isShowingSplash = false
                     }
                 }

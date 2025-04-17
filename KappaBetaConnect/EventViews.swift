@@ -423,7 +423,7 @@ struct EditEventView: View {
                         Text("Event Name")
                             .foregroundColor(.gray)
                         TextField("Enter event name", text: $eventName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .customTextField()
                     }
                     
                     // Date and Time
@@ -439,7 +439,7 @@ struct EditEventView: View {
                         Text("Location")
                             .foregroundColor(.gray)
                         TextField("Enter location", text: $location)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .customTextField()
                     }
                     
                     // Event Link
@@ -447,7 +447,7 @@ struct EditEventView: View {
                         Text("Event Link")
                             .foregroundColor(.gray)
                         TextField("Enter event link", text: $eventLink)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .customTextField()
                             .keyboardType(.URL)
                             .autocapitalization(.none)
                     }
@@ -469,7 +469,7 @@ struct EditEventView: View {
                         Text("Hashtags")
                             .foregroundColor(.gray)
                         TextField("Enter hashtags (separated by spaces)", text: $hashtags)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .customTextField()
                     }
                     
                     // Update Event Button

@@ -460,7 +460,7 @@ struct CommentsSheetView: View {
                 
                 HStack {
                     TextField("Add a comment...", text: $newComment)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .customTextField()
                     
                     Button(action: onComment) {
                         Text("Post")

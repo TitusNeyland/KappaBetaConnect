@@ -39,15 +39,8 @@ struct ProfileSetupView: View {
                         .padding(.top, 10)
                     
                     VStack(spacing: 15) {
-                        TextField("Major", text: $userData.major)
-                            .textFieldStyle(.plain)
-                            .frame(minHeight: 55)
-                            .font(.system(size: 18))
-                            .padding(.horizontal, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(.systemGray4), lineWidth: 1)
-                            )
+                        CustomTextField(text: $userData.major, placeholder: "Major", keyboardType: .default, textContentType: .organizationName, autoCapitalizeFirstLetter: true, autoCapitalizeWords: true)
+                            .customTextField()
                     }
                     .padding(.horizontal, 30)
                 }
@@ -83,25 +76,11 @@ struct ProfileSetupView: View {
                                 .stroke(Color(.systemGray4), lineWidth: 1)
                         )
                         
-                        TextField("Current Job Title", text: $userData.jobTitle)
-                            .textFieldStyle(.plain)
-                            .frame(minHeight: 55)
-                            .font(.system(size: 18))
-                            .padding(.horizontal, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(.systemGray4), lineWidth: 1)
-                            )
+                        CustomTextField(text: $userData.jobTitle, placeholder: "Current Job Title", keyboardType: .default, textContentType: .jobTitle, autoCapitalizeFirstLetter: true, autoCapitalizeWords: true)
+                            .customTextField()
                         
-                        TextField("Company", text: $userData.company)
-                            .textFieldStyle(.plain)
-                            .frame(minHeight: 55)
-                            .font(.system(size: 18))
-                            .padding(.horizontal, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(.systemGray4), lineWidth: 1)
-                            )
+                        CustomTextField(text: $userData.company, placeholder: "Company", keyboardType: .default, textContentType: .organizationName, autoCapitalizeFirstLetter: true, autoCapitalizeWords: true)
+                            .customTextField()
                     }
                     .padding(.horizontal, 30)
                 }

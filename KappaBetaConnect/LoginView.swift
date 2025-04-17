@@ -10,76 +10,86 @@ struct LoginView: View {
     @EnvironmentObject private var authManager: AuthManager
     
     var body: some View {
-        VStack(spacing: 20) {
-            // Logo at the top
-            Image("kblogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 150, height: 150)
-                .padding(.top, 50)
-            
-            // Login form
-            VStack(spacing: 15) {
-                TextField("Email", text: $email)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .autocapitalization(.none)
-                    .keyboardType(.emailAddress)
+        ScrollView {
+            VStack(spacing: 20) {
+                // Logo at the top
+                Image("kblogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 150, height: 150)
+                    .padding(.top, 50)
                 
-                ZStack(alignment: .trailing) {
-                    if showPassword {
-                        TextField("Password", text: $password)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                    } else {
-                        SecureField("Password", text: $password)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                // Login form
+                VStack(spacing: 15) {
+                    CustomTextField(text: $email, placeholder: "Email", keyboardType: .emailAddress, textContentType: .emailAddress)
+                        .customTextField()
+                    
+                    ZStack(alignment: .trailing) {
+                        if showPassword {
+                            CustomTextField(text: $password, placeholder: "Password", isSecure: false)
+                                .customTextField()
+                        } else {
+                            CustomTextField(text: $password, placeholder: "Password", isSecure: true)
+                                .customTextField()
+                        }
+                        
+                        Button(action: {
+                            showPassword.toggle()
+                        }) {
+                            Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.trailing, 8)
                     }
                     
                     Button(action: {
-                        showPassword.toggle()
+                        login()
                     }) {
-                        Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
-                            .foregroundColor(.gray)
+                        if isLoading {
+                            HStack {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                Text("Logging in...")
+                                    .foregroundColor(.white)
+                                    .padding(.leading, 8)
+                            }
+                        } else {
+                            Text("Login")
+                                .foregroundColor(.white)
+                        }
                     }
-                    .padding(.trailing, 8)
-                }
-                
-                Button(action: {
-                    login()
-                }) {
-                    if isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    } else {
-                        Text("Login")
-                            .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.black)
+                    .cornerRadius(10)
+                    .disabled(isLoading)
+                    .animation(.easeInOut, value: isLoading)
+                    
+                    Button("Forgot Password?") {
+                        // Handle forgot password action
                     }
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.black)
-                .cornerRadius(10)
-                .disabled(isLoading)
-                
-                Button("Forgot Password?") {
-                    // Handle forgot password action
-                }
-                .foregroundColor(.gray)
-            }
-            .padding(.horizontal, 30)
-            
-            Spacer()
-            
-            // Updated sign up prompt with navigation
-            HStack {
-                Text("Not a member?")
                     .foregroundColor(.gray)
-                NavigationLink("Sign Up", destination: SignUpView())
-                    .foregroundColor(.black)
-                    .fontWeight(.bold)
+                }
+                .padding(.horizontal, 30)
+                
+                Spacer()
+                
+                // Updated sign up prompt with navigation
+                HStack {
+                    Text("Not a member?")
+                        .foregroundColor(.gray)
+                    NavigationLink("Sign Up", destination: SignUpView())
+                        .foregroundColor(.black)
+                        .fontWeight(.bold)
+                }
+                .padding(.bottom, 20)
             }
-            .padding(.bottom, 20)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Color(.systemBackground))
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
         } message: {
