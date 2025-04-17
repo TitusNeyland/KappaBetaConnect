@@ -190,7 +190,7 @@ struct ProfileView: View {
                                     showBioEditSheet = true
                                 }) {
                                     Image(systemName: "pencil")
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(.black)
                                 }
                             }
                             .padding(.horizontal, 20)
