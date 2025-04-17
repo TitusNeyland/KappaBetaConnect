@@ -20,17 +20,15 @@ struct LoginView: View {
             
             // Login form
             VStack(spacing: 15) {
-                TextField("Email", text: $email)
+                CustomTextField(text: $email, placeholder: "Email", keyboardType: .emailAddress, textContentType: .emailAddress)
                     .customTextField()
-                    .autocapitalization(.none)
-                    .keyboardType(.emailAddress)
                 
                 ZStack(alignment: .trailing) {
                     if showPassword {
-                        TextField("Password", text: $password)
+                        CustomTextField(text: $password, placeholder: "Password", isSecure: false)
                             .customTextField()
                     } else {
-                        SecureField("Password", text: $password)
+                        CustomTextField(text: $password, placeholder: "Password", isSecure: true)
                             .customTextField()
                     }
                     

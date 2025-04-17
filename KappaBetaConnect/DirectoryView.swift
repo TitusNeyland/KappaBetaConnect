@@ -205,10 +205,12 @@ struct FilterSheet: View {
                         get: { filters.industry ?? "" },
                         set: { filters.industry = $0.isEmpty ? nil : $0 }
                     ))
+                    .customTextField()
                     TextField("Company", text: Binding(
                         get: { filters.company ?? "" },
                         set: { filters.company = $0.isEmpty ? nil : $0 }
                     ))
+                    .customTextField()
                 }
                 
                 Section(header: Text("Education")) {
@@ -216,6 +218,7 @@ struct FilterSheet: View {
                         get: { filters.major ?? "" },
                         set: { filters.major = $0.isEmpty ? nil : $0 }
                     ))
+                    .customTextField()
                 }
                 
                 Section(header: Text("Location")) {
@@ -223,10 +226,12 @@ struct FilterSheet: View {
                         get: { filters.city ?? "" },
                         set: { filters.city = $0.isEmpty ? nil : $0 }
                     ))
+                    .customTextField()
                     TextField("State", text: Binding(
                         get: { filters.state ?? "" },
                         set: { filters.state = $0.isEmpty ? nil : $0 }
                     ))
+                    .customTextField()
                 }
             }
             .navigationTitle("Filters")
@@ -244,5 +249,11 @@ struct FilterSheet: View {
                 }
             }
         }
+    }
+}
+
+extension TextFieldStyle where Self == PlainTextFieldStyle {
+    func customTextField() -> some TextFieldStyle {
+        self
     }
 } 
