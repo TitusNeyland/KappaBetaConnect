@@ -7,6 +7,8 @@ struct CustomTextField: UIViewRepresentable {
     var keyboardType: UIKeyboardType = .default
     var textContentType: UITextContentType?
     var isSecure: Bool = false
+    var allowWhitespace: Bool = true
+    var autoCapitalizeFirstLetter: Bool = false
     
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -44,7 +46,22 @@ struct CustomTextField: UIViewRepresentable {
         }
         
         func textFieldDidChangeSelection(_ textField: UITextField) {
+            if let currentText = textField.text, parent.autoCapitalizeFirstLetter && !currentText.isEmpty {
+                let firstLetter = currentText.prefix(1).uppercased()
+                let restOfString = currentText.dropFirst()
+                textField.text = firstLetter + restOfString
+            }
             parent.text = textField.text ?? ""
+        }
+        
+        func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+            if !parent.allowWhitespace {
+                // Prevent whitespace characters
+                if string.contains(" ") {
+                    return false
+                }
+            }
+            return true
         }
     }
 }

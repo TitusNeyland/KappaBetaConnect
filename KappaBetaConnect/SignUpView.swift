@@ -56,12 +56,12 @@ struct SignUpView: View {
                                     .stroke(Color(.systemGray4), lineWidth: 1)
                             )
                             
-                            CustomTextField(text: $userData.firstName, placeholder: "First Name", keyboardType: .default, textContentType: .givenName)
+                            CustomTextField(text: $userData.firstName, placeholder: "First Name", keyboardType: .default, textContentType: .givenName, allowWhitespace: false, autoCapitalizeFirstLetter: true)
                                 .customTextField()
                         }
                         
                         HStack(spacing: 10) {
-                            CustomTextField(text: $userData.lastName, placeholder: "Last Name", keyboardType: .default, textContentType: .familyName)
+                            CustomTextField(text: $userData.lastName, placeholder: "Last Name", keyboardType: .default, textContentType: .familyName, allowWhitespace: false, autoCapitalizeFirstLetter: true)
                                 .customTextField()
                             
                             // Suffix Picker
@@ -94,7 +94,7 @@ struct SignUpView: View {
                         .padding(.top, 30)
                     
                     VStack(spacing: 15) {
-                        CustomTextField(text: $userData.city, placeholder: "City", keyboardType: .default, textContentType: .addressCity)
+                        CustomTextField(text: $userData.city, placeholder: "City", keyboardType: .default, textContentType: .addressCity, autoCapitalizeFirstLetter: true)
                             .customTextField()
                         
                         // State Picker
