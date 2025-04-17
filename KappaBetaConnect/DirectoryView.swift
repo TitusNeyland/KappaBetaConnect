@@ -136,46 +136,53 @@ struct UserCard: View {
     let user: User
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Profile Image
-            if let profileImageURL = user.profileImageURL,
-               let url = URL(string: profileImageURL) {
-                AsyncImage(url: url) { image in
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } placeholder: {
-                    ProgressView()
-                }
-                .frame(width: 40, height: 40)
-                .clipShape(Circle())
-            } else {
-                Circle()
-                    .fill(Color.gray.opacity(0.3))
+        NavigationLink(destination: ProfileView(userId: user.id)) {
+            HStack(spacing: 12) {
+                // Profile Image
+                if let profileImageURL = user.profileImageURL,
+                   let url = URL(string: profileImageURL) {
+                    AsyncImage(url: url) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } placeholder: {
+                        ProgressView()
+                    }
                     .frame(width: 40, height: 40)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .foregroundColor(.gray)
-                    )
-            }
-            
-            // User Info
-            VStack(alignment: .leading, spacing: 8) {
-                Text("\(user.firstName) \(user.lastName)")
-                    .font(.headline)
-                
-                if let city = user.city, let state = user.state {
-                    Text("\(city), \(state)")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                    .clipShape(Circle())
+                } else {
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 40, height: 40)
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.gray)
+                        )
                 }
+                
+                // User Info
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("\(user.firstName) \(user.lastName)")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    if let city = user.city, let state = user.state {
+                        Text("\(city), \(state)")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.gray)
+                    .font(.system(size: 14, weight: .semibold))
             }
-            
-            Spacer()
+            .padding()
+            .background(Color(.secondarySystemGroupedBackground))
+            .cornerRadius(10)
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(10)
     }
 }
 
