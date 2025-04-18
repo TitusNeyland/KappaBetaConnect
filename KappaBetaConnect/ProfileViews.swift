@@ -57,6 +57,123 @@ struct EnlargedImageView: View {
     }
 }
 
+struct ManageProfileView: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var userRepository: UserRepository
+    @State private var firstName = ""
+    @State private var lastName = ""
+    @State private var email = ""
+    @State private var phoneNumber = ""
+    @State private var major = ""
+    @State private var city = ""
+    @State private var state = ""
+    @State private var careerField = ""
+    @State private var company = ""
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var isLoading = false
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Personal Information")) {
+                    TextField("First Name", text: $firstName)
+                    TextField("Last Name", text: $lastName)
+                    TextField("Email", text: $email)
+                        .textContentType(.emailAddress)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                    TextField("Phone Number", text: $phoneNumber)
+                        .textContentType(.telephoneNumber)
+                        .keyboardType(.phonePad)
+                    TextField("Major", text: $major)
+                }
+                
+                Section(header: Text("Location")) {
+                    TextField("City", text: $city)
+                    TextField("State", text: $state)
+                }
+                
+                Section(header: Text("Career")) {
+                    TextField("Career Field", text: $careerField)
+                    TextField("Company", text: $company)
+                }
+            }
+            .navigationTitle("Manage Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        saveChanges()
+                    }
+                    .disabled(isLoading)
+                }
+            }
+            .onAppear {
+                loadCurrentUserData()
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private func loadCurrentUserData() {
+        if let user = userRepository.currentUser {
+            firstName = user.firstName
+            lastName = user.lastName
+            email = user.email
+            phoneNumber = user.phoneNumber
+            major = user.major ?? ""
+            city = user.city ?? ""
+            state = user.state ?? ""
+            careerField = user.careerField ?? ""
+            company = user.company ?? ""
+        }
+    }
+    
+    private func saveChanges() {
+        guard !firstName.isEmpty, !lastName.isEmpty, !email.isEmpty, !phoneNumber.isEmpty else {
+            showError = true
+            errorMessage = "Please fill in all required fields"
+            return
+        }
+        
+        isLoading = true
+        
+        Task {
+            do {
+                if var user = userRepository.currentUser {
+                    user.firstName = firstName
+                    user.lastName = lastName
+                    user.email = email
+                    user.phoneNumber = phoneNumber
+                    user.major = major.isEmpty ? nil : major
+                    user.city = city.isEmpty ? nil : city
+                    user.state = state.isEmpty ? nil : state
+                    user.careerField = careerField.isEmpty ? nil : careerField
+                    user.company = company.isEmpty ? nil : company
+                    
+                    try await userRepository.updateUser(user)
+                    dismiss()
+                }
+            } catch {
+                showError = true
+                errorMessage = error.localizedDescription
+            }
+            isLoading = false
+        }
+    }
+}
+
 struct ProfileView: View {
     @StateObject private var postRepository = PostRepository()
     @StateObject private var userRepository = UserRepository()
@@ -82,6 +199,7 @@ struct ProfileView: View {
     @State private var showEnlargedImage = false
     @State private var enlargedImage: Image?
     @State private var bioDidSave = false
+    @State private var showManageProfile = false
     
     // Optional parameter to view a different user's profile
     var userId: String?
@@ -544,21 +662,36 @@ struct ProfileView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
                         
-                        // Logout Button
+                        // Manage Profile Button
                         if isCurrentUserProfile {
-                            Button(action: {
-                                showLogoutAlert = true
-                            }) {
-                                Text("Logout")
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(Color.red)
-                                    .cornerRadius(10)
+                            VStack(spacing: 10) {
+                                Button(action: {
+                                    showManageProfile = true
+                                }) {
+                                    Text("Manage Profile")
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(Color.blue)
+                                        .cornerRadius(10)
+                                }
+                                .padding(.horizontal, 20)
+                                
+                                Button(action: {
+                                    showLogoutAlert = true
+                                }) {
+                                    Text("Logout")
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(Color.red)
+                                        .cornerRadius(10)
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.bottom, 30)
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 30)
                         }
                     }
                 }
@@ -724,6 +857,9 @@ struct ProfileView: View {
                     socialMediaDidSave = false
                 }
             }
+        }
+        .sheet(isPresented: $showManageProfile) {
+            ManageProfileView(userRepository: userRepository)
         }
     }
     
