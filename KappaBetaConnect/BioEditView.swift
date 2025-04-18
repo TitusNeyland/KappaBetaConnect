@@ -6,10 +6,12 @@ struct BioEditView: View {
     @State private var newBio: String
     @State private var showError = false
     @State private var errorMessage = ""
+    @Binding var didSave: Bool
     
-    init(userRepository: UserRepository, currentBio: String?) {
+    init(userRepository: UserRepository, currentBio: String?, didSave: Binding<Bool>) {
         self.userRepository = userRepository
         _newBio = State(initialValue: currentBio ?? "")
+        _didSave = didSave
     }
     
     var body: some View {
@@ -50,6 +52,7 @@ struct BioEditView: View {
                                 if var user = userRepository.currentUser {
                                     user.bio = newBio.trimmingCharacters(in: .whitespacesAndNewlines)
                                     try await userRepository.updateUser(user)
+                                    didSave = true
                                     dismiss()
                                 }
                             } catch {

@@ -81,6 +81,7 @@ struct ProfileView: View {
     @State private var socialMediaDidSave = false
     @State private var showEnlargedImage = false
     @State private var enlargedImage: Image?
+    @State private var bioDidSave = false
     
     // Optional parameter to view a different user's profile
     var userId: String?
@@ -688,7 +689,16 @@ struct ProfileView: View {
             }
         }
         .sheet(isPresented: $showBioEditSheet) {
-            BioEditView(userRepository: userRepository, currentBio: displayedUser?.bio)
+            BioEditView(userRepository: userRepository, currentBio: displayedUser?.bio, didSave: $bioDidSave)
+        }
+        .onChange(of: showBioEditSheet) { isPresented in
+            if !isPresented && bioDidSave {
+                // Sheet was dismissed and changes were saved
+                Task {
+                    await fetchUserData()
+                    bioDidSave = false
+                }
+            }
         }
         .sheet(isPresented: $showInterestsEditSheet) {
             InterestsEditView(userRepository: userRepository, didSave: $interestsDidSave)
