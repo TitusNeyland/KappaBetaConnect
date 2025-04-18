@@ -48,6 +48,7 @@ struct ProfileView: View {
     @State private var showSocialMediaEditSheet = false
     @State private var selectedSocialMedia: SocialMediaType = .linkedIn
     @State private var newSocialMediaURL = ""
+    @State private var socialMediaDidSave = false
     
     // Optional parameter to view a different user's profile
     var userId: String?
@@ -619,7 +620,16 @@ struct ProfileView: View {
             }
         }
         .sheet(isPresented: $showSocialMediaEditSheet) {
-            SocialMediaEditView(userRepository: userRepository)
+            SocialMediaEditView(userRepository: userRepository, didSave: $socialMediaDidSave)
+        }
+        .onChange(of: showSocialMediaEditSheet) { isPresented in
+            if !isPresented && socialMediaDidSave {
+                // Sheet was dismissed and changes were saved
+                Task {
+                    await fetchUserData()
+                    socialMediaDidSave = false
+                }
+            }
         }
     }
     
@@ -897,6 +907,7 @@ struct SocialMediaEditView: View {
     @State private var facebookURL = ""
     @State private var showError = false
     @State private var errorMessage = ""
+    @Binding var didSave: Bool
     
     var body: some View {
         NavigationView {
@@ -1022,6 +1033,7 @@ struct SocialMediaEditView: View {
                     user.facebookURL = validateAndFormatURL(facebookURL)
                     
                     try await userRepository.updateUser(user)
+                    didSave = true
                     dismiss()
                 }
             } catch {
