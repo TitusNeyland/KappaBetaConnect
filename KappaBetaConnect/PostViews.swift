@@ -37,6 +37,7 @@ struct CreatePostSheet: View {
     @Binding var showError: Bool
     @Binding var errorMessage: String
     @State private var newPostContent = ""
+    var didCreatePost: ((Bool) -> Void)?
     
     private let maxCharacterCount = 500
     
@@ -128,10 +129,12 @@ struct CreatePostSheet: View {
                     authorId: currentUser.id ?? "",
                     authorName: "\(currentUser.firstName) \(currentUser.lastName)"
                 )
+                didCreatePost?(true)
                 dismiss()
             } catch {
                 showError = true
                 errorMessage = error.localizedDescription
+                didCreatePost?(false)
             }
         }
     }
