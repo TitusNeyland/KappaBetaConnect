@@ -81,6 +81,7 @@ struct ProfileView: View {
     @State private var socialMediaDidSave = false
     @State private var showEnlargedImage = false
     @State private var enlargedImage: Image?
+    @State private var bioDidSave = false
     
     // Optional parameter to view a different user's profile
     var userId: String?
@@ -193,7 +194,7 @@ struct ProfileView: View {
                         // Name and Title
                         VStack(spacing: 4) {
                             if let user = displayedUser ?? userRepository.currentUser {
-                                Text("\(user.firstName) \(user.lastName)")
+                                Text("\(user.firstName) \(user.lastName)\(user.suffix != nil ? ", \(user.suffix!)" : "")")
                                     .font(.title2)
                                     .fontWeight(.bold)
                                 
@@ -266,10 +267,45 @@ struct ProfileView: View {
                             .padding(.horizontal, 20)
                             
                             if let user = displayedUser ?? userRepository.currentUser {
-                                Text(user.bio ?? "No bio available")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                                    .padding(.horizontal, 20)
+                                VStack(alignment: .leading, spacing: 12) {
+                                    // Bio
+                                    if let bio = user.bio {
+                                        Text(bio)
+                                            .font(.subheadline)
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    // Contact Information
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        if let major = user.major {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "graduationcap.fill")
+                                                    .foregroundColor(.gray)
+                                                Text("Major: \(major)")
+                                                    .font(.subheadline)
+                                                    .foregroundColor(.gray)
+                                            }
+                                        }
+                                        
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "envelope.fill")
+                                                .foregroundColor(.gray)
+                                            Text("Email: \(user.email)")
+                                                .font(.subheadline)
+                                                .foregroundColor(.gray)
+                                        }
+                                        
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "phone.fill")
+                                                .foregroundColor(.gray)
+                                            Text("Phone: \(user.phoneNumber)")
+                                                .font(.subheadline)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                    .padding(.top, 16)
+                                }
+                                .padding(.horizontal, 20)
                             } else {
                                 Text("Loading...")
                                     .font(.subheadline)
@@ -414,6 +450,7 @@ struct ProfileView: View {
                                 }
                             }
                             .padding(.horizontal, 20)
+                            .padding(.bottom, 8)
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 10) {
@@ -653,7 +690,16 @@ struct ProfileView: View {
             }
         }
         .sheet(isPresented: $showBioEditSheet) {
-            BioEditView(userRepository: userRepository, currentBio: displayedUser?.bio)
+            BioEditView(userRepository: userRepository, currentBio: displayedUser?.bio, didSave: $bioDidSave)
+        }
+        .onChange(of: showBioEditSheet) { isPresented in
+            if !isPresented && bioDidSave {
+                // Sheet was dismissed and changes were saved
+                Task {
+                    await fetchUserData()
+                    bioDidSave = false
+                }
+            }
         }
         .sheet(isPresented: $showInterestsEditSheet) {
             InterestsEditView(userRepository: userRepository, didSave: $interestsDidSave)
