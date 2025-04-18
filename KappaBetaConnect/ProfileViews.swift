@@ -266,10 +266,45 @@ struct ProfileView: View {
                             .padding(.horizontal, 20)
                             
                             if let user = displayedUser ?? userRepository.currentUser {
-                                Text(user.bio ?? "No bio available")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                                    .padding(.horizontal, 20)
+                                VStack(alignment: .leading, spacing: 12) {
+                                    // Bio
+                                    if let bio = user.bio {
+                                        Text(bio)
+                                            .font(.subheadline)
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    // Contact Information
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        if let major = user.major {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "graduationcap.fill")
+                                                    .foregroundColor(.gray)
+                                                Text("Major: \(major)")
+                                                    .font(.subheadline)
+                                                    .foregroundColor(.gray)
+                                            }
+                                        }
+                                        
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "envelope.fill")
+                                                .foregroundColor(.gray)
+                                            Text("Email: \(user.email)")
+                                                .font(.subheadline)
+                                                .foregroundColor(.gray)
+                                        }
+                                        
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "phone.fill")
+                                                .foregroundColor(.gray)
+                                            Text("Phone: \(user.phoneNumber)")
+                                                .font(.subheadline)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                    .padding(.top, 16)
+                                }
+                                .padding(.horizontal, 20)
                             } else {
                                 Text("Loading...")
                                     .font(.subheadline)
