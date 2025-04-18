@@ -44,18 +44,18 @@ struct FeedView: View {
                     Toast(message: "Post uploaded successfully", isShowing: $showToast)
                 }
             }
-            .sheet(isPresented: $showNewPostSheet, onDismiss: {
-                // Show toast when returning from successful post creation
-                if !showError {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                        showToast = true
-                    }
-                }
-            }) {
+            .sheet(isPresented: $showNewPostSheet) {
                 CreatePostSheet(
                     postRepository: postRepository,
                     showError: $showError,
-                    errorMessage: $errorMessage
+                    errorMessage: $errorMessage,
+                    didCreatePost: { success in
+                        if success {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                showToast = true
+                            }
+                        }
+                    }
                 )
             }
             .alert("Error", isPresented: $showError) {
