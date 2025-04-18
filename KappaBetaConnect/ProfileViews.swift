@@ -35,6 +35,11 @@ struct EnlargedImageView: View {
         ZStack {
             Color.black.opacity(0.9)
                 .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.easeOut) {
+                        isPresented = false
+                    }
+                }
             
             VStack {
                 Spacer()
@@ -43,14 +48,6 @@ struct EnlargedImageView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .gesture(
-                        TapGesture()
-                            .onEnded { _ in
-                                withAnimation(.easeOut) {
-                                    isPresented = false
-                                }
-                            }
-                    )
                 
                 Spacer()
             }
