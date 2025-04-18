@@ -4,7 +4,7 @@ struct MainTabView: View {
     @State private var selectedTab = 0
     @EnvironmentObject private var authManager: AuthManager
     
-    let tabs = ["Home", "Feed", "Directory", "Events", "Messages", "Profile"]
+    let tabs = ["Home", "Feed", "Directory", "Events", /*"Messages",*/ "Profile"]
     
     // Add these properties
     @State private var scrollProxy: ScrollViewProxy? = nil
@@ -62,8 +62,8 @@ struct MainTabView: View {
                 EventsView()
                     .tag(3)
                 
-                MessagesView()
-                    .tag(4)
+                /*MessagesView()
+                    .tag(4)*/
                 
                 ProfileView()
                     .environmentObject(authManager)
