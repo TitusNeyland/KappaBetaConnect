@@ -729,6 +729,7 @@ struct ProfileView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
+                        .padding(.bottom, 30)
                         
                         // Manage Profile Button
                         if isCurrentUserProfile {
@@ -745,6 +746,7 @@ struct ProfileView: View {
                                         .cornerRadius(10)
                                 }
                                 .padding(.horizontal, 20)
+                                .padding(.top, 20)
                                 
                                 Button(action: {
                                     showLogoutAlert = true
