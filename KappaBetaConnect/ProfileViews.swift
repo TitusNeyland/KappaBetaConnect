@@ -53,6 +53,7 @@ struct EnlargedImageView: View {
             }
         }
         .transition(.opacity)
+        .navigationBarHidden(true)
     }
 }
 
