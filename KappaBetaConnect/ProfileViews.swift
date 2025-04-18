@@ -39,6 +39,7 @@ struct ProfileView: View {
     @State private var newLinkedInURL = ""
     @State private var showBioEditSheet = false
     @State private var showInterestsEditSheet = false
+    @State private var interestsDidSave = false
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var isUploading = false
@@ -68,7 +69,6 @@ struct ProfileView: View {
     let lineName = "INDEUCED IN2ENT"
     let shipName = "12 INVADERS"
     let positions = ["Assistant Secretary"]
-    @State private var interests: [String] = []
     let bio = "Passionate software engineer with a focus on iOS development. Creating innovative solutions and mentoring junior developers. Always excited to learn new technologies and contribute to meaningful projects."
     let instagram = "@username"
     let twitter = "@username"
@@ -607,7 +607,16 @@ struct ProfileView: View {
             BioEditView(userRepository: userRepository, currentBio: displayedUser?.bio)
         }
         .sheet(isPresented: $showInterestsEditSheet) {
-            InterestsEditView(interests: $interests, userRepository: userRepository)
+            InterestsEditView(userRepository: userRepository, didSave: $interestsDidSave)
+        }
+        .onChange(of: showInterestsEditSheet) { isPresented in
+            if !isPresented && interestsDidSave {
+                // Sheet was dismissed and changes were saved
+                Task {
+                    await fetchUserData()
+                    interestsDidSave = false
+                }
+            }
         }
         .sheet(isPresented: $showSocialMediaEditSheet) {
             SocialMediaEditView(userRepository: userRepository)
@@ -750,13 +759,13 @@ struct FlowLayout<Content: View>: View {
 }
 
 struct InterestsEditView: View {
-    @Binding var interests: [String]
     @Environment(\.dismiss) private var dismiss
-    @State private var newInterest = ""
     @State private var selectedInterests: Set<String> = []
+    @State private var newInterest = ""
     @State private var showError = false
     @State private var errorMessage = ""
     @ObservedObject var userRepository: UserRepository
+    @Binding var didSave: Bool
     
     private let predefinedInterests = [
         "Technology", "Gaming", "Art", "Travel", "Music", "Sports",
@@ -845,6 +854,7 @@ struct InterestsEditView: View {
                 if var user = userRepository.currentUser {
                     user.interests = Array(selectedInterests)
                     try await userRepository.updateUser(user)
+                    didSave = true
                     dismiss()
                 }
             } catch {
