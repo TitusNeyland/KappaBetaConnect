@@ -441,31 +441,48 @@ struct CommentsSheetView: View {
     @Binding var showSheet: Bool
     @Binding var newComment: String
     let onComment: () -> Void
+    @EnvironmentObject private var authManager: AuthManager
+    @State private var showDeleteAlert = false
+    @State private var commentToDelete: Comment?
+    @State private var showError = false
+    @State private var errorMessage = ""
+    let postRepository: PostRepository
+    
+    private func isCurrentUserComment(_ comment: Comment) -> Bool {
+        comment.authorId == authManager.currentUser?.id
+    }
     
     var body: some View {
         NavigationView {
             VStack {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        ForEach(post.comments.reversed()) { comment in
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text(comment.authorName)
-                                        .font(.headline)
-                                    Spacer()
-                                    Text(comment.timestamp.formatted(date: .abbreviated, time: .shortened))
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                }
-                                Text(comment.content)
-                                    .font(.body)
+                List {
+                    ForEach(post.comments.reversed()) { comment in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(comment.authorName)
+                                    .font(.headline)
+                                Spacer()
+                                Text(comment.timestamp.formatted(date: .abbreviated, time: .shortened))
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
                             }
-                            .padding(.horizontal)
-                            Divider()
+                            Text(comment.content)
+                                .font(.body)
+                        }
+                        .padding(.vertical, 4)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            if isCurrentUserComment(comment) {
+                                Button(role: .destructive) {
+                                    commentToDelete = comment
+                                    showDeleteAlert = true
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                         }
                     }
-                    .padding(.vertical)
                 }
+                .listStyle(.plain)
                 
                 HStack {
                     TextField("Add a comment...", text: $newComment)
@@ -487,6 +504,32 @@ struct CommentsSheetView: View {
                         showSheet = false
                     }
                 }
+            }
+            .alert("Delete Comment", isPresented: $showDeleteAlert) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) {
+                    if let comment = commentToDelete {
+                        deleteComment(comment)
+                    }
+                }
+            } message: {
+                Text("Are you sure you want to delete this comment? This action cannot be undone.")
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private func deleteComment(_ comment: Comment) {
+        Task {
+            do {
+                try await postRepository.deleteComment(postId: post.id ?? "", commentId: comment.id ?? "")
+            } catch {
+                showError = true
+                errorMessage = "Failed to delete comment: \(error.localizedDescription)"
             }
         }
     }
@@ -590,7 +633,8 @@ struct PostCard: View {
                 post: post,
                 showSheet: $showCommentSheet,
                 newComment: $newComment,
-                onComment: handleComment
+                onComment: handleComment,
+                postRepository: postRepository
             )
         }
         .sheet(isPresented: $showShareSheet) {
