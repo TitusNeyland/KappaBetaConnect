@@ -40,6 +40,10 @@ struct User: Identifiable, Codable {
     // Optional social info
     var profileImageURL: String?
     var linkedInURL: String?
+    var instagramURL: String?
+    var twitterURL: String?
+    var snapchatURL: String?
+    var facebookURL: String?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -48,7 +52,7 @@ struct User: Identifiable, Codable {
         case careerField, major, jobTitle, company, bio, interests
         case lineNumber, semester, year, status, graduationYear
         case createdAt, updatedAt, isActive
-        case profileImageURL, linkedInURL
+        case profileImageURL, linkedInURL, instagramURL, twitterURL, snapchatURL, facebookURL
     }
     
     init(id: String? = nil, 
@@ -74,6 +78,10 @@ struct User: Identifiable, Codable {
          graduationYear: String? = nil,
          profileImageURL: String? = nil,
          linkedInURL: String? = nil,
+         instagramURL: String? = nil,
+         twitterURL: String? = nil,
+         snapchatURL: String? = nil,
+         facebookURL: String? = nil,
          isActive: Bool = true) {
         
         self.id = id
@@ -99,6 +107,10 @@ struct User: Identifiable, Codable {
         self.graduationYear = graduationYear
         self.profileImageURL = profileImageURL
         self.linkedInURL = linkedInURL
+        self.instagramURL = instagramURL
+        self.twitterURL = twitterURL
+        self.snapchatURL = snapchatURL
+        self.facebookURL = facebookURL
         self.createdAt = Date()
         self.updatedAt = Date()
         self.isActive = isActive

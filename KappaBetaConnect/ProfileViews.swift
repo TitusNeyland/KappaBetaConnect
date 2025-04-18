@@ -39,11 +39,16 @@ struct ProfileView: View {
     @State private var newLinkedInURL = ""
     @State private var showBioEditSheet = false
     @State private var showInterestsEditSheet = false
+    @State private var interestsDidSave = false
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var isUploading = false
     @State private var userPosts: [Post] = []
     @State private var displayedUser: User?
+    @State private var showSocialMediaEditSheet = false
+    @State private var selectedSocialMedia: SocialMediaType = .linkedIn
+    @State private var newSocialMediaURL = ""
+    @State private var socialMediaDidSave = false
     
     // Optional parameter to view a different user's profile
     var userId: String?
@@ -65,75 +70,79 @@ struct ProfileView: View {
     let lineName = "INDEUCED IN2ENT"
     let shipName = "12 INVADERS"
     let positions = ["Assistant Secretary"]
-    @State private var interests: [String] = []
     let bio = "Passionate software engineer with a focus on iOS development. Creating innovative solutions and mentoring junior developers. Always excited to learn new technologies and contribute to meaningful projects."
     let instagram = "@username"
     let twitter = "@username"
     let snapchat = "@username"
     
+    enum SocialMediaType: String, CaseIterable {
+        case linkedIn = "LinkedIn"
+        case instagram = "Instagram"
+        case twitter = "X"
+        case snapchat = "Snapchat"
+        case facebook = "Facebook"
+        
+        var icon: String {
+            switch self {
+            case .linkedIn: return "person.2.fill"
+            case .instagram: return "camera.fill"
+            case .twitter: return "message.fill"
+            case .snapchat: return "camera.viewfinder"
+            case .facebook: return "person.circle.fill"
+            }
+        }
+    }
+    
     var body: some View {
         ZStack {
             ScrollView {
                 VStack(spacing: 0) {
-                    // Profile Header with Cover Photo
-                    ZStack(alignment: .bottom) {
-                        // Cover Photo
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(height: 200)
-                            .overlay(
-                                Image(systemName: "photo")
-                                    .font(.system(size: 50))
-                                    .foregroundColor(.gray)
-                            )
-                        
-                        // Profile Picture
-                        VStack {
-                            ZStack {
-                                if let selectedImage = selectedImage {
-                                    Image(uiImage: selectedImage)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 120, height: 120)
-                                        .clipShape(Circle())
-                                } else if let user = displayedUser ?? userRepository.currentUser,
-                                          let profileImageURL = user.profileImageURL,
-                                          let url = URL(string: profileImageURL) {
-                                    AsyncImage(url: url) { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                    } placeholder: {
-                                        ProgressView()
-                                    }
+                    // Profile Picture
+                    VStack {
+                        ZStack {
+                            if let selectedImage = selectedImage {
+                                Image(uiImage: selectedImage)
+                                    .resizable()
+                                    .scaledToFill()
                                     .frame(width: 120, height: 120)
                                     .clipShape(Circle())
-                                } else {
-                                    Circle()
-                                        .fill(Color.gray.opacity(0.3))
-                                        .frame(width: 120, height: 120)
-                                        .overlay(
-                                            Image(systemName: "person.fill")
-                                                .foregroundColor(.gray)
-                                                .font(.system(size: 50))
-                                        )
+                            } else if let user = displayedUser ?? userRepository.currentUser,
+                                      let profileImageURL = user.profileImageURL,
+                                      let url = URL(string: profileImageURL) {
+                                AsyncImage(url: url) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    ProgressView()
                                 }
-                                
-                                if isCurrentUserProfile {
-                                    PhotosPicker(selection: $selectedItem, matching: .images) {
-                                        Image(systemName: "camera.circle.fill")
-                                            .font(.system(size: 30))
-                                            .foregroundColor(.blue)
-                                            .background(Color.white)
-                                            .clipShape(Circle())
-                                    }
-                                    .offset(x: 40, y: 40)
-                                }
+                                .frame(width: 120, height: 120)
+                                .clipShape(Circle())
+                            } else {
+                                Circle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .frame(width: 120, height: 120)
+                                    .overlay(
+                                        Image(systemName: "person.fill")
+                                            .foregroundColor(.gray)
+                                            .font(.system(size: 50))
+                                    )
                             }
-                            .offset(y: 60)
-                            .shadow(radius: 5)
+                            
+                            if isCurrentUserProfile {
+                                PhotosPicker(selection: $selectedItem, matching: .images) {
+                                    Image(systemName: "camera.circle.fill")
+                                        .font(.system(size: 30))
+                                        .foregroundColor(.blue)
+                                        .background(Color.white)
+                                        .clipShape(Circle())
+                                }
+                                .offset(x: 40, y: 40)
+                            }
                         }
+                        .shadow(radius: 5)
                     }
+                    .padding(.top, 20)
                     
                     // Profile Info
                     VStack(spacing: 20) {
@@ -169,7 +178,7 @@ struct ProfileView: View {
                                     .fontWeight(.bold)
                             }
                         }
-                        .padding(.top, 60)
+                        .padding(.top, 10)
                         
                         // Quick Stats
                         HStack(spacing: 30) {
@@ -351,11 +360,13 @@ struct ProfileView: View {
                                 Text("Interests & Hobbies")
                                     .font(.headline)
                                 Spacer()
-                                Button(action: {
-                                    showInterestsEditSheet = true
-                                }) {
-                                    Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(.black)
+                                if isCurrentUserProfile {
+                                    Button(action: {
+                                        showInterestsEditSheet = true
+                                    }) {
+                                        Image(systemName: "plus.circle.fill")
+                                            .foregroundColor(.black)
+                                    }
                                 }
                             }
                             .padding(.horizontal, 20)
@@ -374,7 +385,7 @@ struct ProfileView: View {
                                                 .cornerRadius(15)
                                         }
                                     } else {
-                                        Text("Add your interests here")
+                                        Text(isCurrentUserProfile ? "Add your interests here" : "No interests listed")
                                             .font(.subheadline)
                                             .foregroundColor(.gray)
                                             .padding(.horizontal, 12)
@@ -407,67 +418,45 @@ struct ProfileView: View {
                             }
                             .padding(.top, 20)
                             
+                            if isCurrentUserProfile {
+                                Button(action: {
+                                    showSocialMediaEditSheet = true
+                                }) {
+                                    Image(systemName: "plus.circle.fill")
+                                        .foregroundColor(.black)
+                                        .font(.system(size: 24))
+                                }
+                                .padding(.top, 5)
+                            }
+                            
                             if let user = displayedUser ?? userRepository.currentUser {
                                 HStack(spacing: 15) {
-                                    if let linkedInURL = user.linkedInURL {
-                                        Link(destination: URL(string: linkedInURL)!) {
-                                            VStack(spacing: 4) {
-                                                Image(systemName: "person.2.fill")
-                                                    .font(.system(size: 14))
-                                                    .foregroundColor(.black)
-                                                Text("LinkedIn")
-                                                    .font(.system(size: 11))
-                                                    .foregroundColor(.black)
+                                    ForEach(SocialMediaType.allCases, id: \.self) { type in
+                                        if let url = getSocialMediaURL(for: type, user: user) {
+                                            Link(destination: URL(string: url)!) {
+                                                VStack(spacing: 2) {
+                                                    Image(systemName: type.icon)
+                                                        .font(.system(size: 20))
+                                                        .foregroundColor(.black)
+                                                    Text(type.rawValue)
+                                                        .font(.system(size: 9))
+                                                        .foregroundColor(.black)
+                                                }
                                             }
-                                        }
-                                    }
-                                    
-                                    Link(destination: URL(string: "https://instagram.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!) {
-                                        VStack(spacing: 4) {
-                                            Image(systemName: "camera.fill")
-                                                    .font(.system(size: 14))
-                                                    .foregroundColor(.black)
-                                            Text("Instagram")
-                                                .font(.system(size: 11))
-                                                .foregroundColor(.black)
-                                        }
-                                    }
-                                    
-                                    Link(destination: URL(string: "https://twitter.com/\(twitter.replacingOccurrences(of: "@", with: ""))")!) {
-                                        VStack(spacing: 4) {
-                                            Image(systemName: "message.fill")
-                                                    .font(.system(size: 14))
-                                                    .foregroundColor(.black)
-                                            Text("X")
-                                                .font(.system(size: 11))
-                                                .foregroundColor(.black)
-                                        }
-                                    }
-                                    
-                                    Link(destination: URL(string: "https://snapchat.com/add/\(snapchat.replacingOccurrences(of: "@", with: ""))")!) {
-                                        VStack(spacing: 4) {
-                                            Image(systemName: "camera.viewfinder")
-                                                    .font(.system(size: 14))
-                                                    .foregroundColor(.black)
-                                            Text("Snapchat")
-                                                .font(.system(size: 11))
-                                                .foregroundColor(.black)
-                                        }
-                                    }
-                                    
-                                    Link(destination: URL(string: "https://facebook.com/\(instagram.replacingOccurrences(of: "@", with: ""))")!) {
-                                        VStack(spacing: 4) {
-                                            Image(systemName: "person.circle.fill")
-                                                    .font(.system(size: 14))
-                                                    .foregroundColor(.black)
-                                            Text("Facebook")
-                                                .font(.system(size: 11))
-                                                .foregroundColor(.black)
+                                        } else {
+                                            VStack(spacing: 2) {
+                                                Image(systemName: type.icon)
+                                                    .font(.system(size: 20))
+                                                    .foregroundColor(.gray)
+                                                Text(type.rawValue)
+                                                    .font(.system(size: 9))
+                                                    .foregroundColor(.gray)
+                                            }
                                         }
                                     }
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, 10)
                                 .padding(.top, 10)
                             }
                         }
@@ -619,7 +608,28 @@ struct ProfileView: View {
             BioEditView(userRepository: userRepository, currentBio: displayedUser?.bio)
         }
         .sheet(isPresented: $showInterestsEditSheet) {
-            InterestsEditView(interests: $interests, userRepository: userRepository)
+            InterestsEditView(userRepository: userRepository, didSave: $interestsDidSave)
+        }
+        .onChange(of: showInterestsEditSheet) { isPresented in
+            if !isPresented && interestsDidSave {
+                // Sheet was dismissed and changes were saved
+                Task {
+                    await fetchUserData()
+                    interestsDidSave = false
+                }
+            }
+        }
+        .sheet(isPresented: $showSocialMediaEditSheet) {
+            SocialMediaEditView(userRepository: userRepository, didSave: $socialMediaDidSave)
+        }
+        .onChange(of: showSocialMediaEditSheet) { isPresented in
+            if !isPresented && socialMediaDidSave {
+                // Sheet was dismissed and changes were saved
+                Task {
+                    await fetchUserData()
+                    socialMediaDidSave = false
+                }
+            }
         }
     }
     
@@ -676,6 +686,21 @@ struct ProfileView: View {
                 showError = true
                 errorMessage = "Failed to load user data: \(error.localizedDescription)"
             }
+        }
+    }
+    
+    private func getSocialMediaURL(for type: SocialMediaType, user: User) -> String? {
+        switch type {
+        case .linkedIn:
+            return user.linkedInURL
+        case .instagram:
+            return user.instagramURL
+        case .twitter:
+            return user.twitterURL
+        case .snapchat:
+            return user.snapchatURL
+        case .facebook:
+            return user.facebookURL
         }
     }
 }
@@ -744,13 +769,13 @@ struct FlowLayout<Content: View>: View {
 }
 
 struct InterestsEditView: View {
-    @Binding var interests: [String]
     @Environment(\.dismiss) private var dismiss
-    @State private var newInterest = ""
     @State private var selectedInterests: Set<String> = []
+    @State private var newInterest = ""
     @State private var showError = false
     @State private var errorMessage = ""
     @ObservedObject var userRepository: UserRepository
+    @Binding var didSave: Bool
     
     private let predefinedInterests = [
         "Technology", "Gaming", "Art", "Travel", "Music", "Sports",
@@ -839,6 +864,7 @@ struct InterestsEditView: View {
                 if var user = userRepository.currentUser {
                     user.interests = Array(selectedInterests)
                     try await userRepository.updateUser(user)
+                    didSave = true
                     dismiss()
                 }
             } catch {
@@ -867,6 +893,153 @@ struct InterestToggleButton: View {
                     RoundedRectangle(cornerRadius: 15)
                         .stroke(isSelected ? Color.orange : Color.clear, lineWidth: 1)
                 )
+        }
+    }
+}
+
+struct SocialMediaEditView: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var userRepository: UserRepository
+    @State private var linkedInURL = ""
+    @State private var instagramURL = ""
+    @State private var twitterURL = ""
+    @State private var snapchatURL = ""
+    @State private var facebookURL = ""
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @Binding var didSave: Bool
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Social Media Links")) {
+                    VStack(alignment: .leading) {
+                        Text("LinkedIn")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        TextField("https://linkedin.com/in/username", text: $linkedInURL)
+                            .textContentType(.URL)
+                            .keyboardType(.URL)
+                            .autocapitalization(.none)
+                    }
+                    
+                    VStack(alignment: .leading) {
+                        Text("Instagram")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        TextField("https://instagram.com/username", text: $instagramURL)
+                            .textContentType(.URL)
+                            .keyboardType(.URL)
+                            .autocapitalization(.none)
+                    }
+                    
+                    VStack(alignment: .leading) {
+                        Text("X (Twitter)")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        TextField("https://x.com/username", text: $twitterURL)
+                            .textContentType(.URL)
+                            .keyboardType(.URL)
+                            .autocapitalization(.none)
+                    }
+                    
+                    VStack(alignment: .leading) {
+                        Text("Snapchat")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        TextField("https://snapchat.com/add/username", text: $snapchatURL)
+                            .textContentType(.URL)
+                            .keyboardType(.URL)
+                            .autocapitalization(.none)
+                    }
+                    
+                    VStack(alignment: .leading) {
+                        Text("Facebook")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        TextField("https://facebook.com/username", text: $facebookURL)
+                            .textContentType(.URL)
+                            .keyboardType(.URL)
+                            .autocapitalization(.none)
+                    }
+                }
+                
+                Section(footer: Text("Leave fields empty to remove links")) {
+                    EmptyView()
+                }
+            }
+            .navigationTitle("Edit Social Media")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        saveChanges()
+                    }
+                }
+            }
+            .onAppear {
+                loadCurrentURLs()
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private func loadCurrentURLs() {
+        if let user = userRepository.currentUser {
+            linkedInURL = user.linkedInURL ?? ""
+            instagramURL = user.instagramURL ?? ""
+            twitterURL = user.twitterURL ?? ""
+            snapchatURL = user.snapchatURL ?? ""
+            facebookURL = user.facebookURL ?? ""
+        }
+    }
+    
+    private func validateAndFormatURL(_ url: String) -> String? {
+        let trimmedURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedURL.isEmpty {
+            return nil
+        }
+        
+        var formattedURL = trimmedURL
+        if !formattedURL.lowercased().hasPrefix("http") {
+            formattedURL = "https://" + formattedURL
+        }
+        
+        guard URL(string: formattedURL) != nil else {
+            return nil
+        }
+        
+        return formattedURL
+    }
+    
+    private func saveChanges() {
+        Task {
+            do {
+                if var user = userRepository.currentUser {
+                    user.linkedInURL = validateAndFormatURL(linkedInURL)
+                    user.instagramURL = validateAndFormatURL(instagramURL)
+                    user.twitterURL = validateAndFormatURL(twitterURL)
+                    user.snapchatURL = validateAndFormatURL(snapchatURL)
+                    user.facebookURL = validateAndFormatURL(facebookURL)
+                    
+                    try await userRepository.updateUser(user)
+                    didSave = true
+                    dismiss()
+                }
+            } catch {
+                showError = true
+                errorMessage = error.localizedDescription
+            }
         }
     }
 } 
