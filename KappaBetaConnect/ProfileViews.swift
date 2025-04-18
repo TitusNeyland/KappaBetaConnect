@@ -450,6 +450,7 @@ struct ProfileView: View {
                                 }
                             }
                             .padding(.horizontal, 20)
+                            .padding(.bottom, 8)
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 10) {
