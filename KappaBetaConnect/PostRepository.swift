@@ -120,6 +120,32 @@ class PostRepository: ObservableObject {
         return comment
     }
     
+    func deleteComment(postId: String, commentId: String) async throws {
+        let postRef = db.collection("posts").document(postId)
+        
+        try await db.runTransaction { transaction, errorPointer in
+            do {
+                let postDoc = try transaction.getDocument(postRef)
+                guard var post = try? postDoc.data(as: Post.self) else { return nil }
+                
+                // Remove the comment with matching ID
+                post.comments.removeAll { $0.id == commentId }
+                
+                try transaction.setData(from: post, forDocument: postRef)
+                
+                // Update local posts array
+                if let index = self.posts.firstIndex(where: { $0.id == postId }) {
+                    self.posts[index].comments = post.comments
+                }
+                
+                return nil
+            } catch {
+                errorPointer?.pointee = error as NSError
+                return nil
+            }
+        }
+    }
+    
     func incrementShareCount(postId: String) async throws {
         let postRef = db.collection("posts").document(postId)
         
