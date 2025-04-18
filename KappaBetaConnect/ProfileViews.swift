@@ -60,8 +60,10 @@ struct EnlargedImageView: View {
 struct ManageProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var userRepository: UserRepository
+    @State private var prefix = ""
     @State private var firstName = ""
     @State private var lastName = ""
+    @State private var suffix = ""
     @State private var email = ""
     @State private var phoneNumber = ""
     @State private var major = ""
@@ -73,20 +75,56 @@ struct ManageProfileView: View {
     @State private var errorMessage = ""
     @State private var isLoading = false
     
+    let prefixes = ["Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Rev.", "Hon."]
+    let suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "M.D.", "Esq."]
+    
     var body: some View {
         NavigationView {
             Form {
                 Section(header: Text("Personal Information")) {
-                    TextField("First Name", text: $firstName)
-                    TextField("Last Name", text: $lastName)
-                    TextField("Email", text: $email)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                    TextField("Phone Number", text: $phoneNumber)
-                        .textContentType(.telephoneNumber)
-                        .keyboardType(.phonePad)
-                    TextField("Major", text: $major)
+                    VStack(spacing: 16) {
+                        HStack {
+                            Text("Prefix")
+                                .foregroundColor(.gray)
+                            Spacer()
+                            Picker("", selection: $prefix) {
+                                Text("Prefix").tag("")
+                                ForEach(prefixes, id: \.self) { prefix in
+                                    Text(prefix).tag(prefix)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .frame(width: 100)
+                        }
+                        
+                        TextField("First Name", text: $firstName)
+                        
+                        HStack {
+                            TextField("Last Name", text: $lastName)
+                            
+                            Spacer()
+                            
+                            Text("Suffix")
+                                .foregroundColor(.gray)
+                            Picker("", selection: $suffix) {
+                                Text("Suffix").tag("")
+                                ForEach(suffixes, id: \.self) { suffix in
+                                    Text(suffix).tag(suffix)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .frame(width: 100)
+                        }
+                        
+                        TextField("Email", text: $email)
+                            .textContentType(.emailAddress)
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
+                        TextField("Phone Number", text: $phoneNumber)
+                            .textContentType(.telephoneNumber)
+                            .keyboardType(.phonePad)
+                        TextField("Major", text: $major)
+                    }
                 }
                 
                 Section(header: Text("Location")) {
@@ -128,8 +166,10 @@ struct ManageProfileView: View {
     
     private func loadCurrentUserData() {
         if let user = userRepository.currentUser {
+            prefix = user.prefix ?? ""
             firstName = user.firstName
             lastName = user.lastName
+            suffix = user.suffix ?? ""
             email = user.email
             phoneNumber = user.phoneNumber
             major = user.major ?? ""
@@ -152,8 +192,10 @@ struct ManageProfileView: View {
         Task {
             do {
                 if var user = userRepository.currentUser {
+                    user.prefix = prefix.isEmpty ? nil : prefix
                     user.firstName = firstName
                     user.lastName = lastName
+                    user.suffix = suffix.isEmpty ? nil : suffix
                     user.email = email
                     user.phoneNumber = phoneNumber
                     user.major = major.isEmpty ? nil : major
