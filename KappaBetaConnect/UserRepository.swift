@@ -189,6 +189,10 @@ class UserRepository: ObservableObject {
         if let interests = user.interests { dict["interests"] = interests }
         if let profileImageURL = user.profileImageURL { dict["profileImageURL"] = profileImageURL }
         if let linkedInURL = user.linkedInURL { dict["linkedInURL"] = linkedInURL }
+        if let instagramURL = user.instagramURL { dict["instagramURL"] = instagramURL }
+        if let twitterURL = user.twitterURL { dict["twitterURL"] = twitterURL }
+        if let snapchatURL = user.snapchatURL { dict["snapchatURL"] = snapchatURL }
+        if let facebookURL = user.facebookURL { dict["facebookURL"] = facebookURL }
         if let lineNumber = user.lineNumber { dict["lineNumber"] = lineNumber }
         if let semester = user.semester { dict["semester"] = semester }
         if let year = user.year { dict["year"] = year }
@@ -237,6 +241,10 @@ class UserRepository: ObservableObject {
             graduationYear: dict["graduationYear"] as? String,
             profileImageURL: dict["profileImageURL"] as? String,
             linkedInURL: dict["linkedInURL"] as? String,
+            instagramURL: dict["instagramURL"] as? String,
+            twitterURL: dict["twitterURL"] as? String,
+            snapchatURL: dict["snapchatURL"] as? String,
+            facebookURL: dict["facebookURL"] as? String,
             isActive: isActive
         )
     }
@@ -270,6 +278,10 @@ class UserRepository: ObservableObject {
         if let graduationYear = user.graduationYear { data["graduationYear"] = graduationYear }
         if let profileImageURL = user.profileImageURL { data["profileImageURL"] = profileImageURL }
         if let linkedInURL = user.linkedInURL { data["linkedInURL"] = linkedInURL }
+        if let instagramURL = user.instagramURL { data["instagramURL"] = instagramURL }
+        if let twitterURL = user.twitterURL { data["twitterURL"] = twitterURL }
+        if let snapchatURL = user.snapchatURL { data["snapchatURL"] = snapchatURL }
+        if let facebookURL = user.facebookURL { data["facebookURL"] = facebookURL }
         
         return data
     }
@@ -302,6 +314,10 @@ class UserRepository: ObservableObject {
         let graduationYear = data["graduationYear"] as? String
         let profileImageURL = data["profileImageURL"] as? String
         let linkedInURL = data["linkedInURL"] as? String
+        let instagramURL = data["instagramURL"] as? String
+        let twitterURL = data["twitterURL"] as? String
+        let snapchatURL = data["snapchatURL"] as? String
+        let facebookURL = data["facebookURL"] as? String
         
         var user = User(
             id: id,
@@ -326,6 +342,10 @@ class UserRepository: ObservableObject {
             graduationYear: graduationYear,
             profileImageURL: profileImageURL,
             linkedInURL: linkedInURL,
+            instagramURL: instagramURL,
+            twitterURL: twitterURL,
+            snapchatURL: snapchatURL,
+            facebookURL: facebookURL,
             isActive: isActive
         )
         
