@@ -27,6 +27,38 @@ class ImageService {
     }
 }
 
+struct EnlargedImageView: View {
+    let image: Image
+    @Binding var isPresented: Bool
+    
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.9)
+                .ignoresSafeArea()
+            
+            VStack {
+                Spacer()
+                
+                image
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .gesture(
+                        TapGesture()
+                            .onEnded { _ in
+                                withAnimation(.easeOut) {
+                                    isPresented = false
+                                }
+                            }
+                    )
+                
+                Spacer()
+            }
+        }
+        .transition(.opacity)
+    }
+}
+
 struct ProfileView: View {
     @StateObject private var postRepository = PostRepository()
     @StateObject private var userRepository = UserRepository()
@@ -49,6 +81,8 @@ struct ProfileView: View {
     @State private var selectedSocialMedia: SocialMediaType = .linkedIn
     @State private var newSocialMediaURL = ""
     @State private var socialMediaDidSave = false
+    @State private var showEnlargedImage = false
+    @State private var enlargedImage: Image?
     
     // Optional parameter to view a different user's profile
     var userId: String?
@@ -106,6 +140,12 @@ struct ProfileView: View {
                                     .scaledToFill()
                                     .frame(width: 120, height: 120)
                                     .clipShape(Circle())
+                                    .onTapGesture {
+                                        enlargedImage = Image(uiImage: selectedImage)
+                                        withAnimation(.easeIn) {
+                                            showEnlargedImage = true
+                                        }
+                                    }
                             } else if let user = displayedUser ?? userRepository.currentUser,
                                       let profileImageURL = user.profileImageURL,
                                       let url = URL(string: profileImageURL) {
@@ -113,11 +153,17 @@ struct ProfileView: View {
                                     image
                                         .resizable()
                                         .scaledToFill()
+                                        .frame(width: 120, height: 120)
+                                        .clipShape(Circle())
+                                        .onTapGesture {
+                                            enlargedImage = image
+                                            withAnimation(.easeIn) {
+                                                showEnlargedImage = true
+                                            }
+                                        }
                                 } placeholder: {
                                     ProgressView()
                                 }
-                                .frame(width: 120, height: 120)
-                                .clipShape(Circle())
                             } else {
                                 Circle()
                                     .fill(Color.gray.opacity(0.3))
@@ -494,6 +540,10 @@ struct ProfileView: View {
             
             NavigationLink(destination: LoginView().navigationBarBackButtonHidden(true), isActive: $navigateToLogin) {
                 EmptyView()
+            }
+            
+            if showEnlargedImage, let image = enlargedImage {
+                EnlargedImageView(image: image, isPresented: $showEnlargedImage)
             }
         }
         .onChange(of: selectedItem) { newItem in
