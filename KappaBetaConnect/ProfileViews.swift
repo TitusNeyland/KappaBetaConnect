@@ -77,6 +77,20 @@ struct ManageProfileView: View {
     
     let prefixes = ["Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Rev.", "Hon."]
     let suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "M.D.", "Esq."]
+    let careerFields = [
+        "Business & Finance",
+        "Technology & Engineering",
+        "Healthcare & Medicine",
+        "Law & Legal Services",
+        "Education & Research",
+        "Government & Public Service",
+        "Arts & Entertainment",
+        "Marketing & Communications",
+        "Science & Research",
+        "Real Estate & Construction",
+        "Non-Profit & Social Services",
+        "Other"
+    ]
     
     var body: some View {
         NavigationView {
@@ -99,13 +113,12 @@ struct ManageProfileView: View {
                         
                         TextField("First Name", text: $firstName)
                         
+                        TextField("Last Name", text: $lastName)
+                        
                         HStack {
-                            TextField("Last Name", text: $lastName)
-                            
-                            Spacer()
-                            
                             Text("Suffix")
                                 .foregroundColor(.gray)
+                            Spacer()
                             Picker("", selection: $suffix) {
                                 Text("Suffix").tag("")
                                 ForEach(suffixes, id: \.self) { suffix in
@@ -133,7 +146,20 @@ struct ManageProfileView: View {
                 }
                 
                 Section(header: Text("Career")) {
-                    TextField("Career Field", text: $careerField)
+                    HStack {
+                        Text("Career Field")
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Picker("", selection: $careerField) {
+                            Text("Select Career Field").tag("")
+                            ForEach(careerFields, id: \.self) { field in
+                                Text(field).tag(field)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.black)
+                    }
+                    
                     TextField("Company", text: $company)
                 }
             }
