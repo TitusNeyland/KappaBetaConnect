@@ -414,46 +414,48 @@ struct ProfileView: View {
                                 Rectangle()
                                     .frame(height: 1)
                                     .foregroundColor(.gray)
-                                    
-                                if isCurrentUserProfile {
-                                    Button(action: {
-                                        showSocialMediaEditSheet = true
-                                    }) {
-                                        Image(systemName: "plus.circle.fill")
-                                            .foregroundColor(.black)
-                                    }
-                                }
                             }
                             .padding(.top, 20)
                             
+                            if isCurrentUserProfile {
+                                Button(action: {
+                                    showSocialMediaEditSheet = true
+                                }) {
+                                    Image(systemName: "plus.circle.fill")
+                                        .foregroundColor(.black)
+                                        .font(.system(size: 24))
+                                }
+                                .padding(.top, 5)
+                            }
+                            
                             if let user = displayedUser ?? userRepository.currentUser {
-                                HStack(spacing: 25) {
+                                HStack(spacing: 15) {
                                     ForEach(SocialMediaType.allCases, id: \.self) { type in
                                         if let url = getSocialMediaURL(for: type, user: user) {
                                             Link(destination: URL(string: url)!) {
-                                                VStack(spacing: 4) {
+                                                VStack(spacing: 2) {
                                                     Image(systemName: type.icon)
                                                         .font(.system(size: 20))
                                                         .foregroundColor(.black)
                                                     Text(type.rawValue)
-                                                        .font(.system(size: 11))
+                                                        .font(.system(size: 9))
                                                         .foregroundColor(.black)
                                                 }
                                             }
                                         } else {
-                                            VStack(spacing: 4) {
+                                            VStack(spacing: 2) {
                                                 Image(systemName: type.icon)
                                                     .font(.system(size: 20))
                                                     .foregroundColor(.gray)
                                                 Text(type.rawValue)
-                                                    .font(.system(size: 11))
+                                                    .font(.system(size: 9))
                                                     .foregroundColor(.gray)
                                             }
                                         }
                                     }
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, 10)
                                 .padding(.top, 10)
                             }
                         }
