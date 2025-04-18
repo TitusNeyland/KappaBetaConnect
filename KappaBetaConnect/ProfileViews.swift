@@ -193,7 +193,7 @@ struct ProfileView: View {
                         // Name and Title
                         VStack(spacing: 4) {
                             if let user = displayedUser ?? userRepository.currentUser {
-                                Text("\(user.firstName) \(user.lastName)")
+                                Text("\(user.firstName) \(user.lastName)\(user.suffix != nil ? ", \(user.suffix!)" : "")")
                                     .font(.title2)
                                     .fontWeight(.bold)
                                 
