@@ -163,6 +163,18 @@ class UserRepository: ObservableObject {
         }
     }
     
+    func findUserByName(firstName: String, lastName: String) async throws -> User? {
+        let snapshot = try await db.collection("users")
+            .whereField("firstName", isEqualTo: firstName)
+            .whereField("lastName", isEqualTo: lastName)
+            .getDocuments()
+        
+        guard let document = snapshot.documents.first else { return nil }
+        var user = try document.data(as: User.self)
+        user.id = document.documentID
+        return user
+    }
+    
     // Helper function to convert User to Firestore dictionary
     private func userToDictionary(_ user: User) throws -> [String: Any] {
         let dateFormatter = ISO8601DateFormatter()

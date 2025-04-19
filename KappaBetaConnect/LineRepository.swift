@@ -34,7 +34,7 @@ class LineRepository: ObservableObject {
         return line
     }
     
-    func getLineMemberDetails(line: Line, lineNumber: Int) -> (alias: String, name: String)? {
+    func getLineMemberDetails(line: Line, lineNumber: Int) -> (alias: String?, name: String)? {
         guard let member = line.members.first(where: { member in member.number == lineNumber }) else {
             return nil
         }
@@ -69,5 +69,29 @@ class LineRepository: ObservableObject {
         )
         
         try await createLine(sampleLine)
+    }
+    
+    func fetchMostRecentLine() async throws -> Line? {
+        let snapshot = try await db.collection("lines")
+            .order(by: "year", descending: true)
+            .getDocuments()
+        
+        // Get all lines and sort them by year and semester
+        let allLines = try snapshot.documents.compactMap { document -> Line? in
+            var line = try document.data(as: Line.self)
+            line.id = document.documentID
+            return line
+        }
+        
+        // Sort lines by year and semester
+        let sortedLines = allLines.sorted { line1, line2 in
+            if line1.year != line2.year {
+                return line1.year > line2.year
+            }
+            // If years are equal, Fall comes before Spring
+            return line1.semester == "Fall" && line2.semester == "Spring"
+        }
+        
+        return sortedLines.first
     }
 } 
