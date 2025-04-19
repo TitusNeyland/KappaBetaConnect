@@ -1,20 +1,15 @@
 import SwiftUI
 
 struct HomeView: View {
-    // Sample data for new members - replace with actual data later
-    let newMembers = [
-        (name: "Nathan Cooke", city: "Jackson, MS"),
-        (name: "Alfred Carter", city: "Atlanta, GA"),
-        (name: "Victor Simon", city: "Chicago, IL"),
-        (name: "Samuel Trotter", city: "Dallas, TX"),
-        (name: "Austin Wheeler", city: "Miami, FL")
-    ]
-    
     @StateObject private var eventRepository = EventRepository()
     @StateObject private var userRepository = UserRepository()
     @StateObject private var postRepository = PostRepository()
+    @StateObject private var lineRepository = LineRepository()
     @EnvironmentObject private var authManager: AuthManager
     @State private var recommendedUsers: [User] = []
+    @State private var newestMembers: [LineMember] = []
+    @State private var newestMembersCity: [String: String] = [:]
+    @State private var showNoLineMessage: Bool = false
     
     var upcomingEvents: [Event] {
         let now = Date()
@@ -86,33 +81,38 @@ struct HomeView: View {
                     .padding(.leading, 20)
                     .padding(.top, 30)
                 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 20) {
-                        ForEach(newMembers, id: \.name) { member in
-                            VStack {
-                                Circle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .frame(width: 70, height: 70)
-                                    .overlay(
-                                        Image(systemName: "person.fill")
-                                            .foregroundColor(.gray)
-                                            .font(.system(size: 30))
-                                    )
-                                
-                                Text(member.name)
-                                    .font(.caption)
-                                    .multilineTextAlignment(.center)
-                                
-                                Text(member.city)
-                                    .font(.caption2)
-                                    .foregroundColor(.gray)
-                                    .multilineTextAlignment(.center)
+                if showNoLineMessage {
+                    Text("No new members to display")
+                        .foregroundColor(.gray)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 10)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 20) {
+                            ForEach(newestMembers, id: \.number) { member in
+                                VStack {
+                                    Circle()
+                                        .fill(Color.gray.opacity(0.3))
+                                        .frame(width: 70, height: 70)
+                                        .overlay(
+                                            Image(systemName: "person.fill")
+                                                .foregroundColor(.gray)
+                                                .font(.system(size: 30))
+                                        )
+                                    
+                                    Text(member.name)
+                                        .font(.caption)
+                                        .multilineTextAlignment(.center)
+                                }
+                                .frame(width: 80)
+                                .onAppear {
+                                    print("Displaying member: \(member.name) (Number: \(member.number))")
+                                }
                             }
-                            .frame(width: 80)
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 10)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 10)
                 }
                 
                 Text("Upcoming Events")
@@ -272,12 +272,42 @@ struct HomeView: View {
         }
         .background(Color(.secondarySystemBackground))
         .onAppear {
+            print("HomeView appeared - Starting data fetch")
             Task {
                 do {
+                    print("Fetching events...")
                     try await eventRepository.fetchEvents()
+                    print("Fetching posts...")
                     try await postRepository.fetchPosts()
+                    
+                    print("Attempting to fetch most recent line...")
+                    if let recentLine = try await lineRepository.fetchMostRecentLine() {
+                        print("Found most recent line:")
+                        print("- Line Name: \(recentLine.line_name)")
+                        print("- Semester: \(recentLine.semester)")
+                        print("- Year: \(recentLine.year)")
+                        print("- Number of members: \(recentLine.members.count)")
+                        
+                        await MainActor.run {
+                            self.newestMembers = recentLine.members.sorted(by: { $0.number < $1.number })
+                            self.showNoLineMessage = false
+                            print("Updated newestMembers array with \(self.newestMembers.count) members")
+                            for member in self.newestMembers {
+                                print("- Member \(member.number): \(member.name)")
+                            }
+                        }
+                    } else {
+                        print("No recent line found in database")
+                        await MainActor.run {
+                            self.showNoLineMessage = true
+                        }
+                    }
                 } catch {
                     print("Error fetching data: \(error.localizedDescription)")
+                    print("Error details: \(error)")
+                    await MainActor.run {
+                        self.showNoLineMessage = true
+                    }
                 }
             }
         }

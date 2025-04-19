@@ -1065,16 +1065,7 @@ struct ProfileView: View {
                         Text("Line Name")
                             .font(.subheadline)
                             .fontWeight(.medium)
-                        Text(userLineDetails?.lineName ?? "Not specified")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Alias")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                        Text(userAlias ?? "Not specified")
+                        Text((userAlias ?? "Not specified").uppercased())
                             .font(.subheadline)
                             .foregroundColor(.gray)
                     }

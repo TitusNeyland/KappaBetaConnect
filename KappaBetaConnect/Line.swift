@@ -20,7 +20,7 @@ struct Line: Codable, Identifiable {
 struct LineMember: Codable, Identifiable {
     var id: String?
     var name: String
-    var alias: String
+    var alias: String?
     var number: Int
     
     enum CodingKeys: String, CodingKey {
