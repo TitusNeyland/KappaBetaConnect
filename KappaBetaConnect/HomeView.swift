@@ -75,7 +75,7 @@ struct HomeView: View {
                 }
                 .padding(.top, 20)
                 
-                Text("New Members")
+                Text("Newest Members")
                     .font(.title2)
                     .fontWeight(.semibold)
                     .padding(.leading, 20)
