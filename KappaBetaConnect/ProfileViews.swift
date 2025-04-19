@@ -263,23 +263,32 @@ struct ManageProfileView: View {
         Task {
             do {
                 if var user = userRepository.currentUser {
+                    // Basic info
                     user.prefix = prefix.isEmpty ? nil : prefix
                     user.firstName = firstName
                     user.lastName = lastName
                     user.suffix = suffix.isEmpty ? nil : suffix
                     user.email = email
                     user.phoneNumber = phoneNumber
-                    user.major = major.isEmpty ? nil : major
-                    user.city = city.isEmpty ? nil : city
-                    user.state = state.isEmpty ? nil : state
-                    user.careerField = careerField.isEmpty ? nil : careerField
-                    user.company = company.isEmpty ? nil : company
-                    user.lineNumber = lineNumber.isEmpty ? nil : lineNumber
-                    user.semester = semester.isEmpty ? nil : semester
-                    user.year = year.isEmpty ? nil : year
-                    user.status = status.isEmpty ? nil : status
+                    
+                    // Optional fields - trim whitespace before checking isEmpty
+                    user.major = major.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : major
+                    user.city = city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : city
+                    user.state = state.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : state
+                    user.careerField = careerField.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : careerField
+                    user.company = company.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : company
+                    
+                    // Initiation details - ensure we're not saving empty strings
+                    user.lineNumber = lineNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : lineNumber
+                    user.semester = semester.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : semester
+                    user.year = year.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : year
+                    user.status = status.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : status
                     
                     try await userRepository.updateUser(user)
+                    
+                    // Update the current user in the repository
+                    userRepository.currentUser = user
+                    
                     dismiss()
                 }
             } catch {
@@ -572,102 +581,7 @@ struct ProfileView: View {
                         }
                         
                         // Brotherhood Details Section
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text("Brotherhood Details")
-                                .font(.headline)
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 10)
-                            
-                            VStack(spacing: 25) {
-                                // First row: Initiated, Line #, Ship
-                                HStack(spacing: 30) {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Initiated")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                        if let user = displayedUser ?? userRepository.currentUser,
-                                           let semester = user.semester,
-                                           let year = user.year {
-                                            // Convert semester to abbreviated form and year to 'YY format
-                                            let abbreviatedSemester = semester == "Fall" ? "FA" : "SPR"
-                                            let abbreviatedYear = "'\(year.suffix(2))"
-                                            Text("\(abbreviatedSemester) \(abbreviatedYear)")
-                                                .font(.subheadline)
-                                                .foregroundColor(.gray)
-                                        } else {
-                                            Text("Not specified")
-                                                .font(.subheadline)
-                                                .foregroundColor(.gray)
-                                        }
-                                    }
-                                    
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Line #")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                        if let user = displayedUser ?? userRepository.currentUser,
-                                           let lineNumber = user.lineNumber {
-                                            Text(lineNumber)
-                                                .font(.subheadline)
-                                                .foregroundColor(.gray)
-                                        } else {
-                                            Text("Not specified")
-                                                .font(.subheadline)
-                                                .foregroundColor(.gray)
-                                        }
-                                    }
-                                    
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Ship")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                        Text(shipName)
-                                            .font(.subheadline)
-                                            .foregroundColor(.gray)
-                                    }
-                                }
-                                .padding(.horizontal, 20)
-                                
-                                Divider()
-                                    .padding(.horizontal, 20)
-                                
-                                // Second row: Line Name and Positions
-                                VStack(alignment: .leading, spacing: 25) {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Line Name")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                        Text(lineName)
-                                            .font(.subheadline)
-                                            .foregroundColor(.gray)
-                                    }
-                                    
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Positions")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                        HStack {
-                                            ForEach(positions, id: \.self) { position in
-                                                Text(position)
-                                                    .font(.subheadline)
-                                                    .foregroundColor(.gray)
-                                                if position != positions.last {
-                                                    Text("•")
-                                                        .foregroundColor(.gray)
-                                                        .padding(.horizontal, 4)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 20)
-                            }
-                            .padding(.vertical, 20)
-                            .background(Color.gray.opacity(0.05))
-                            .cornerRadius(15)
-                            .padding(.horizontal, 20)
-                        }
-                        .padding(.vertical, 10)
+                        initiationDetailsView
                         
                         // Interests Section
                         VStack(alignment: .leading, spacing: 10) {
@@ -1050,6 +964,109 @@ struct ProfileView: View {
             return user.snapchatURL
         case .facebook:
             return user.facebookURL
+        }
+    }
+    
+    private var initiationDetailsView: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("Brotherhood Details")
+                .font(.headline)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 10)
+            
+            VStack(spacing: 25) {
+                // First row: Initiated, Line #, Ship
+                HStack(spacing: 30) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Initiated")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        if let user = displayedUser ?? userRepository.currentUser {
+                            let semester = user.semester?.trimmingCharacters(in: .whitespacesAndNewlines)
+                            let year = user.year?.trimmingCharacters(in: .whitespacesAndNewlines)
+                            
+                            if let sem = semester, !sem.isEmpty,
+                               let yr = year, !yr.isEmpty {
+                                // Convert semester to abbreviated form and year to 'YY format
+                                let abbreviatedSemester = sem == "Fall" ? "FA" : "SPR"
+                                let abbreviatedYear = "'\(yr.suffix(2))"
+                                Text("\(abbreviatedSemester) \(abbreviatedYear)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            } else {
+                                Text("Not specified")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                        } else {
+                            Text("Not specified")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Line #")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        if let user = displayedUser ?? userRepository.currentUser,
+                           let lineNum = user.lineNumber?.trimmingCharacters(in: .whitespacesAndNewlines),
+                           !lineNum.isEmpty {
+                            Text(lineNum)
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        } else {
+                            Text("Not specified")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Ship")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        Text(shipName)
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding(.horizontal, 20)
+                
+                Divider()
+                    .padding(.horizontal, 20)
+                
+                // Second row: Line Name and Positions
+                VStack(alignment: .leading, spacing: 25) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Line Name")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        Text(lineName)
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Positions")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        HStack {
+                            ForEach(positions, id: \.self) { position in
+                                Text(position)
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                if position != positions.last {
+                                    Text("•")
+                                        .foregroundColor(.gray)
+                                        .padding(.horizontal, 4)
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
         }
     }
 }
