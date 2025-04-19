@@ -1,6 +1,5 @@
 import Foundation
 import FirebaseFirestore
-import FirebaseFirestoreSwift
 
 class LineRepository: ObservableObject {
     private let db = Firestore.firestore()
