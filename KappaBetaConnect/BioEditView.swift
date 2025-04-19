@@ -24,15 +24,16 @@ struct BioEditView: View {
                 TextEditor(text: $newBio)
                     .frame(height: 200)
                     .padding(8)
+                    .background(Color(.systemBackground))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color(.systemGray4))
+                            .stroke(Color(.separator), lineWidth: 1)
                     )
                     .padding(.horizontal)
                 
                 Text("Tell us about yourself, your career, and your interests")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
                 
                 Spacer()
             }

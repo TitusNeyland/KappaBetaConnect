@@ -59,16 +59,16 @@ struct HomeView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Welcome back,")
-                        .font(.title)
-                        .fontWeight(.semibold)
+                            .font(.title)
+                            .fontWeight(.semibold)
                         if let firstName = userRepository.currentUser?.firstName {
                             Text("\(firstName)!")
                                 .font(.title)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.black)
+                                .foregroundColor(.primary)
                         }
                     }
-                        .padding(.leading, 20)
+                    .padding(.leading, 20)
                     
                     Spacer()
                     
@@ -127,45 +127,48 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 10)
                 } else {
-                VStack(spacing: 20) {
+                    VStack(spacing: 20) {
                         ForEach(upcomingEvents) { event in
                             NavigationLink(destination: EventDetailView(userRepository: UserRepository(), eventRepository: eventRepository, eventId: event.id ?? "")) {
-                        HStack {
-                            // Date column
+                                HStack {
+                                    // Date column
                                     let calendar = Calendar.current
                                     let month = calendar.shortMonthSymbols[calendar.component(.month, from: event.date) - 1].uppercased()
                                     let day = String(calendar.component(.day, from: event.date))
                                     
-                            VStack(alignment: .center) {
+                                    VStack(alignment: .center) {
                                         Text(month)
-                                    .font(.system(size: 14, weight: .medium))
+                                            .font(.system(size: 14, weight: .medium))
                                         Text(day)
-                                    .font(.system(size: 24, weight: .bold))
-                            }
-                            .frame(width: 50)
-                            
-                            // Event details
-                            VStack(alignment: .leading) {
+                                            .font(.system(size: 24, weight: .bold))
+                                    }
+                                    .frame(width: 50)
+                                    
+                                    // Event details
+                                    VStack(alignment: .leading) {
                                         Text(event.title)
-                                    .font(.system(size: 18, weight: .semibold))
+                                            .font(.system(size: 18, weight: .semibold))
                                             .foregroundColor(.primary)
-                                Text(event.location)
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.gray)
-                            }
-                            .padding(.leading, 10)
-                            
-                            Spacer()
-                            
-                            // Chevron indicator
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
-                                .padding(.trailing, 10)
-                        }
+                                        Text(event.location)
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.gray)
+                                    }
+                                    .padding(.leading, 10)
+                                    
+                                    Spacer()
+                                    
+                                    // Chevron indicator
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(.gray)
+                                        .padding(.trailing, 10)
+                                }
                             }
                             .buttonStyle(PlainButtonStyle())
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 20)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .cornerRadius(10)
+                            .padding(.horizontal, 20)
                         }
                     }
                 }
@@ -217,6 +220,7 @@ struct HomeView: View {
                                     }
                                     .padding(.leading, 8)
                                 }
+                                .padding(.leading, -8)
                                 
                                 Spacer()
                                 
@@ -224,6 +228,9 @@ struct HomeView: View {
                                     .foregroundColor(.gray)
                                     .font(.system(size: 14, weight: .semibold))
                             }
+                            .padding(.horizontal, 12)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .cornerRadius(10)
                             .padding(.horizontal, 20)
                         }
                     }
@@ -242,19 +249,19 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
                 } else {
-                VStack(spacing: 15) {
+                    VStack(spacing: 15) {
                         ForEach(recentActivities, id: \.time) { activity in
-                        HStack {
-                            Text(activity.name)
-                                .fontWeight(.semibold)
-                            + Text(" \(activity.action)")
-                            
-                            Spacer()
-                            
+                            HStack {
+                                Text(activity.name)
+                                    .fontWeight(.semibold)
+                                + Text(" \(activity.action)")
+                                
+                                Spacer()
+                                
                                 Text(activity.time.timeAgoDisplay())
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.horizontal, 20)
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.horizontal, 20)
                         }
                     }
                 }
