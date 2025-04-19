@@ -103,6 +103,13 @@ struct HomeView: View {
                                     Text(member.name)
                                         .font(.caption)
                                         .multilineTextAlignment(.center)
+                                    
+                                    if let alias = member.alias {
+                                        Text(alias)
+                                            .font(.caption2)
+                                            .foregroundColor(.gray)
+                                            .multilineTextAlignment(.center)
+                                    }
                                 }
                                 .frame(width: 80)
                                 .onAppear {
@@ -272,29 +279,16 @@ struct HomeView: View {
         }
         .background(Color(.secondarySystemBackground))
         .onAppear {
-            print("HomeView appeared - Starting data fetch")
             Task {
                 do {
-                    print("Fetching events...")
                     try await eventRepository.fetchEvents()
-                    print("Fetching posts...")
                     try await postRepository.fetchPosts()
                     
-                    print("Attempting to fetch most recent line...")
                     if let recentLine = try await lineRepository.fetchMostRecentLine() {
-                        print("Found most recent line:")
-                        print("- Line Name: \(recentLine.line_name)")
-                        print("- Semester: \(recentLine.semester)")
-                        print("- Year: \(recentLine.year)")
-                        print("- Number of members: \(recentLine.members.count)")
-                        
+                        print("Found most recent line: \(recentLine.line_name) (\(recentLine.semester) \(recentLine.year))")
                         await MainActor.run {
                             self.newestMembers = recentLine.members.sorted(by: { $0.number < $1.number })
                             self.showNoLineMessage = false
-                            print("Updated newestMembers array with \(self.newestMembers.count) members")
-                            for member in self.newestMembers {
-                                print("- Member \(member.number): \(member.name)")
-                            }
                         }
                     } else {
                         print("No recent line found in database")
@@ -304,7 +298,6 @@ struct HomeView: View {
                     }
                 } catch {
                     print("Error fetching data: \(error.localizedDescription)")
-                    print("Error details: \(error)")
                     await MainActor.run {
                         self.showNoLineMessage = true
                     }
