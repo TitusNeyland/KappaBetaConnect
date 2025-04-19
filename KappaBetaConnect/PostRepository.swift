@@ -10,10 +10,14 @@ class PostRepository: ObservableObject {
             .order(by: "timestamp", descending: true)
             .getDocuments()
         
-        self.posts = try snapshot.documents.compactMap { document in
+        let fetchedPosts = try snapshot.documents.compactMap { document in
             var post = try document.data(as: Post.self)
             post.id = document.documentID
             return post
+        }
+        
+        await MainActor.run {
+            self.posts = fetchedPosts
         }
     }
     
@@ -52,7 +56,7 @@ class PostRepository: ObservableObject {
             shareCount: 0
         )
         
-        _ = try db.collection("posts").addDocument(from: post)
+        _ = try await db.collection("posts").addDocument(from: post)
         try await fetchPosts() // Refresh posts after creating new one
     }
     
