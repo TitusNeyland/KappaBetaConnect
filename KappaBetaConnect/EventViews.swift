@@ -44,17 +44,15 @@ struct EventsView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
-                        LazyVStack(spacing: 16) {
+                        LazyVStack(spacing: 12) {
                             ForEach(filteredEvents) { event in
                                 NavigationLink(destination: EventDetailView(userRepository: userRepository, eventRepository: eventRepository, eventId: event.id ?? "")) {
                                     EventListItem(event: event)
-                                        .padding(.horizontal)
                                 }
                                 .buttonStyle(PlainButtonStyle())
-                                Divider()
-                                    .padding(.horizontal)
                             }
                         }
+                        .padding(.vertical)
                     }
                 }
             }
@@ -82,18 +80,6 @@ struct EventsView: View {
                 } catch {
                     showError = true
                     errorMessage = error.localizedDescription
-                }
-            }
-            .onAppear {
-                print("EventsView appeared")
-                print("Current user: \(userRepository.currentUser?.id ?? "nil")")
-                Task {
-                    do {
-                        try await eventRepository.fetchEvents()
-                    } catch {
-                        showError = true
-                        errorMessage = error.localizedDescription
-                    }
                 }
             }
             .overlay(
@@ -173,7 +159,10 @@ struct EventListItem: View {
             
             Spacer()
         }
-        .padding(.vertical, 8)
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(10)
+        .padding(.horizontal, 8)
     }
 }
 
@@ -352,6 +341,7 @@ struct EventDetailView: View {
                     }
                     .padding()
                 }
+                .background(Color(.secondarySystemBackground))
             } else {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
