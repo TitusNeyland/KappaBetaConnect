@@ -67,7 +67,7 @@ struct MainTabView: View {
                 
                 ProfileView()
                     .environmentObject(authManager)
-                    .tag(5)
+                    .tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .onChange(of: selectedTab) { newValue in
