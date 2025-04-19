@@ -71,6 +71,10 @@ struct ManageProfileView: View {
     @State private var state = ""
     @State private var careerField = ""
     @State private var company = ""
+    @State private var lineNumber = ""
+    @State private var semester = ""
+    @State private var year = ""
+    @State private var status = ""
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var isLoading = false
@@ -91,6 +95,13 @@ struct ManageProfileView: View {
         "Non-Profit & Social Services",
         "Other"
     ]
+    let lineNumbers = Array(1...50).map { String($0) }
+    let semesters = ["Fall", "Spring"]
+    let years: [String] = {
+        let currentYear = Calendar.current.component(.year, from: Date())
+        return Array(1911...currentYear).map { String($0) }.reversed()
+    }()
+    let statuses = ["Collegiate", "Alumni"]
     
     var body: some View {
         NavigationView {
@@ -162,6 +173,36 @@ struct ManageProfileView: View {
                     
                     TextField("Company", text: $company)
                 }
+                
+                Section(header: Text("Initiation Details")) {
+                    Picker("Line Number", selection: $lineNumber) {
+                        Text("Select Line #").tag("")
+                        ForEach(lineNumbers, id: \.self) { number in
+                            Text(number).tag(number)
+                        }
+                    }
+                    
+                    Picker("Semester", selection: $semester) {
+                        Text("Select Semester").tag("")
+                        ForEach(semesters, id: \.self) { sem in
+                            Text(sem).tag(sem)
+                        }
+                    }
+                    
+                    Picker("Year", selection: $year) {
+                        Text("Select Year").tag("")
+                        ForEach(years, id: \.self) { yr in
+                            Text(yr).tag(yr)
+                        }
+                    }
+                    
+                    Picker("Status", selection: $status) {
+                        Text("Select Status").tag("")
+                        ForEach(statuses, id: \.self) { stat in
+                            Text(stat).tag(stat)
+                        }
+                    }
+                }
             }
             .navigationTitle("Manage Profile")
             .navigationBarTitleDisplayMode(.inline)
@@ -203,6 +244,10 @@ struct ManageProfileView: View {
             state = user.state ?? ""
             careerField = user.careerField ?? ""
             company = user.company ?? ""
+            lineNumber = user.lineNumber ?? ""
+            semester = user.semester ?? ""
+            year = user.year ?? ""
+            status = user.status ?? ""
         }
     }
     
@@ -229,6 +274,10 @@ struct ManageProfileView: View {
                     user.state = state.isEmpty ? nil : state
                     user.careerField = careerField.isEmpty ? nil : careerField
                     user.company = company.isEmpty ? nil : company
+                    user.lineNumber = lineNumber.isEmpty ? nil : lineNumber
+                    user.semester = semester.isEmpty ? nil : semester
+                    user.year = year.isEmpty ? nil : year
+                    user.status = status.isEmpty ? nil : status
                     
                     try await userRepository.updateUser(user)
                     dismiss()
