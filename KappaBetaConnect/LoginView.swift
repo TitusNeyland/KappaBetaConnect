@@ -8,6 +8,7 @@ struct LoginView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @EnvironmentObject private var authManager: AuthManager
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         ScrollView {
@@ -95,6 +96,12 @@ struct LoginView: View {
         } message: {
             Text(errorMessage)
         }
+        .onChange(of: authManager.isAuthenticated) { newValue in
+            if newValue {
+                isLoading = false
+                dismiss()
+            }
+        }
     }
     
     private func login() {
@@ -115,14 +122,8 @@ struct LoginView: View {
         Task {
             do {
                 try await authManager.signIn(email: email, password: password)
-                
-                // Auth state listener in AuthManager will update isAuthenticated
-                // and navigate to MainTabView via ContentView
-                DispatchQueue.main.async {
-                    isLoading = false
-                }
             } catch {
-                DispatchQueue.main.async {
+                await MainActor.run {
                     showError(message: "Login failed: \(error.localizedDescription)")
                 }
             }
