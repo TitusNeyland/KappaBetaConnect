@@ -594,7 +594,7 @@ struct ProfileView: View {
                                         showInterestsEditSheet = true
                                     }) {
                                         Image(systemName: "plus.circle.fill")
-                                            .foregroundColor(.black)
+                                            .foregroundColor(Color(.label))
                                     }
                                 }
                             }
@@ -653,7 +653,7 @@ struct ProfileView: View {
                                     showSocialMediaEditSheet = true
                                 }) {
                                     Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(.black)
+                                        .foregroundColor(Color(.label))
                                         .font(.system(size: 24))
                                 }
                                 .padding(.top, 5)
@@ -729,12 +729,12 @@ struct ProfileView: View {
                     }
                 }
             }
-            .background(Color(.systemBackground))
+            .background(Color(.secondarySystemBackground))
             
             if isUploading {
                 ProgressView("Uploading image...")
                     .padding()
-                    .background(Color(.systemBackground))
+                    .background(Color(.secondarySystemBackground))
                     .cornerRadius(10)
                     .shadow(radius: 5)
             }

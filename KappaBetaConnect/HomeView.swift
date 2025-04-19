@@ -166,7 +166,7 @@ struct HomeView: View {
                             .buttonStyle(PlainButtonStyle())
                             .padding(.vertical, 10)
                             .padding(.horizontal, 20)
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color(.tertiarySystemGroupedBackground))
                             .cornerRadius(10)
                             .padding(.horizontal, 20)
                         }
@@ -228,8 +228,9 @@ struct HomeView: View {
                                     .foregroundColor(.gray)
                                     .font(.system(size: 14, weight: .semibold))
                             }
+                            .padding(.vertical, 12)
                             .padding(.horizontal, 12)
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color(.tertiarySystemGroupedBackground))
                             .cornerRadius(10)
                             .padding(.horizontal, 20)
                         }
@@ -269,6 +270,7 @@ struct HomeView: View {
                 Spacer()
             }
         }
+        .background(Color(.secondarySystemBackground))
         .onAppear {
             Task {
                 do {

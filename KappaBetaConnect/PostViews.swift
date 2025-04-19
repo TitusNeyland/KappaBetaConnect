@@ -616,10 +616,15 @@ struct PostCard: View {
                 onViewAllComments: { showCommentSheet = true }
             )
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(Color(.tertiarySystemGroupedBackground))
         .cornerRadius(10)
-        .padding(.horizontal, 8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1.3)
+        )
+        .padding(.horizontal, 2)
         .alert("Delete Post", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
