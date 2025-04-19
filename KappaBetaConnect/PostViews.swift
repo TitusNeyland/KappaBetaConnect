@@ -101,7 +101,7 @@ struct CreatePostSheet: View {
                     }
                     .disabled(isPostButtonDisabled)
                     .font(.headline)
-                    .foregroundColor(isPostButtonDisabled ? .gray : .black)
+                    .foregroundColor(isPostButtonDisabled ? .gray : .primary)
                 }
             }
         }
@@ -616,10 +616,15 @@ struct PostCard: View {
                 onViewAllComments: { showCommentSheet = true }
             )
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(Color(.tertiarySystemGroupedBackground))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1.3)
+        )
+        .padding(.horizontal, 2)
         .alert("Delete Post", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {

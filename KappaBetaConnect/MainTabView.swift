@@ -19,7 +19,7 @@ struct MainTabView: View {
                         ForEach(0..<tabs.count, id: \.self) { index in
                             VStack {
                                 Text(tabs[index])
-                                    .foregroundColor(selectedTab == index ? .black : .gray)
+                                    .foregroundColor(selectedTab == index ? .primary : .secondary)
                                     .fontWeight(selectedTab == index ? .bold : .regular)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 12)
@@ -27,7 +27,7 @@ struct MainTabView: View {
                                 // Active tab indicator
                                 Rectangle()
                                     .frame(height: 2)
-                                    .foregroundColor(selectedTab == index ? .black : .clear)
+                                    .foregroundColor(selectedTab == index ? .primary : .clear)
                             }
                             .id(index) // Add id for scrolling
                             .onTapGesture {
@@ -45,8 +45,8 @@ struct MainTabView: View {
                     }
                 }
             }
-            .background(Color.white)
-            .shadow(color: .gray.opacity(0.2), radius: 4, y: 2)
+            .background(Color(.secondarySystemBackground))
+            .shadow(color: Color(.systemGray4), radius: 4, y: 2)
             
             // Tab Content
             TabView(selection: $selectedTab) {
