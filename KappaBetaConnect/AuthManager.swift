@@ -12,26 +12,39 @@ class AuthManager: ObservableObject {
     
     init() {
         setupAuthStateListener()
+        
+        // Check current auth state
+        if let user = Auth.auth().currentUser {
+            self.isAuthenticated = true
+            self.userId = user.uid
+            
+            Task {
+                if let userData = try? await userRepository.getUser(withId: user.uid) {
+                    await MainActor.run {
+                        self.currentUser = userData
+                    }
+                }
+            }
+        }
     }
     
     private func setupAuthStateListener() {
         Auth.auth().addStateDidChangeListener { [weak self] _, user in
-            self?.isAuthenticated = user != nil
-            self?.userId = user?.uid
-            
-            if let userId = user?.uid {
-                Task {
+            Task { @MainActor in
+                self?.isAuthenticated = user != nil
+                self?.userId = user?.uid
+                
+                if let userId = user?.uid {
                     do {
-                        let user = try await self?.userRepository.getUser(withId: userId)
-                        DispatchQueue.main.async {
+                        if let user = try await self?.userRepository.getUser(withId: userId) {
                             self?.currentUser = user
                         }
                     } catch {
                         print("Error fetching user: \(error.localizedDescription)")
                     }
+                } else {
+                    self?.currentUser = nil
                 }
-            } else {
-                self?.currentUser = nil
             }
         }
     }
@@ -45,6 +58,12 @@ class AuthManager: ObservableObject {
         
         try await userRepository.createUser(user)
         
+        await MainActor.run {
+            self.isAuthenticated = true
+            self.userId = userId
+            self.currentUser = user
+        }
+        
         return userId
     }
     
@@ -52,21 +71,23 @@ class AuthManager: ObservableObject {
         let authResult = try await Auth.auth().signIn(withEmail: email, password: password)
         let userId = authResult.user.uid
         
-        DispatchQueue.main.async {
+        let user = try await userRepository.getUser(withId: userId)
+        
+        await MainActor.run {
             self.isAuthenticated = true
             self.userId = userId
-        }
-        
-        if let user = try await userRepository.getUser(withId: userId) {
-            DispatchQueue.main.async {
-                self.currentUser = user
-            }
+            self.currentUser = user
         }
     }
     
     func signOut() throws {
         try Auth.auth().signOut()
-        currentUser = nil
+        
+        Task { @MainActor in
+            self.isAuthenticated = false
+            self.currentUser = nil
+            self.userId = nil
+        }
     }
     
     func resetPassword(forEmail email: String) async throws {
