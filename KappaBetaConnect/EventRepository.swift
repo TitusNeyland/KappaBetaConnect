@@ -17,8 +17,12 @@ class EventRepository: ObservableObject {
                     return
                 }
                 
-                self?.events = documents.compactMap { document in
+                let fetchedEvents = documents.compactMap { document in
                     try? document.data(as: Event.self)
+                }
+                
+                DispatchQueue.main.async {
+                    self?.events = fetchedEvents
                 }
             }
     }
@@ -45,8 +49,12 @@ class EventRepository: ObservableObject {
             .order(by: "date", descending: false)
             .getDocuments()
         
-        events = try snapshot.documents.compactMap { document in
+        let fetchedEvents = try snapshot.documents.compactMap { document in
             try document.data(as: Event.self)
+        }
+        
+        await MainActor.run {
+            self.events = fetchedEvents
         }
     }
     
@@ -54,39 +62,46 @@ class EventRepository: ObservableObject {
         let eventRef = db.collection(eventsCollection).document(eventId)
         
         try await db.runTransaction { transaction, errorPointer in
-            let eventDocument: DocumentSnapshot
             do {
-                eventDocument = try transaction.getDocument(eventRef)
-            } catch let fetchError as NSError {
-                errorPointer?.pointee = fetchError
-                return nil
-            }
-            
-            guard var event = try? eventDocument.data(as: Event.self) else {
-                let error = NSError(domain: "EventRepository", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to decode event data"])
-                errorPointer?.pointee = error
-                return nil
-            }
-            
-            if event.attendees.contains(userId) {
-                event.attendees.removeAll { $0 == userId }
-            } else {
-                event.attendees.append(userId)
-            }
-            
-            do {
+                let eventDocument = try transaction.getDocument(eventRef)
+                guard var event = try? eventDocument.data(as: Event.self) else {
+                    let error = NSError(domain: "EventRepository", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to decode event data"])
+                    errorPointer?.pointee = error
+                    return nil
+                }
+                
+                if event.attendees.contains(userId) {
+                    event.attendees.removeAll { $0 == userId }
+                } else {
+                    event.attendees.append(userId)
+                }
+                
                 try transaction.setData(from: event, forDocument: eventRef)
-            } catch let setError as NSError {
-                errorPointer?.pointee = setError
+                
+                // Update local events array on main thread
+                DispatchQueue.main.async {
+                    if let index = self.events.firstIndex(where: { $0.id == eventId }) {
+                        self.events[index].attendees = event.attendees
+                    }
+                }
+                
+                return nil
+            } catch {
+                errorPointer?.pointee = error as NSError
                 return nil
             }
-            
-            return nil
         }
     }
     
     func deleteEvent(eventId: String) async throws {
         try await db.collection(eventsCollection).document(eventId).delete()
+        
+        // Remove the event from the local events array on main thread
+        await MainActor.run {
+            if let index = self.events.firstIndex(where: { $0.id == eventId }) {
+                self.events.remove(at: index)
+            }
+        }
     }
     
     func updateEvent(eventId: String, title: String, description: String, date: Date, location: String, eventLink: String?, hashtags: String?) async throws {
@@ -113,5 +128,12 @@ class EventRepository: ObservableObject {
         )
         
         try await eventRef.setData(from: updatedEvent)
+        
+        // Update the local events array on main thread
+        await MainActor.run {
+            if let index = self.events.firstIndex(where: { $0.id == eventId }) {
+                self.events[index] = updatedEvent
+            }
+        }
     }
 } 

@@ -937,12 +937,11 @@ struct ProfileView: View {
         
         do {
             print("Fetching user data for: \(displayedUserId)")
-            if let user = try await userRepository.getUser(withId: displayedUserId) {
-                await MainActor.run {
-                    self.displayedUser = user
-                }
-                print("Successfully fetched user data")
+            let user = try await userRepository.getUser(withId: displayedUserId)
+            await MainActor.run {
+                self.displayedUser = user
             }
+            print("Successfully fetched user data")
         } catch {
             print("Error fetching user data: \(error)")
             await MainActor.run {

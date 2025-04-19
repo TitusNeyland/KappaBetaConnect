@@ -10,10 +10,14 @@ class PostRepository: ObservableObject {
             .order(by: "timestamp", descending: true)
             .getDocuments()
         
-        self.posts = try snapshot.documents.compactMap { document in
+        let fetchedPosts = try snapshot.documents.compactMap { document in
             var post = try document.data(as: Post.self)
             post.id = document.documentID
             return post
+        }
+        
+        await MainActor.run {
+            self.posts = fetchedPosts
         }
     }
     
@@ -35,9 +39,11 @@ class PostRepository: ObservableObject {
         guard var updatedPost = try? document.data(as: Post.self) else { return }
         updatedPost.id = document.documentID
         
-        // Update the specific post in the posts array
-        if let index = posts.firstIndex(where: { $0.id == postId }) {
-            posts[index] = updatedPost
+        await MainActor.run {
+            // Update the specific post in the posts array
+            if let index = self.posts.firstIndex(where: { $0.id == postId }) {
+                self.posts[index] = updatedPost
+            }
         }
     }
     
@@ -52,7 +58,7 @@ class PostRepository: ObservableObject {
             shareCount: 0
         )
         
-        _ = try db.collection("posts").addDocument(from: post)
+        _ = try await db.collection("posts").addDocument(from: post)
         try await fetchPosts() // Refresh posts after creating new one
     }
     
@@ -72,9 +78,11 @@ class PostRepository: ObservableObject {
                 
                 try transaction.setData(from: post, forDocument: postRef)
                 
-                // Update local posts array
-                if let index = self.posts.firstIndex(where: { $0.id == postId }) {
-                    self.posts[index].likes = post.likes
+                // Update local posts array on main thread
+                DispatchQueue.main.async {
+                    if let index = self.posts.firstIndex(where: { $0.id == postId }) {
+                        self.posts[index].likes = post.likes
+                    }
                 }
                 
                 return nil
@@ -105,9 +113,11 @@ class PostRepository: ObservableObject {
                 post.comments.append(comment)
                 try transaction.setData(from: post, forDocument: postRef)
                 
-                // Update local posts array
-                if let index = self.posts.firstIndex(where: { $0.id == postId }) {
-                    self.posts[index].comments = post.comments
+                // Update local posts array on main thread
+                DispatchQueue.main.async {
+                    if let index = self.posts.firstIndex(where: { $0.id == postId }) {
+                        self.posts[index].comments = post.comments
+                    }
                 }
                 
                 return nil
@@ -133,9 +143,11 @@ class PostRepository: ObservableObject {
                 
                 try transaction.setData(from: post, forDocument: postRef)
                 
-                // Update local posts array
-                if let index = self.posts.firstIndex(where: { $0.id == postId }) {
-                    self.posts[index].comments = post.comments
+                // Update local posts array on main thread
+                DispatchQueue.main.async {
+                    if let index = self.posts.firstIndex(where: { $0.id == postId }) {
+                        self.posts[index].comments = post.comments
+                    }
                 }
                 
                 return nil
@@ -157,9 +169,11 @@ class PostRepository: ObservableObject {
                 post.shareCount += 1
                 try transaction.setData(from: post, forDocument: postRef)
                 
-                // Update local posts array
-                if let index = self.posts.firstIndex(where: { $0.id == postId }) {
-                    self.posts[index].shareCount = post.shareCount
+                // Update local posts array on main thread
+                DispatchQueue.main.async {
+                    if let index = self.posts.firstIndex(where: { $0.id == postId }) {
+                        self.posts[index].shareCount = post.shareCount
+                    }
                 }
                 
                 return nil
@@ -174,9 +188,11 @@ class PostRepository: ObservableObject {
         // Delete the post from Firestore
         try await db.collection("posts").document(postId).delete()
         
-        // Remove the post from the local posts array
-        if let index = posts.firstIndex(where: { $0.id == postId }) {
-            posts.remove(at: index)
+        // Remove the post from the local posts array on main thread
+        await MainActor.run {
+            if let index = self.posts.firstIndex(where: { $0.id == postId }) {
+                self.posts.remove(at: index)
+            }
         }
     }
 } 

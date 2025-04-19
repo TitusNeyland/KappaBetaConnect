@@ -25,7 +25,9 @@ class UserRepository: ObservableObject {
                 }
             } else {
                 print("No user logged in")
-                self?.currentUser = nil
+                Task { @MainActor in
+                    self?.currentUser = nil
+                }
             }
         }
         
@@ -49,7 +51,7 @@ class UserRepository: ObservableObject {
         //print("Fetching user with ID: \(userId)")
         if let user = try await getUser(withId: userId) {
             //print("Found user: \(user.firstName) \(user.lastName)")
-            DispatchQueue.main.async {
+            await MainActor.run {
                 self.currentUser = user
                 //print("Current user set to: \(user.firstName) \(user.lastName)")
             }
@@ -112,7 +114,7 @@ class UserRepository: ObservableObject {
         try await docRef.setData(userData)
         
         // Update the currentUser property on the main thread
-        DispatchQueue.main.async {
+        await MainActor.run {
             if self.currentUser?.id == userId {
                 self.currentUser = updatedUser
             }

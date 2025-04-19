@@ -20,6 +20,14 @@ struct FeedView: View {
                         }
                         .padding()
                     }
+                    .refreshable {
+                        do {
+                            try await postRepository.fetchPosts()
+                        } catch {
+                            showError = true
+                            errorMessage = error.localizedDescription
+                        }
+                    }
                 }
                 .navigationTitle("Feed")
                 .overlay(
@@ -67,8 +75,10 @@ struct FeedView: View {
                 do {
                     try await postRepository.fetchPosts()
                 } catch {
-                    showError = true
-                    errorMessage = error.localizedDescription
+                    await MainActor.run {
+                        showError = true
+                        errorMessage = error.localizedDescription
+                    }
                 }
             }
         }

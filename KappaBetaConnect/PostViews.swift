@@ -657,8 +657,10 @@ struct PostCard: View {
     
     private func handleLike() {
         guard let userId = authManager.currentUser?.id else {
-            showError = true
-            errorMessage = "You must be logged in to like posts"
+            Task { @MainActor in
+                showError = true
+                errorMessage = "You must be logged in to like posts"
+            }
             return
         }
         
@@ -666,16 +668,20 @@ struct PostCard: View {
             do {
                 try await postRepository.toggleLike(postId: post.id ?? "", userId: userId)
             } catch {
-                showError = true
-                errorMessage = error.localizedDescription
+                await MainActor.run {
+                    showError = true
+                    errorMessage = error.localizedDescription
+                }
             }
         }
     }
     
     private func handleComment() {
         guard let currentUser = authManager.currentUser else {
-            showError = true
-            errorMessage = "You must be logged in to comment"
+            Task { @MainActor in
+                showError = true
+                errorMessage = "You must be logged in to comment"
+            }
             return
         }
         
@@ -691,11 +697,15 @@ struct PostCard: View {
                     authorName: "\(currentUser.firstName) \(currentUser.lastName)"
                 )
                 
-                newComment = ""
-                showCommentSheet = false
+                await MainActor.run {
+                    newComment = ""
+                    showCommentSheet = false
+                }
             } catch {
-                showError = true
-                errorMessage = error.localizedDescription
+                await MainActor.run {
+                    showError = true
+                    errorMessage = error.localizedDescription
+                }
             }
         }
     }
@@ -705,8 +715,10 @@ struct PostCard: View {
             do {
                 try await postRepository.incrementShareCount(postId: post.id ?? "")
             } catch {
-                showError = true
-                errorMessage = error.localizedDescription
+                await MainActor.run {
+                    showError = true
+                    errorMessage = error.localizedDescription
+                }
             }
         }
     }
@@ -716,8 +728,10 @@ struct PostCard: View {
             do {
                 try await postRepository.deletePost(postId: post.id ?? "")
             } catch {
-                showError = true
-                errorMessage = "Failed to delete post: \(error.localizedDescription)"
+                await MainActor.run {
+                    showError = true
+                    errorMessage = "Failed to delete post: \(error.localizedDescription)"
+                }
             }
         }
     }
