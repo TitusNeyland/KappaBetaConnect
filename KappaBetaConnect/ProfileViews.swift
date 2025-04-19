@@ -57,6 +57,240 @@ struct EnlargedImageView: View {
     }
 }
 
+struct ManageProfileView: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var userRepository: UserRepository
+    @State private var prefix = ""
+    @State private var firstName = ""
+    @State private var lastName = ""
+    @State private var suffix = ""
+    @State private var email = ""
+    @State private var phoneNumber = ""
+    @State private var major = ""
+    @State private var city = ""
+    @State private var state = ""
+    @State private var careerField = ""
+    @State private var company = ""
+    @State private var lineNumber = ""
+    @State private var semester = ""
+    @State private var year = ""
+    @State private var status = ""
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var isLoading = false
+    
+    let prefixes = ["Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Rev.", "Hon."]
+    let suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "M.D.", "Esq."]
+    let careerFields = [
+        "Business & Finance",
+        "Technology & Engineering",
+        "Healthcare & Medicine",
+        "Law & Legal Services",
+        "Education & Research",
+        "Government & Public Service",
+        "Arts & Entertainment",
+        "Marketing & Communications",
+        "Science & Research",
+        "Real Estate & Construction",
+        "Non-Profit & Social Services",
+        "Other"
+    ]
+    let lineNumbers = Array(1...50).map { String($0) }
+    let semesters = ["Fall", "Spring"]
+    let years: [String] = {
+        let currentYear = Calendar.current.component(.year, from: Date())
+        return Array(1911...currentYear).map { String($0) }.reversed()
+    }()
+    let statuses = ["Collegiate", "Alumni"]
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Personal Information")) {
+                    VStack(spacing: 16) {
+                        HStack {
+                            Text("Prefix")
+                                .foregroundColor(.gray)
+                            Spacer()
+                            Picker("", selection: $prefix) {
+                                Text("Prefix").tag("")
+                                ForEach(prefixes, id: \.self) { prefix in
+                                    Text(prefix).tag(prefix)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .frame(width: 100)
+                        }
+                        
+                        TextField("First Name", text: $firstName)
+                        
+                        TextField("Last Name", text: $lastName)
+                        
+                        HStack {
+                            Text("Suffix")
+                                .foregroundColor(.gray)
+                            Spacer()
+                            Picker("", selection: $suffix) {
+                                Text("Suffix").tag("")
+                                ForEach(suffixes, id: \.self) { suffix in
+                                    Text(suffix).tag(suffix)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .frame(width: 100)
+                        }
+                        
+                        TextField("Email", text: $email)
+                            .textContentType(.emailAddress)
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
+                        TextField("Phone Number", text: $phoneNumber)
+                            .textContentType(.telephoneNumber)
+                            .keyboardType(.phonePad)
+                        TextField("Major", text: $major)
+                    }
+                }
+                
+                Section(header: Text("Location")) {
+                    TextField("City", text: $city)
+                    TextField("State", text: $state)
+                }
+                
+                Section(header: Text("Career")) {
+                    HStack {
+                        Text("Career Field")
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Picker("", selection: $careerField) {
+                            Text("Select Career Field").tag("")
+                            ForEach(careerFields, id: \.self) { field in
+                                Text(field).tag(field)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.black)
+                    }
+                    
+                    TextField("Company", text: $company)
+                }
+                
+                Section(header: Text("Initiation Details")) {
+                    Picker("Line Number", selection: $lineNumber) {
+                        Text("Select Line #").tag("")
+                        ForEach(lineNumbers, id: \.self) { number in
+                            Text(number).tag(number)
+                        }
+                    }
+                    
+                    Picker("Semester", selection: $semester) {
+                        Text("Select Semester").tag("")
+                        ForEach(semesters, id: \.self) { sem in
+                            Text(sem).tag(sem)
+                        }
+                    }
+                    
+                    Picker("Year", selection: $year) {
+                        Text("Select Year").tag("")
+                        ForEach(years, id: \.self) { yr in
+                            Text(yr).tag(yr)
+                        }
+                    }
+                    
+                    Picker("Status", selection: $status) {
+                        Text("Select Status").tag("")
+                        ForEach(statuses, id: \.self) { stat in
+                            Text(stat).tag(stat)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Manage Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        saveChanges()
+                    }
+                    .disabled(isLoading)
+                }
+            }
+            .onAppear {
+                loadCurrentUserData()
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private func loadCurrentUserData() {
+        if let user = userRepository.currentUser {
+            prefix = user.prefix ?? ""
+            firstName = user.firstName
+            lastName = user.lastName
+            suffix = user.suffix ?? ""
+            email = user.email
+            phoneNumber = user.phoneNumber
+            major = user.major ?? ""
+            city = user.city ?? ""
+            state = user.state ?? ""
+            careerField = user.careerField ?? ""
+            company = user.company ?? ""
+            lineNumber = user.lineNumber ?? ""
+            semester = user.semester ?? ""
+            year = user.year ?? ""
+            status = user.status ?? ""
+        }
+    }
+    
+    private func saveChanges() {
+        guard !firstName.isEmpty, !lastName.isEmpty, !email.isEmpty, !phoneNumber.isEmpty else {
+            showError = true
+            errorMessage = "Please fill in all required fields"
+            return
+        }
+        
+        isLoading = true
+        
+        Task {
+            do {
+                if var user = userRepository.currentUser {
+                    user.prefix = prefix.isEmpty ? nil : prefix
+                    user.firstName = firstName
+                    user.lastName = lastName
+                    user.suffix = suffix.isEmpty ? nil : suffix
+                    user.email = email
+                    user.phoneNumber = phoneNumber
+                    user.major = major.isEmpty ? nil : major
+                    user.city = city.isEmpty ? nil : city
+                    user.state = state.isEmpty ? nil : state
+                    user.careerField = careerField.isEmpty ? nil : careerField
+                    user.company = company.isEmpty ? nil : company
+                    user.lineNumber = lineNumber.isEmpty ? nil : lineNumber
+                    user.semester = semester.isEmpty ? nil : semester
+                    user.year = year.isEmpty ? nil : year
+                    user.status = status.isEmpty ? nil : status
+                    
+                    try await userRepository.updateUser(user)
+                    dismiss()
+                }
+            } catch {
+                showError = true
+                errorMessage = error.localizedDescription
+            }
+            isLoading = false
+        }
+    }
+}
+
 struct ProfileView: View {
     @StateObject private var postRepository = PostRepository()
     @StateObject private var userRepository = UserRepository()
@@ -82,6 +316,7 @@ struct ProfileView: View {
     @State private var showEnlargedImage = false
     @State private var enlargedImage: Image?
     @State private var bioDidSave = false
+    @State private var showManageProfile = false
     
     // Optional parameter to view a different user's profile
     var userId: String?
@@ -543,22 +778,39 @@ struct ProfileView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
+                        .padding(.bottom, 30)
                         
-                        // Logout Button
+                        // Manage Profile Button
                         if isCurrentUserProfile {
-                            Button(action: {
-                                showLogoutAlert = true
-                            }) {
-                                Text("Logout")
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(Color.red)
-                                    .cornerRadius(10)
+                            VStack(spacing: 10) {
+                                Button(action: {
+                                    showManageProfile = true
+                                }) {
+                                    Text("Manage Profile")
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(Color.black)
+                                        .cornerRadius(10)
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.top, 20)
+                                
+                                Button(action: {
+                                    showLogoutAlert = true
+                                }) {
+                                    Text("Logout")
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(Color.red)
+                                        .cornerRadius(10)
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.bottom, 30)
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 30)
                         }
                     }
                 }
@@ -724,6 +976,9 @@ struct ProfileView: View {
                     socialMediaDidSave = false
                 }
             }
+        }
+        .sheet(isPresented: $showManageProfile) {
+            ManageProfileView(userRepository: userRepository)
         }
     }
     
