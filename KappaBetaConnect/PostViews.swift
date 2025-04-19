@@ -101,7 +101,7 @@ struct CreatePostSheet: View {
                     }
                     .disabled(isPostButtonDisabled)
                     .font(.headline)
-                    .foregroundColor(isPostButtonDisabled ? .gray : .black)
+                    .foregroundColor(isPostButtonDisabled ? .gray : .primary)
                 }
             }
         }
