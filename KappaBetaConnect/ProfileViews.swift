@@ -504,7 +504,7 @@ struct ProfileView: View {
                                         showBioEditSheet = true
                                     }) {
                                         Image(systemName: "pencil")
-                                            .foregroundColor(.black)
+                                            .foregroundColor(Color(.label))
                                     }
                                 }
                             }
