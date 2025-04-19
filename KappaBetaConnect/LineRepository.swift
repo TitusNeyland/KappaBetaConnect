@@ -22,6 +22,25 @@ class LineRepository: ObservableObject {
         return line
     }
     
+    func findLine(semester: String, year: Int) async throws -> Line? {
+        let snapshot = try await db.collection("lines")
+            .whereField("semester", isEqualTo: semester)
+            .whereField("year", isEqualTo: year)
+            .getDocuments()
+        
+        guard let document = snapshot.documents.first else { return nil }
+        var line = try document.data(as: Line.self)
+        line.id = document.documentID
+        return line
+    }
+    
+    func getLineMemberDetails(line: Line, lineNumber: Int) -> (alias: String, name: String)? {
+        guard let member = line.members.first(where: { member in member.number == lineNumber }) else {
+            return nil
+        }
+        return (alias: member.alias, name: member.name)
+    }
+    
     func createLine(_ line: Line) async throws {
         let docRef = try db.collection("lines").addDocument(from: line)
         print("Line created with ID: \(docRef.documentID)")
