@@ -87,7 +87,7 @@ struct SignUpView: View {
                 
                 // Location Section
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Location")
+                    Text("Current Location")
                         .font(.title2)
                         .fontWeight(.bold)
                         .padding(.horizontal, 30)
@@ -103,6 +103,43 @@ struct SignUpView: View {
                                 .foregroundColor(.gray)
                             Spacer()
                             Picker("State", selection: $userData.state) {
+                                Text("Select State").tag("")
+                                ForEach(states, id: \.self) { state in
+                                    Text(state).tag(state)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .tint(.black)
+                        }
+                        .padding()
+                        .background(Color(.systemBackground))
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(.systemGray4), lineWidth: 1)
+                        )
+                    }
+                    .padding(.horizontal, 30)
+                }
+                
+                // Hometown Section
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("Hometown")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .padding(.horizontal, 30)
+                        .padding(.top, 30)
+                    
+                    VStack(spacing: 15) {
+                        CustomTextField(text: $userData.homeCity, placeholder: "Hometown City", keyboardType: .default, textContentType: .addressCity, autoCapitalizeFirstLetter: true, autoCapitalizeWords: true)
+                            .customTextField()
+                        
+                        // State Picker
+                        HStack {
+                            Text("State")
+                                .foregroundColor(.gray)
+                            Spacer()
+                            Picker("State", selection: $userData.homeState) {
                                 Text("Select State").tag("")
                                 ForEach(states, id: \.self) { state in
                                     Text(state).tag(state)

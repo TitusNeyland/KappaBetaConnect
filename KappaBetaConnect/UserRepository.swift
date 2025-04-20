@@ -195,6 +195,8 @@ class UserRepository: ObservableObject {
         if let suffix = user.suffix { dict["suffix"] = suffix }
         if let city = user.city { dict["city"] = city }
         if let state = user.state { dict["state"] = state }
+        if let homeCity = user.homeCity { dict["homeCity"] = homeCity }
+        if let homeState = user.homeState { dict["homeState"] = homeState }
         if let careerField = user.careerField { dict["careerField"] = careerField }
         if let major = user.major { dict["major"] = major }
         if let jobTitle = user.jobTitle { dict["jobTitle"] = jobTitle }
@@ -241,6 +243,8 @@ class UserRepository: ObservableObject {
             phoneNumber: phoneNumber,
             city: dict["city"] as? String,
             state: dict["state"] as? String,
+            homeCity: dict["homeCity"] as? String,
+            homeState: dict["homeState"] as? String,
             password: password,
             careerField: dict["careerField"] as? String,
             major: dict["major"] as? String,
@@ -280,6 +284,8 @@ class UserRepository: ObservableObject {
         if let suffix = user.suffix { data["suffix"] = suffix }
         if let city = user.city { data["city"] = city }
         if let state = user.state { data["state"] = state }
+        if let homeCity = user.homeCity { data["homeCity"] = homeCity }
+        if let homeState = user.homeState { data["homeState"] = homeState }
         if let careerField = user.careerField { data["careerField"] = careerField }
         if let major = user.major { data["major"] = major }
         if let jobTitle = user.jobTitle { data["jobTitle"] = jobTitle }
@@ -316,6 +322,8 @@ class UserRepository: ObservableObject {
         let suffix = data["suffix"] as? String
         let city = data["city"] as? String
         let state = data["state"] as? String
+        let homeCity = data["homeCity"] as? String
+        let homeState = data["homeState"] as? String
         let careerField = data["careerField"] as? String
         let major = data["major"] as? String
         let jobTitle = data["jobTitle"] as? String
@@ -343,6 +351,8 @@ class UserRepository: ObservableObject {
             phoneNumber: phoneNumber,
             city: city,
             state: state,
+            homeCity: homeCity,
+            homeState: homeState,
             password: password,
             careerField: careerField,
             major: major,
