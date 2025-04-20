@@ -80,6 +80,9 @@ struct ManageProfileView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var isLoading = false
+    @State private var dialogTitle = "Error"
+    @State private var shouldSignOut = false
+    @EnvironmentObject private var authManager: AuthManager
     
     let prefixes = ["Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Rev.", "Hon."]
     let suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "M.D.", "Esq."]
@@ -226,7 +229,7 @@ struct ManageProfileView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        saveChanges()
+                        saveProfile()
                     }
                     .disabled(isLoading)
                 }
@@ -234,8 +237,16 @@ struct ManageProfileView: View {
             .onAppear {
                 loadCurrentUserData()
             }
-            .alert("Error", isPresented: $showError) {
-                Button("OK", role: .cancel) { }
+            .alert(dialogTitle, isPresented: $showError) {
+                Button("OK") {
+                    if shouldSignOut {
+                        do {
+                            try authManager.signOut()
+                        } catch {
+                            print("Error signing out: \(error.localizedDescription)")
+                        }
+                    }
+                }
             } message: {
                 Text(errorMessage)
             }
@@ -264,54 +275,137 @@ struct ManageProfileView: View {
         }
     }
     
-    private func saveChanges() {
-        guard !firstName.isEmpty, !lastName.isEmpty, !email.isEmpty, !phoneNumber.isEmpty else {
+    private func saveProfile() {
+        isLoading = true
+        
+        // Validate required fields
+        if firstName.isEmpty {
             showError = true
-            errorMessage = "Please fill in all required fields"
+            errorMessage = "First name is required"
+            isLoading = false
             return
         }
         
-        isLoading = true
+        if lastName.isEmpty {
+            showError = true
+            errorMessage = "Last name is required"
+            isLoading = false
+            return
+        }
+        
+        if email.isEmpty {
+            showError = true
+            errorMessage = "Email is required"
+            isLoading = false
+            return
+        }
+        
+        if !isValidEmail(email) {
+            showError = true
+            errorMessage = "Please enter a valid email address"
+            isLoading = false
+            return
+        }
         
         Task {
             do {
-                if var user = userRepository.currentUser {
-                    // Basic info
-                    user.prefix = prefix.isEmpty ? nil : prefix
-                    user.firstName = firstName
-                    user.lastName = lastName
-                    user.suffix = suffix.isEmpty ? nil : suffix
-                    user.email = email
-                    user.phoneNumber = phoneNumber
-                    
-                    // Optional fields - trim whitespace before checking isEmpty
-                    user.major = major.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : major
-                    user.city = city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : city
-                    user.state = state.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : state
-                    user.homeCity = homeCity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : homeCity
-                    user.homeState = homeState.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : homeState
-                    user.careerField = careerField.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : careerField
-                    user.company = company.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : company
-                    
-                    // Initiation details - ensure we're not saving empty strings
-                    user.lineNumber = lineNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : lineNumber
-                    user.semester = semester.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : semester
-                    user.year = year.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : year
-                    user.status = status.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : status
-                    
-                    try await userRepository.updateUser(user)
-                    
-                    // Update the current user in the repository
-                    userRepository.currentUser = user
-                    
-                    dismiss()
+                // Check if email has changed
+                let currentEmail = userRepository.currentUser?.email ?? ""
+                let emailChanged = email != currentEmail
+                
+                // Update user in Firestore
+                var updatedUser = userRepository.currentUser ?? User(
+                    id: "",
+                    prefix: nil,
+                    firstName: "",
+                    lastName: "",
+                    suffix: nil,
+                    email: "",
+                    phoneNumber: "",
+                    city: nil,
+                    state: nil,
+                    homeCity: nil,
+                    homeState: nil,
+                    password: "",
+                    careerField: nil,
+                    major: nil,
+                    jobTitle: nil,
+                    company: nil,
+                    bio: nil,
+                    interests: nil,
+                    lineNumber: nil,
+                    semester: nil,
+                    year: nil,
+                    status: nil,
+                    graduationYear: nil,
+                    profileImageURL: nil,
+                    linkedInURL: nil,
+                    instagramURL: nil,
+                    twitterURL: nil,
+                    snapchatURL: nil,
+                    facebookURL: nil,
+                    isActive: true
+                )
+                
+                updatedUser.prefix = prefix
+                updatedUser.firstName = firstName
+                updatedUser.lastName = lastName
+                updatedUser.suffix = suffix
+                updatedUser.email = email
+                updatedUser.phoneNumber = phoneNumber
+                updatedUser.major = major
+                updatedUser.city = city
+                updatedUser.state = state
+                updatedUser.homeCity = homeCity
+                updatedUser.homeState = homeState
+                updatedUser.careerField = careerField
+                updatedUser.company = company
+                updatedUser.lineNumber = lineNumber
+                updatedUser.semester = semester
+                updatedUser.year = year
+                updatedUser.status = status
+                updatedUser.updatedAt = Date()
+                
+                // If email changed, update both Firestore and Firebase Auth
+                if emailChanged {
+                    do {
+                        try await authManager.updateEmail(to: email)
+                        
+                        // Update the email in Firestore
+                        updatedUser.email = email
+                        try await userRepository.updateUser(updatedUser)
+                        
+                        // Show success message for email verification
+                        dialogTitle = "Email Update"
+                        errorMessage = "A verification email has been sent to your new email address. You will be signed out to complete the email change process. Please sign in again with your new email once you've verified it."
+                        showError = true
+                        shouldSignOut = true
+                        isLoading = false
+                        return
+                    } catch {
+                        dialogTitle = "Error"
+                        showError = true
+                        errorMessage = "Failed to send verification email: \(error.localizedDescription)"
+                        isLoading = false
+                        return
+                    }
                 }
+                
+                // Only update the user in Firestore if email hasn't changed or if it's already verified
+                try await userRepository.updateUser(updatedUser)
+                dismiss()
             } catch {
                 showError = true
                 errorMessage = error.localizedDescription
             }
             isLoading = false
         }
+    }
+    
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
+        return emailPred.evaluate(with: email)
     }
 }
 
@@ -345,6 +439,8 @@ struct ProfileView: View {
     @State private var userLine: Line?
     @State private var userLineDetails: (lineName: String, shipName: String)?
     @State private var userAlias: String?
+    @State private var dialogTitle = "Error"
+    @State private var shouldSignOut = false
     
     // Optional parameter to view a different user's profile
     var userId: String?

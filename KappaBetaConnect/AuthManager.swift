@@ -93,4 +93,13 @@ class AuthManager: ObservableObject {
     func resetPassword(forEmail email: String) async throws {
         try await Auth.auth().sendPasswordReset(withEmail: email)
     }
+    
+    func updateEmail(to newEmail: String) async throws {
+        guard let user = Auth.auth().currentUser else {
+            throw NSError(domain: "AuthManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "No user is currently signed in"])
+        }
+        
+        // First send a verification email to the new address
+        try await user.sendEmailVerification(beforeUpdatingEmail: newEmail)
+    }
 } 
