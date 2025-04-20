@@ -26,6 +26,7 @@ struct KappaBetaConnectApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(authManager)
+                .preferredColorScheme(.light)
         }
     }
 }
