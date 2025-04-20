@@ -1,14 +1,13 @@
 import SwiftUI
 
-struct LoginView: View {
+struct ForgotPasswordView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var email = ""
-    @State private var password = ""
-    @State private var showPassword = false
     @State private var isLoading = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var showSuccess = false
     @EnvironmentObject private var authManager: AuthManager
-    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         ScrollView {
@@ -20,42 +19,30 @@ struct LoginView: View {
                     .frame(width: 150, height: 150)
                     .padding(.top, 50)
                 
-                // Login form
+                // Forgot password form
                 VStack(spacing: 15) {
+                    Text("Enter your email address and we'll send you a link to reset your password.")
+                        .font(.body)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.gray)
+                        .padding(.horizontal, 20)
+                    
                     CustomTextField(text: $email, placeholder: "Email", keyboardType: .emailAddress, textContentType: .emailAddress)
                         .customTextField()
                     
-                    ZStack(alignment: .trailing) {
-                        if showPassword {
-                            CustomTextField(text: $password, placeholder: "Password", isSecure: false)
-                                .customTextField()
-                        } else {
-                            CustomTextField(text: $password, placeholder: "Password", isSecure: true)
-                                .customTextField()
-                        }
-                        
-                        Button(action: {
-                            showPassword.toggle()
-                        }) {
-                            Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.trailing, 8)
-                    }
-                    
                     Button(action: {
-                        login()
+                        resetPassword()
                     }) {
                         if isLoading {
                             HStack {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                Text("Logging in...")
+                                Text("Sending...")
                                     .foregroundColor(.white)
                                     .padding(.leading, 8)
                             }
                         } else {
-                            Text("Login")
+                            Text("Send Reset Link")
                                 .foregroundColor(.white)
                         }
                     }
@@ -64,26 +51,10 @@ struct LoginView: View {
                     .background(Color.black)
                     .cornerRadius(10)
                     .disabled(isLoading)
-                    .animation(.easeInOut, value: isLoading)
-                    
-                    NavigationLink(destination: ForgotPasswordView()) {
-                        Text("Forgot Password?")
-                            .foregroundColor(.gray)
-                    }
                 }
                 .padding(.horizontal, 30)
                 
                 Spacer()
-                
-                // Updated sign up prompt with navigation
-                HStack {
-                    Text("Not a member?")
-                        .foregroundColor(.gray)
-                    NavigationLink("Sign Up", destination: SignUpView())
-                        .foregroundColor(.black)
-                        .fontWeight(.bold)
-                }
-                .padding(.bottom, 20)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -96,15 +67,16 @@ struct LoginView: View {
         } message: {
             Text(errorMessage)
         }
-        .onChange(of: authManager.isAuthenticated) { newValue in
-            if newValue {
-                isLoading = false
+        .alert("Success", isPresented: $showSuccess) {
+            Button("OK") {
                 dismiss()
             }
+        } message: {
+            Text("Password reset email sent. Please check your inbox.")
         }
     }
     
-    private func login() {
+    private func resetPassword() {
         isLoading = true
         
         // Validate input
@@ -113,18 +85,21 @@ struct LoginView: View {
             return
         }
         
-        if password.isEmpty {
-            showError(message: "Please enter your password")
+        if !isValidEmail(email) {
+            showError(message: "Please enter a valid email address")
             return
         }
         
-        // Attempt to sign in
+        // Attempt to reset password
         Task {
             do {
-                try await authManager.signIn(email: email, password: password)
+                try await authManager.resetPassword(forEmail: email)
+                await MainActor.run {
+                    showSuccess = true
+                }
             } catch {
                 await MainActor.run {
-                    showError(message: "Login failed: \(error.localizedDescription)")
+                    showError(message: "Failed to send reset email: \(error.localizedDescription)")
                 }
             }
         }
@@ -135,11 +110,17 @@ struct LoginView: View {
         showError = true
         isLoading = false
     }
+    
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
+        return emailPred.evaluate(with: email)
+    }
 }
 
 #Preview {
     NavigationStack {
-        LoginView()
+        ForgotPasswordView()
             .environmentObject(AuthManager())
     }
 } 
