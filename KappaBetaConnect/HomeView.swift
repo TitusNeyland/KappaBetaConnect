@@ -151,7 +151,10 @@ struct HomeView: View {
                 } else {
                     VStack(spacing: 15) {
                         ForEach(recentPosts) { post in
-                            PostCard(post: post, postRepository: postRepository)
+                            NavigationLink(destination: FeedView()) {
+                                PostCard(post: post, postRepository: postRepository)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
                     .padding(.horizontal, 20)
