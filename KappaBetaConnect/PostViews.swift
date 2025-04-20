@@ -493,6 +493,7 @@ struct CommentsSheetView: View {
                             .fontWeight(.medium)
                     }
                     .disabled(newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .foregroundColor(newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray : .primary)
                 }
                 .padding()
             }
@@ -503,6 +504,7 @@ struct CommentsSheetView: View {
                     Button("Done") {
                         showSheet = false
                     }
+                    .foregroundColor(Color(.label))
                 }
             }
             .alert("Delete Comment", isPresented: $showDeleteAlert) {

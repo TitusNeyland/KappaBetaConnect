@@ -44,6 +44,7 @@ struct BioEditView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundColor(.primary)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -62,6 +63,7 @@ struct BioEditView: View {
                             }
                         }
                     }
+                    .foregroundColor(.primary)
                 }
             }
             .alert("Error", isPresented: $showError) {

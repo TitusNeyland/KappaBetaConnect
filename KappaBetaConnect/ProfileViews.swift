@@ -441,8 +441,8 @@ struct ProfileView: View {
                                 PhotosPicker(selection: $selectedItem, matching: .images) {
                                     Image(systemName: "camera.circle.fill")
                                         .font(.system(size: 30))
-                                        .foregroundColor(.blue)
-                                        .background(Color.white)
+                                        .foregroundColor(.primary)
+                                        .background(Color(.secondarySystemBackground))
                                         .clipShape(Circle())
                                 }
                                 .offset(x: 40, y: 40)
@@ -1221,12 +1221,14 @@ struct InterestsEditView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundColor(.primary)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         saveInterests()
                     }
+                    .foregroundColor(.primary)
                 }
             }
             .onAppear {
@@ -1371,12 +1373,14 @@ struct SocialMediaEditView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundColor(.primary)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         saveChanges()
                     }
+                    .foregroundColor(.primary)
                 }
             }
             .onAppear {

@@ -38,7 +38,7 @@ struct FeedView: View {
                             .font(.title2)
                             .foregroundColor(.white)
                             .frame(width: 60, height: 60)
-                            .background(Color.black)
+                            .background(Color(.black))
                             .clipShape(Circle())
                             .shadow(radius: 4)
                     }
