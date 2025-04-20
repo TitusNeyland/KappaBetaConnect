@@ -10,6 +10,8 @@ class UserSignupData: ObservableObject {
     @Published var phoneNumber: String = ""
     @Published var city: String = ""
     @Published var state: String = ""
+    @Published var homeCity: String = ""
+    @Published var homeState: String = ""
     
     // Security
     @Published var password: String = ""
@@ -37,6 +39,8 @@ class UserSignupData: ObservableObject {
             phoneNumber: phoneNumber,
             city: city.isEmpty ? nil : city,
             state: state.isEmpty ? nil : state,
+            homeCity: homeCity.isEmpty ? nil : homeCity,
+            homeState: homeState.isEmpty ? nil : homeState,
             password: password,
             careerField: careerField.isEmpty ? nil : careerField,
             major: major.isEmpty ? nil : major,

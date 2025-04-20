@@ -37,6 +37,14 @@ struct DirectoryView: View {
                 matches = matches && user.company?.lowercased() == company.lowercased()
             }
             
+            if let homeCity = activeFilters.homeCity, !homeCity.isEmpty {
+                matches = matches && user.homeCity?.lowercased() == homeCity.lowercased()
+            }
+            
+            if let homeState = activeFilters.homeState, !homeState.isEmpty {
+                matches = matches && user.homeState?.lowercased() == homeState.lowercased()
+            }
+            
             return matches
         }
     }
@@ -192,9 +200,11 @@ struct Filters {
     var state: String?
     var major: String?
     var company: String?
+    var homeCity: String?
+    var homeState: String?
     
     var hasActiveFilters: Bool {
-        return [industry, city, state, major, company].contains { filter in
+        return [industry, city, state, major, company, homeCity, homeState].contains { filter in
             filter != nil && !filter!.isEmpty
         }
     }
@@ -228,7 +238,7 @@ struct FilterSheet: View {
                     .customTextField()
                 }
                 
-                Section(header: Text("Location")) {
+                Section(header: Text("Current Location")) {
                     TextField("City", text: Binding(
                         get: { filters.city ?? "" },
                         set: { filters.city = $0.isEmpty ? nil : $0 }
@@ -237,6 +247,19 @@ struct FilterSheet: View {
                     TextField("State", text: Binding(
                         get: { filters.state ?? "" },
                         set: { filters.state = $0.isEmpty ? nil : $0 }
+                    ))
+                    .customTextField()
+                }
+                
+                Section(header: Text("Hometown")) {
+                    TextField("Hometown City", text: Binding(
+                        get: { filters.homeCity ?? "" },
+                        set: { filters.homeCity = $0.isEmpty ? nil : $0 }
+                    ))
+                    .customTextField()
+                    TextField("Hometown State", text: Binding(
+                        get: { filters.homeState ?? "" },
+                        set: { filters.homeState = $0.isEmpty ? nil : $0 }
                     ))
                     .customTextField()
                 }
