@@ -271,11 +271,13 @@ struct FilterSheet: View {
                     Button("Reset") {
                         filters = Filters()
                     }
+                    .foregroundColor(Color(.label))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         dismiss()
                     }
+                    .foregroundColor(Color(.label))
                 }
             }
         }
