@@ -20,6 +20,13 @@ struct HomeView: View {
             .map { $0 }
     }
     
+    var recentPosts: [Post] {
+        postRepository.posts
+            .sorted { $0.timestamp > $1.timestamp }
+            .prefix(3)
+            .map { $0 }
+    }
+    
     // Add recommended connections data
     let recommendedConnections = [
         (name: "Fred West", title: "Job Title"),
@@ -124,6 +131,30 @@ struct HomeView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 10)
                     }
+                }
+                
+                Divider()
+                    .background(Color.gray.opacity(0.2))
+                    .padding(.horizontal, 20)
+                
+                Text("Recent Posts")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .padding(.leading, 20)
+                    .padding(.top, 40)
+                
+                if recentPosts.isEmpty {
+                    Text("No recent posts")
+                        .foregroundColor(.gray)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 10)
+                } else {
+                    VStack(spacing: 15) {
+                        ForEach(recentPosts) { post in
+                            PostCard(post: post, postRepository: postRepository)
+                        }
+                    }
+                    .padding(.horizontal, 20)
                 }
                 
                 Divider()
