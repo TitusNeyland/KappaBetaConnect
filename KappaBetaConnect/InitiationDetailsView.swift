@@ -2,6 +2,7 @@ import SwiftUI
 
 struct InitiationDetailsView: View {
     @ObservedObject var userData: UserSignupData
+    @StateObject private var lineRepository = LineRepository()
     @State private var selectedLineNumber = "1"
     @State private var selectedSemester = "Fall"
     @State private var selectedYear = String(Calendar.current.component(.year, from: Date()))
@@ -9,6 +10,10 @@ struct InitiationDetailsView: View {
     @State private var selectedGraduationYear = String(Calendar.current.component(.year, from: Date()) + 4)
     @State private var navigateToPassword = false
     @State private var isLoading = false
+    @State private var showConfirmation = false
+    @State private var lineName = ""
+    @State private var memberName = ""
+    @State private var memberAlias = ""
     
     let lineNumbers = Array(1...50).map { String($0) }
     let semesters = ["Fall", "Spring"]
@@ -142,12 +147,9 @@ struct InitiationDetailsView: View {
                     
                     NavigationLink(destination: PasswordSetupView(userData: userData), isActive: $navigateToPassword) {
                         Button(action: {
-                            userData.lineNumber = selectedLineNumber
-                            userData.semester = selectedSemester
-                            userData.year = selectedYear
-                            userData.status = selectedStatus
-                            userData.graduationYear = selectedStatus == "Collegiate" ? selectedGraduationYear : ""
-                            navigateToPassword = true
+                            Task {
+                                await checkLineMember()
+                            }
                         }) {
                             Text("Continue")
                                 .foregroundColor(.white)
@@ -166,6 +168,51 @@ struct InitiationDetailsView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .background(Color(.systemBackground))
+        .alert("Confirm Your Info", isPresented: $showConfirmation) {
+            Button("Yes, that's me") {
+                userData.lineNumber = selectedLineNumber
+                userData.semester = selectedSemester
+                userData.year = selectedYear
+                userData.status = selectedStatus
+                userData.graduationYear = selectedStatus == "Collegiate" ? selectedGraduationYear : ""
+                navigateToPassword = true
+            }
+            Button("No, that's not me", role: .cancel) { }
+        } message: {
+            Text("Are you \(memberName), \(memberAlias)?")
+        }
+    }
+    
+    private func checkLineMember() async {
+        isLoading = true
+        do {
+            if let year = Int(selectedYear),
+               let lineNumber = Int(selectedLineNumber),
+               let line = try await lineRepository.findLine(semester: selectedSemester, year: year) {
+                
+                if let memberDetails = lineRepository.getLineMemberDetails(line: line, lineNumber: lineNumber) {
+                    await MainActor.run {
+                        self.lineName = line.line_name
+                        self.memberName = memberDetails.name
+                        self.memberAlias = memberDetails.alias ?? ""
+                        self.showConfirmation = true
+                    }
+                } else {
+                    await MainActor.run {
+                        self.showConfirmation = false
+                        // Handle case where member not found
+                    }
+                }
+            } else {
+                await MainActor.run {
+                    self.showConfirmation = false
+                    // Handle case where line not found
+                }
+            }
+        } catch {
+            print("Error checking line member: \(error)")
+        }
+        isLoading = false
     }
 }
 

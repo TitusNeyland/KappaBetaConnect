@@ -303,6 +303,7 @@ struct ManageProfileView: View {
 struct ProfileView: View {
     @StateObject private var postRepository = PostRepository()
     @StateObject private var userRepository = UserRepository()
+    @StateObject private var lineRepository = LineRepository()
     @EnvironmentObject private var authManager: AuthManager
     @State private var showLogoutAlert = false
     @State private var navigateToLogin = false
@@ -326,6 +327,9 @@ struct ProfileView: View {
     @State private var enlargedImage: Image?
     @State private var bioDidSave = false
     @State private var showManageProfile = false
+    @State private var userLine: Line?
+    @State private var userLineDetails: (lineName: String, shipName: String)?
+    @State private var userAlias: String?
     
     // Optional parameter to view a different user's profile
     var userId: String?
@@ -941,6 +945,26 @@ struct ProfileView: View {
             await MainActor.run {
                 self.displayedUser = user
             }
+            
+            // Fetch line information if available
+            if let user = user,
+               let semester = user.semester,
+               let yearStr = user.year,
+               let year = Int(yearStr),
+               let lineNumberStr = user.lineNumber,
+               let lineNumber = Int(lineNumberStr) {
+                
+                if let line = try await lineRepository.findLine(semester: semester, year: year) {
+                    await MainActor.run {
+                        self.userLine = line
+                        self.userLineDetails = (lineName: line.line_name, shipName: line.line_name)
+                        if let memberDetails = lineRepository.getLineMemberDetails(line: line, lineNumber: lineNumber) {
+                            self.userAlias = memberDetails.alias
+                        }
+                    }
+                }
+            }
+            
             print("Successfully fetched user data")
         } catch {
             print("Error fetching user data: \(error)")
@@ -1025,7 +1049,7 @@ struct ProfileView: View {
                         Text("Ship")
                             .font(.subheadline)
                             .fontWeight(.medium)
-                        Text(shipName)
+                        Text(userLineDetails?.shipName ?? "Not specified")
                             .font(.subheadline)
                             .foregroundColor(.gray)
                     }
@@ -1041,27 +1065,9 @@ struct ProfileView: View {
                         Text("Line Name")
                             .font(.subheadline)
                             .fontWeight(.medium)
-                        Text(lineName)
+                        Text((userAlias ?? "Not specified").uppercased())
                             .font(.subheadline)
                             .foregroundColor(.gray)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Positions")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                        HStack {
-                            ForEach(positions, id: \.self) { position in
-                                Text(position)
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                                if position != positions.last {
-                                    Text("•")
-                                        .foregroundColor(.gray)
-                                        .padding(.horizontal, 4)
-                                }
-                            }
-                        }
                     }
                 }
                 .padding(.horizontal, 20)
