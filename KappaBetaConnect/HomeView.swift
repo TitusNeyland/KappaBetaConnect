@@ -75,6 +75,10 @@ struct HomeView: View {
                 }
                 .padding(.top, 20)
                 
+                Divider()
+                    .background(Color.gray.opacity(0.2))
+                    .padding(.horizontal, 20)
+                
                 Text("Newest Members")
                     .font(.title2)
                     .fontWeight(.semibold)
@@ -121,6 +125,10 @@ struct HomeView: View {
                         .padding(.top, 10)
                     }
                 }
+                
+                Divider()
+                    .background(Color.gray.opacity(0.2))
+                    .padding(.horizontal, 20)
                 
                 Text("Upcoming Events")
                     .font(.title2)
@@ -179,6 +187,10 @@ struct HomeView: View {
                         }
                     }
                 }
+                
+                Divider()
+                    .background(Color.gray.opacity(0.2))
+                    .padding(.horizontal, 20)
                 
                 Text("Recommended Connections")
                     .font(.title2)
@@ -243,6 +255,10 @@ struct HomeView: View {
                         }
                     }
                 }
+                
+                Divider()
+                    .background(Color.gray.opacity(0.2))
+                    .padding(.horizontal, 20)
                 
                 Text("Recent Activity")
                     .font(.title2)
