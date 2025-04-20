@@ -392,7 +392,7 @@ struct HomeView: View {
         }
         
         if currentUser.lineNumber == otherUser.lineNumber {
-            return "Line \(otherUser.lineNumber ?? "")"
+            return "You share the same line number"
         }
         
         if let currentInterests = currentUser.interests,
