@@ -69,6 +69,8 @@ struct ManageProfileView: View {
     @State private var major = ""
     @State private var city = ""
     @State private var state = ""
+    @State private var homeCity = ""
+    @State private var homeState = ""
     @State private var careerField = ""
     @State private var company = ""
     @State private var lineNumber = ""
@@ -151,9 +153,18 @@ struct ManageProfileView: View {
                     }
                 }
                 
-                Section(header: Text("Location")) {
+                Section(header: Text("Education")) {
+                    TextField("Major", text: $major)
+                }
+                
+                Section(header: Text("Current Location")) {
                     TextField("City", text: $city)
                     TextField("State", text: $state)
+                }
+                
+                Section(header: Text("Hometown")) {
+                    TextField("City", text: $homeCity)
+                    TextField("State", text: $homeState)
                 }
                 
                 Section(header: Text("Career")) {
@@ -242,6 +253,8 @@ struct ManageProfileView: View {
             major = user.major ?? ""
             city = user.city ?? ""
             state = user.state ?? ""
+            homeCity = user.homeCity ?? ""
+            homeState = user.homeState ?? ""
             careerField = user.careerField ?? ""
             company = user.company ?? ""
             lineNumber = user.lineNumber ?? ""
@@ -275,6 +288,8 @@ struct ManageProfileView: View {
                     user.major = major.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : major
                     user.city = city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : city
                     user.state = state.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : state
+                    user.homeCity = homeCity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : homeCity
+                    user.homeState = homeState.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : homeState
                     user.careerField = careerField.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : careerField
                     user.company = company.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : company
                     
