@@ -550,6 +550,16 @@ struct ProfileView: View {
                                                 .font(.subheadline)
                                                 .foregroundColor(.gray)
                                         }
+                                        
+                                        if let homeCity = user.homeCity, let homeState = user.homeState {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "house.fill")
+                                                    .foregroundColor(.gray)
+                                                Text("Hometown: \(homeCity), \(homeState)")
+                                                    .font(.subheadline)
+                                                    .foregroundColor(.gray)
+                                            }
+                                        }
                                     }
                                     .padding(.top, 16)
                                 }
