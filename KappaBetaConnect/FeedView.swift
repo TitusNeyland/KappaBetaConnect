@@ -14,6 +14,13 @@ struct FeedView: View {
                 VStack(spacing: 0) {
                     ScrollView {
                         VStack(spacing: 20) {
+                            // KB Logo
+                            Image("kblogo")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 60)
+                                .padding(.top, 10)
+                            
                             ForEach(postRepository.posts) { post in
                                 PostCard(post: post, postRepository: postRepository)
                             }
