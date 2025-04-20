@@ -66,7 +66,7 @@ struct ProfileSetupView: View {
                                 }
                             }
                             .pickerStyle(.menu)
-                            .tint(.black)
+                            .tint(.primary)
                         }
                         .padding()
                         .background(Color(.systemBackground))

@@ -32,6 +32,7 @@ struct AddEventView: View {
                             .foregroundColor(.gray)
                         DatePicker("", selection: $eventDate)
                             .datePickerStyle(.graphical)
+                            .tint(.primary)
                     }
                     
                     // Location
@@ -92,6 +93,7 @@ struct AddEventView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundColor(.primary)
                 }
             }
             .alert("Error", isPresented: $showError) {

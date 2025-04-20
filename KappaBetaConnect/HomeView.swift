@@ -208,7 +208,7 @@ struct HomeView: View {
                                     
                                     // Chevron indicator
                                     Image(systemName: "chevron.right")
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(.primary)
                                         .padding(.trailing, 10)
                                 }
                             }

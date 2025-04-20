@@ -49,7 +49,7 @@ struct InitiationDetailsView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(.black)
+                        .tint(.primary)
                     }
                     .padding()
                     .background(Color(.systemBackground))
@@ -71,7 +71,7 @@ struct InitiationDetailsView: View {
                                 }
                             }
                             .pickerStyle(.menu)
-                            .tint(.black)
+                            .tint(.primary)
                         }
                         .padding()
                         .background(Color(.systemBackground))
@@ -93,7 +93,7 @@ struct InitiationDetailsView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(.black)
+                        .tint(.primary)
                     }
                     .padding()
                     .background(Color(.systemBackground))
@@ -114,7 +114,7 @@ struct InitiationDetailsView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(.black)
+                        .tint(.primary)
                     }
                     .padding()
                     .background(Color(.systemBackground))
@@ -135,7 +135,7 @@ struct InitiationDetailsView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(.black)
+                        .tint(.primary)
                     }
                     .padding()
                     .background(Color(.systemBackground))
