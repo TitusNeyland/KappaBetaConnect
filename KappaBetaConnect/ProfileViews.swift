@@ -146,10 +146,10 @@ struct ManageProfileView: View {
                             .textContentType(.emailAddress)
                             .keyboardType(.emailAddress)
                             .autocapitalization(.none)
+                        
                         TextField("Phone Number", text: $phoneNumber)
                             .textContentType(.telephoneNumber)
                             .keyboardType(.phonePad)
-                        TextField("Major", text: $major)
                     }
                 }
                 
