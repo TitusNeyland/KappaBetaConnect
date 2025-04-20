@@ -312,6 +312,9 @@ struct HomeView: View {
                             self.showNoLineMessage = true
                         }
                     }
+                    
+                    // Move recommended users fetch here to ensure it runs after other data is loaded
+                    await fetchRecommendedUsers()
                 } catch {
                     print("Error fetching data: \(error.localizedDescription)")
                     await MainActor.run {
@@ -319,9 +322,6 @@ struct HomeView: View {
                     }
                 }
             }
-        }
-        .task {
-            await fetchRecommendedUsers()
         }
     }
     
