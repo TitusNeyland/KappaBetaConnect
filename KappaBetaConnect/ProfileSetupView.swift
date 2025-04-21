@@ -81,6 +81,10 @@ struct ProfileSetupView: View {
                         
                         CustomTextField(text: $userData.company, placeholder: "Company", keyboardType: .default, textContentType: .organizationName, autoCapitalizeFirstLetter: true, autoCapitalizeWords: true)
                             .customTextField()
+                        
+                        TextField("Years of Experience", text: $userData.yearsOfExperience)
+                            .customTextField()
+                            .keyboardType(.numberPad)
                     }
                     .padding(.horizontal, 30)
                 }

@@ -73,6 +73,7 @@ struct ManageProfileView: View {
     @State private var homeState = ""
     @State private var careerField = ""
     @State private var company = ""
+    @State private var yearsOfExperience = ""
     @State private var lineNumber = ""
     @State private var semester = ""
     @State private var year = ""
@@ -186,6 +187,9 @@ struct ManageProfileView: View {
                     }
                     
                     TextField("Company", text: $company)
+                    
+                    TextField("Years of Experience", text: $yearsOfExperience)
+                        .keyboardType(.numberPad)
                 }
                 
                 Section(header: Text("Initiation Details")) {
@@ -268,6 +272,7 @@ struct ManageProfileView: View {
             homeState = user.homeState ?? ""
             careerField = user.careerField ?? ""
             company = user.company ?? ""
+            yearsOfExperience = user.yearsOfExperience ?? ""
             lineNumber = user.lineNumber ?? ""
             semester = user.semester ?? ""
             year = user.year ?? ""
@@ -360,6 +365,7 @@ struct ManageProfileView: View {
                 updatedUser.homeState = homeState
                 updatedUser.careerField = careerField
                 updatedUser.company = company
+                updatedUser.yearsOfExperience = yearsOfExperience
                 updatedUser.lineNumber = lineNumber
                 updatedUser.semester = semester
                 updatedUser.year = year
@@ -458,7 +464,6 @@ struct ProfileView: View {
     }
     
     // Sample data - replace with actual user data
-    let yearsExperience = "5 years"
     let lineName = "INDEUCED IN2ENT"
     let shipName = "12 INVADERS"
     let positions = ["Assistant Secretary"]
@@ -593,7 +598,11 @@ struct ProfileView: View {
                                     InfoColumn(title: "Industry", value: "Not specified")
                                 }
                                 
-                                InfoColumn(title: "Experience", value: yearsExperience)
+                                if let yearsOfExperience = user.yearsOfExperience {
+                                    InfoColumn(title: "Experience", value: "\(yearsOfExperience) years")
+                                } else {
+                                    InfoColumn(title: "Experience", value: "Not specified")
+                                }
                                 
                                 if let status = user.status {
                                     InfoColumn(title: "Status", value: status)

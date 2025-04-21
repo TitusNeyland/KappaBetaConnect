@@ -21,6 +21,7 @@ class UserSignupData: ObservableObject {
     @Published var major: String = ""
     @Published var jobTitle: String = ""
     @Published var company: String = ""
+    @Published var yearsOfExperience: String = ""
     
     // Initiation Information
     @Published var lineNumber: String = ""
@@ -31,6 +32,7 @@ class UserSignupData: ObservableObject {
     
     func createUser() -> User {
         return User(
+            id: "",
             prefix: prefix.isEmpty ? nil : prefix,
             firstName: firstName,
             lastName: lastName,
@@ -46,11 +48,21 @@ class UserSignupData: ObservableObject {
             major: major.isEmpty ? nil : major,
             jobTitle: jobTitle.isEmpty ? nil : jobTitle,
             company: company.isEmpty ? nil : company,
+            bio: nil,
+            interests: nil,
             lineNumber: lineNumber.isEmpty ? nil : lineNumber,
             semester: semester.isEmpty ? nil : semester,
             year: year.isEmpty ? nil : year,
             status: status.isEmpty ? nil : status,
-            graduationYear: graduationYear.isEmpty ? nil : graduationYear
+            graduationYear: graduationYear.isEmpty ? nil : graduationYear,
+            profileImageURL: nil,
+            linkedInURL: nil,
+            instagramURL: nil,
+            twitterURL: nil,
+            snapchatURL: nil,
+            facebookURL: nil,
+            isActive: true,
+            yearsOfExperience: yearsOfExperience.isEmpty ? nil : yearsOfExperience
         )
     }
 } 
