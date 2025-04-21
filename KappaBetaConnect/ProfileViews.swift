@@ -882,7 +882,7 @@ struct ProfileView: View {
                                         .foregroundColor(.white)
                                         .frame(maxWidth: .infinity)
                                         .padding()
-                                        .background(Color.red)
+                                        .background(Color(red: 0.831, green: 0.686, blue: 0.216))
                                         .cornerRadius(10)
                                 }
                                 .padding(.horizontal, 20)

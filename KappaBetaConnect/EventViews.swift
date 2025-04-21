@@ -99,7 +99,7 @@ struct EventsView: View {
                         .font(.title2)
                         .foregroundColor(.white)
                         .frame(width: 60, height: 60)
-                        .background(Color.black)
+                        .background(Color(red: 0.831, green: 0.686, blue: 0.216))
                         .clipShape(Circle())
                         .shadow(radius: 4)
                 }

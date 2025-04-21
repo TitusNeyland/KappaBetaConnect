@@ -117,14 +117,19 @@ struct HomeView: View {
                         HStack(spacing: 20) {
                             ForEach(newestMembers, id: \.number) { member in
                                 VStack {
-                                    Circle()
-                                        .fill(Color.gray.opacity(0.3))
-                                        .frame(width: 70, height: 70)
-                                        .overlay(
-                                            Image(systemName: "person.fill")
-                                                .foregroundColor(.gray)
-                                                .font(.system(size: 30))
-                                        )
+                                    ZStack {
+                                        GradientRingView()
+                                            .frame(width: 74, height: 74)
+                                        
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(width: 70, height: 70)
+                                            .overlay(
+                                                Image(systemName: "person.fill")
+                                                    .foregroundColor(.gray)
+                                                    .font(.system(size: 30))
+                                            )
+                                    }
                                     
                                     Text(member.name)
                                         .font(.caption)
@@ -467,5 +472,33 @@ struct HomeView: View {
         }
         
         return nil
+    }
+}
+
+struct GradientRingView: View {
+    @State private var rotation: Double = 0
+    
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.831, green: 0.686, blue: 0.216),  // Gold
+                            Color(red: 0.831, green: 0.686, blue: 0.216).opacity(0.5),  // Semi-transparent gold
+                            Color(red: 0.831, green: 0.686, blue: 0.216),  // Gold
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 2
+                )
+                .rotationEffect(.degrees(rotation))
+                .onAppear {
+                    withAnimation(.linear(duration: 2).repeatForever(autoreverses: false)) {
+                        rotation = 360
+                    }
+                }
+        }
     }
 } 
