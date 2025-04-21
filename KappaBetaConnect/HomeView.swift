@@ -74,11 +74,26 @@ struct HomeView: View {
                     
                     Spacer()
                     
-                    Image("kblogo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 70, height: 70)
-                        .padding(.trailing, 0)
+                    HStack(spacing: 10) {
+                        Button(action: {
+                            if let url = URL(string: "https://cash.app/$kappabeta") {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            Image(systemName: "qrcode")
+                                .font(.system(size: 24))
+                                .foregroundColor(.primary)
+                                .frame(width: 40, height: 40)
+                                .background(Color(.systemGray6))
+                                .cornerRadius(8)
+                        }
+                        
+                        Image("kblogo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 70, height: 70)
+                    }
+                    .padding(.trailing, 20)
                 }
                 .padding(.top, 20)
                 
