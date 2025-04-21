@@ -214,6 +214,7 @@ class UserRepository: ObservableObject {
         if let year = user.year { dict["year"] = year }
         if let status = user.status { dict["status"] = status }
         if let graduationYear = user.graduationYear { dict["graduationYear"] = graduationYear }
+        if let yearsOfExperience = user.yearsOfExperience { dict["yearsOfExperience"] = yearsOfExperience }
         
         return dict
     }
@@ -263,7 +264,8 @@ class UserRepository: ObservableObject {
             twitterURL: dict["twitterURL"] as? String,
             snapchatURL: dict["snapchatURL"] as? String,
             facebookURL: dict["facebookURL"] as? String,
-            isActive: isActive
+            isActive: isActive,
+            yearsOfExperience: dict["yearsOfExperience"] as? String
         )
     }
     

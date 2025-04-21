@@ -47,6 +47,9 @@ struct User: Identifiable, Codable {
     var snapchatURL: String?
     var facebookURL: String?
     
+    // New field
+    var yearsOfExperience: String?
+    
     enum CodingKeys: String, CodingKey {
         case id
         case prefix, firstName, lastName, suffix, email, phoneNumber, city, state, homeCity, homeState
@@ -55,6 +58,7 @@ struct User: Identifiable, Codable {
         case lineNumber, semester, year, status, graduationYear
         case createdAt, updatedAt, isActive
         case profileImageURL, linkedInURL, instagramURL, twitterURL, snapchatURL, facebookURL
+        case yearsOfExperience
     }
     
     init(id: String? = nil, 
@@ -86,7 +90,8 @@ struct User: Identifiable, Codable {
          twitterURL: String? = nil,
          snapchatURL: String? = nil,
          facebookURL: String? = nil,
-         isActive: Bool = true) {
+         isActive: Bool = true,
+         yearsOfExperience: String? = nil) {
         
         self.id = id
         self.prefix = prefix
@@ -120,5 +125,6 @@ struct User: Identifiable, Codable {
         self.createdAt = Date()
         self.updatedAt = Date()
         self.isActive = isActive
+        self.yearsOfExperience = yearsOfExperience
     }
 } 
