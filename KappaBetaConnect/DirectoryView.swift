@@ -79,7 +79,7 @@ struct DirectoryView: View {
                         showFilterSheet = true
                     }) {
                         Image(systemName: activeFilters.hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                            .foregroundColor(activeFilters.hasActiveFilters ? .blue : .gray)
+                            .foregroundColor(activeFilters.hasActiveFilters ? Color(red: 0.831, green: 0.686, blue: 0.216) : .gray)
                             .font(.system(size: 22))
                     }
                 }
