@@ -108,6 +108,11 @@ struct ManageProfileView: View {
         return Array(1911...currentYear).map { String($0) }.reversed()
     }()
     let statuses = ["Collegiate", "Alumni"]
+    let states = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", 
+                 "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", 
+                 "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", 
+                 "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", 
+                 "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
     
     var body: some View {
         NavigationView {
@@ -163,12 +168,36 @@ struct ManageProfileView: View {
                 
                 Section(header: Text("Current Location")) {
                     TextField("City", text: $city)
-                    TextField("State", text: $state)
+                    HStack {
+                        Text("State")
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Picker("", selection: $state) {
+                            Text("Select").tag("")
+                            ForEach(states, id: \.self) { state in
+                                Text(state).tag(state)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.black)
+                    }
                 }
                 
                 Section(header: Text("Hometown")) {
                     TextField("City", text: $homeCity)
-                    TextField("State", text: $homeState)
+                    HStack {
+                        Text("State")
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Picker("", selection: $homeState) {
+                            Text("Select").tag("")
+                            ForEach(states, id: \.self) { state in
+                                Text(state).tag(state)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.black)
+                    }
                 }
                 
                 Section(header: Text("Career")) {
