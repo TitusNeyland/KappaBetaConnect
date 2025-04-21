@@ -27,7 +27,7 @@ struct MainTabView: View {
                                 // Active tab indicator
                                 Rectangle()
                                     .frame(height: 2)
-                                    .foregroundColor(selectedTab == index ? .primary : .clear)
+                                    .foregroundColor(selectedTab == index ? Color(red: 0.831, green: 0.686, blue: 0.216) : .clear)
                             }
                             .id(index) // Add id for scrolling
                             .onTapGesture {
