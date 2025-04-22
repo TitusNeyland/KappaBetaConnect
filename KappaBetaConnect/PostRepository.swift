@@ -79,7 +79,7 @@ class PostRepository: ObservableObject {
                 try transaction.setData(from: post, forDocument: postRef)
                 
                 // Update local posts array on main thread
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     if let index = self.posts.firstIndex(where: { $0.id == postId }) {
                         self.posts[index].likes = post.likes
                     }
@@ -114,7 +114,7 @@ class PostRepository: ObservableObject {
                 try transaction.setData(from: post, forDocument: postRef)
                 
                 // Update local posts array on main thread
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     if let index = self.posts.firstIndex(where: { $0.id == postId }) {
                         self.posts[index].comments = post.comments
                     }
@@ -144,7 +144,7 @@ class PostRepository: ObservableObject {
                 try transaction.setData(from: post, forDocument: postRef)
                 
                 // Update local posts array on main thread
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     if let index = self.posts.firstIndex(where: { $0.id == postId }) {
                         self.posts[index].comments = post.comments
                     }
@@ -170,7 +170,7 @@ class PostRepository: ObservableObject {
                 try transaction.setData(from: post, forDocument: postRef)
                 
                 // Update local posts array on main thread
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     if let index = self.posts.firstIndex(where: { $0.id == postId }) {
                         self.posts[index].shareCount = post.shareCount
                     }
