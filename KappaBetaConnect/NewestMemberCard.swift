@@ -42,29 +42,32 @@ struct NewestMemberCard: View {
                 if let user = matchingUser,
                    let profileImageURL = user.profileImageURL,
                    let url = URL(string: profileImageURL) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .empty:
-                            ProgressView()
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 70, height: 70)
-                                .clipShape(Circle())
-                        case .failure:
-                            Circle()
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: 70, height: 70)
-                                .overlay(
-                                    Image(systemName: "person.fill")
-                                        .foregroundColor(.gray)
-                                        .font(.system(size: 30))
-                                )
-                        @unknown default:
-                            ProgressView()
+                    NavigationLink(destination: ProfileView(userId: user.id)) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .empty:
+                                ProgressView()
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 70, height: 70)
+                                    .clipShape(Circle())
+                            case .failure:
+                                Circle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .frame(width: 70, height: 70)
+                                    .overlay(
+                                        Image(systemName: "person.fill")
+                                            .foregroundColor(.gray)
+                                            .font(.system(size: 30))
+                                    )
+                            @unknown default:
+                                ProgressView()
+                            }
                         }
                     }
+                    .buttonStyle(PlainButtonStyle())
                 } else {
                     Circle()
                         .fill(Color.gray.opacity(0.3))
