@@ -75,6 +75,9 @@ struct SecretPasswordView: View {
                         .padding(.horizontal, 20)
                     }
                     .padding(.bottom, 40)
+                    .onTapGesture {
+                        isInputFocused = true
+                    }
                     
                     // Hidden text field for keyboard input
                     TextField("", text: $secretPassword)
@@ -85,6 +88,16 @@ struct SecretPasswordView: View {
                         .onChange(of: secretPassword) { newValue in
                             if newValue.count > maxLength {
                                 secretPassword = String(newValue.prefix(maxLength))
+                            }
+                        }
+                        .submitLabel(.continue)
+                        .onSubmit {
+                            if secretPassword.count == maxLength {
+                                Task {
+                                    await verifyPassword()
+                                }
+                            } else {
+                                isInputFocused = true
                             }
                         }
                     
@@ -121,6 +134,9 @@ struct SecretPasswordView: View {
                 .frame(minHeight: geometry.size.height)
             }
             .scrollDisabled(true)
+            .onTapGesture {
+                isInputFocused = true
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .background(Color(.systemBackground))
