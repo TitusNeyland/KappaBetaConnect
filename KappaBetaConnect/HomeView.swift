@@ -116,36 +116,11 @@ struct HomeView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 20) {
                             ForEach(newestMembers, id: \.number) { member in
-                                VStack {
-                                    ZStack {
-                                        GradientRingView()
-                                            .frame(width: 74, height: 74)
-                                        
-                                        Circle()
-                                            .fill(Color.gray.opacity(0.3))
-                                            .frame(width: 70, height: 70)
-                                            .overlay(
-                                                Image(systemName: "person.fill")
-                                                    .foregroundColor(.gray)
-                                                    .font(.system(size: 30))
-                                            )
-                                    }
-                                    
-                                    Text(member.name)
-                                        .font(.caption)
-                                        .multilineTextAlignment(.center)
-                                    
-                                    if let alias = member.alias {
-                                        Text(alias)
-                                            .font(.caption2)
-                                            .foregroundColor(.gray)
-                                            .multilineTextAlignment(.center)
-                                    }
-                                }
-                                .frame(width: 80)
-                                .onAppear {
-                                    print("Displaying member: \(member.name) (Number: \(member.number))")
-                                }
+                                NewestMemberCard(
+                                    member: member,
+                                    userRepository: userRepository,
+                                    lineRepository: lineRepository
+                                )
                             }
                         }
                         .padding(.horizontal, 20)
