@@ -125,7 +125,10 @@ struct SecretPasswordView: View {
         .navigationBarTitleDisplayMode(.inline)
         .background(Color(.systemBackground))
         .alert("Error", isPresented: $showError) {
-            Button("OK", role: .cancel) { }
+            Button("OK", role: .cancel) {
+                // Re-enable input focus when alert is dismissed
+                isInputFocused = true
+            }
         } message: {
             Text(errorMessage)
         }
@@ -136,7 +139,7 @@ struct SecretPasswordView: View {
     
     private func verifyPassword() async {
         isLoading = true
-        defer { isLoading = false }
+        isInputFocused = false
         
         // Simulate network delay
         try? await Task.sleep(nanoseconds: 1_000_000_000)
@@ -146,12 +149,12 @@ struct SecretPasswordView: View {
         let enteredPasswordHash = SHA256.hash(data: enteredPasswordData)
         let enteredPasswordHashString = enteredPasswordHash.compactMap { String(format: "%02x", $0) }.joined()
         
-        if enteredPasswordHashString == hashedPassword {
-            await MainActor.run {
+        await MainActor.run {
+            isLoading = false
+            
+            if enteredPasswordHashString == hashedPassword {
                 isPassphraseVerified = true
-            }
-        } else {
-            await MainActor.run {
+            } else {
                 showError = true
                 errorMessage = "Incorrect passphrase. Please try again."
                 secretPassword = ""
