@@ -21,7 +21,7 @@ class EventRepository: ObservableObject {
                     try? document.data(as: Event.self)
                 }
                 
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     self?.events = fetchedEvents
                 }
             }
@@ -79,7 +79,7 @@ class EventRepository: ObservableObject {
                 try transaction.setData(from: event, forDocument: eventRef)
                 
                 // Update local events array on main thread
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     if let index = self.events.firstIndex(where: { $0.id == eventId }) {
                         self.events[index].attendees = event.attendees
                     }

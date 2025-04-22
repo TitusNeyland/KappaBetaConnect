@@ -7,10 +7,13 @@ class LineRepository: ObservableObject {
     
     func fetchLines() async throws {
         let snapshot = try await db.collection("lines").getDocuments()
-        self.lines = try snapshot.documents.map { document in
+        let fetchedLines = try snapshot.documents.map { document in
             var line = try document.data(as: Line.self)
             line.id = document.documentID
             return line
+        }
+        await MainActor.run {
+            self.lines = fetchedLines
         }
     }
     

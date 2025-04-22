@@ -10,6 +10,7 @@ struct HomeView: View {
     @State private var newestMembers: [LineMember] = []
     @State private var newestMembersCity: [String: String] = [:]
     @State private var showNoLineMessage: Bool = false
+    @State private var isLoading: Bool = true
     
     var upcomingEvents: [Event] {
         let now = Date()
@@ -323,33 +324,40 @@ struct HomeView: View {
             }
         }
         .background(Color(.secondarySystemBackground))
-        .onAppear {
-            Task {
-                do {
-                    try await eventRepository.fetchEvents()
-                    try await postRepository.fetchPosts()
-                    
-                    if let recentLine = try await lineRepository.fetchMostRecentLine() {
-                        print("Found most recent line: \(recentLine.line_name) (\(recentLine.semester) \(recentLine.year))")
-                        await MainActor.run {
-                            self.newestMembers = recentLine.members.sorted(by: { $0.number < $1.number })
-                            self.showNoLineMessage = false
-                        }
-                    } else {
-                        print("No recent line found in database")
-                        await MainActor.run {
-                            self.showNoLineMessage = true
-                        }
-                    }
-                    
-                    // Move recommended users fetch here to ensure it runs after other data is loaded
-                    await fetchRecommendedUsers()
-                } catch {
-                    print("Error fetching data: \(error.localizedDescription)")
-                    await MainActor.run {
-                        self.showNoLineMessage = true
-                    }
+        .task {
+            await loadData()
+        }
+    }
+    
+    private func loadData() async {
+        isLoading = true
+        defer { isLoading = false }
+        
+        do {
+            // Fetch events
+            try await eventRepository.fetchEvents()
+            
+            // Fetch posts
+            try await postRepository.fetchPosts()
+            
+            // Fetch most recent line
+            if let recentLine = try await lineRepository.fetchMostRecentLine() {
+                await MainActor.run {
+                    self.newestMembers = recentLine.members.sorted(by: { $0.number < $1.number })
+                    self.showNoLineMessage = false
                 }
+            } else {
+                await MainActor.run {
+                    self.showNoLineMessage = true
+                }
+            }
+            
+            // Fetch recommended users after other data is loaded
+            await fetchRecommendedUsers()
+        } catch {
+            print("Error fetching data: \(error.localizedDescription)")
+            await MainActor.run {
+                self.showNoLineMessage = true
             }
         }
     }
@@ -360,14 +368,14 @@ struct HomeView: View {
         do {
             let allUsers = try await userRepository.searchUsers(byName: "")
             let recommendations = allUsers
-                .filter { $0.id != currentUser.id } // Exclude current user
+                .filter { $0.id != currentUser.id }
                 .map { user -> (User, Double) in
                     let score = calculateSimilarityScore(currentUser: currentUser, otherUser: user)
                     return (user, score)
                 }
-                .sorted { $0.1 > $1.1 } // Sort by similarity score
-                .prefix(5) // Get top 5 recommendations
-                .map { $0.0 } // Get just the users
+                .sorted { $0.1 > $1.1 }
+                .prefix(5)
+                .map { $0.0 }
             
             await MainActor.run {
                 self.recommendedUsers = Array(recommendations)

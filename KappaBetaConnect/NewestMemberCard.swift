@@ -12,11 +12,13 @@ struct NewestMemberCard: View {
             try await lineRepository.fetchLines()
             
             if let recentLine = try await lineRepository.fetchMostRecentLine() {
-                currentLine = recentLine
+                await MainActor.run {
+                    currentLine = recentLine
+                }
                 
                 let allUsers = try await userRepository.searchUsers(byName: "")
                 
-                matchingUser = allUsers.first { user in
+                if let matchingUser = allUsers.first(where: { user in
                     guard let userLineNumber = user.lineNumber,
                           let userSemester = user.semester,
                           let userYear = user.year else {
@@ -26,6 +28,10 @@ struct NewestMemberCard: View {
                     return userLineNumber == String(member.number) &&
                            userSemester == recentLine.semester &&
                            userYear == String(recentLine.year)
+                }) {
+                    await MainActor.run {
+                        self.matchingUser = matchingUser
+                    }
                 }
             }
         } catch {
