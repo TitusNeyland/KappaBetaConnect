@@ -1,13 +1,35 @@
 import SwiftUI
 import CryptoKit
 
+struct CharacterBoxView: View {
+    let char: String
+    let isFocused: Bool
+    
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isFocused ? Color.blue : Color.gray.opacity(0.3), lineWidth: 1)
+                .frame(width: 40, height: 40) // Slightly smaller boxes
+            
+            if !char.isEmpty {
+                Circle()
+                    .fill(Color.black)
+                    .frame(width: 12, height: 12)
+            }
+        }
+    }
+}
+
 struct SecretPasswordView: View {
     @ObservedObject var userData: UserSignupData
     @State private var secretPassword = ""
     @State private var showError = false
     @State private var errorMessage = ""
-    @State private var navigateToPassword = false
     @State private var isLoading = false
+    @State private var isPassphraseVerified = false
+    @FocusState private var isInputFocused: Bool
+    
+    private let maxLength = 8 // Length of "LLKB1974"
     
     // Store the hashed password instead of the plain text
     private let hashedPassword: String = {
@@ -18,32 +40,62 @@ struct SecretPasswordView: View {
     }()
     
     var body: some View {
-        VStack(spacing: 20) {
-            Image("kblogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 120, height: 120)
-                .padding(.top, 30)
-                .padding(.bottom, 20)
-            
-            VStack(spacing: 15) {
-                Text("Enter the Secret Passphrase")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .padding(.bottom, 10)
-                
-                Text("Please enter the secret passphrase to verify your membership")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 30)
-                
-                SecureField("Secret Passphrase", text: $secretPassword)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(.horizontal, 30)
-                    .padding(.top, 20)
-                
-                NavigationLink(destination: PasswordSetupView(userData: userData), isActive: $navigateToPassword) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
+                    Image("kblogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 120, height: 120)
+                        .padding(.top, geometry.size.height * 0.1)
+                        .padding(.bottom, 40)
+                    
+                    Text("Enter the Secret Passphrase")
+                        .font(.system(size: 28, weight: .bold))
+                        .multilineTextAlignment(.center)
+                        .padding(.bottom, 10)
+                    
+                    Text("Please enter the secret passphrase to verify your membership")
+                        .font(.system(size: 17))
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 30)
+                        .padding(.bottom, 40)
+                    
+                    // Character boxes in a scrollable container if needed
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(0..<maxLength, id: \.self) { index in
+                                CharacterBoxView(
+                                    char: index < secretPassword.count ? "•" : "",
+                                    isFocused: isInputFocused && index == secretPassword.count
+                                )
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                    .padding(.bottom, 40)
+                    
+                    // Hidden text field for keyboard input
+                    TextField("", text: $secretPassword)
+                        .keyboardType(.asciiCapable)
+                        .focused($isInputFocused)
+                        .opacity(0)
+                        .frame(width: 0, height: 0)
+                        .onChange(of: secretPassword) { newValue in
+                            if newValue.count > maxLength {
+                                secretPassword = String(newValue.prefix(maxLength))
+                            }
+                        }
+                    
+                    Spacer()
+                    
+                    // Navigation link that's only active when verified
+                    NavigationLink(destination: PasswordSetupView(userData: userData), isActive: $isPassphraseVerified) {
+                        EmptyView()
+                    }
+                    
+                    // Separate button for initiating verification
                     Button(action: {
                         Task {
                             await verifyPassword()
@@ -55,19 +107,20 @@ struct SecretPasswordView: View {
                         } else {
                             Text("Continue")
                                 .foregroundColor(.white)
-                                .font(.headline)
+                                .font(.system(size: 17, weight: .semibold))
                         }
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 55)
-                    .background(Color.black)
-                    .cornerRadius(10)
-                    .padding(.horizontal, 30)
-                    .padding(.top, 20)
-                    .disabled(isLoading)
+                    .background(secretPassword.count == maxLength ? Color.black : Color.gray)
+                    .cornerRadius(30)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, geometry.safeAreaInsets.bottom + 20)
+                    .disabled(isLoading || secretPassword.count < maxLength)
                 }
-                .buttonStyle(PlainButtonStyle())
+                .frame(minHeight: geometry.size.height)
             }
+            .scrollDisabled(true)
         }
         .navigationBarTitleDisplayMode(.inline)
         .background(Color(.systemBackground))
@@ -75,6 +128,9 @@ struct SecretPasswordView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage)
+        }
+        .onAppear {
+            isInputFocused = true
         }
     }
     
@@ -92,12 +148,14 @@ struct SecretPasswordView: View {
         
         if enteredPasswordHashString == hashedPassword {
             await MainActor.run {
-                navigateToPassword = true
+                isPassphraseVerified = true
             }
         } else {
             await MainActor.run {
                 showError = true
                 errorMessage = "Incorrect passphrase. Please try again."
+                secretPassword = ""
+                isPassphraseVerified = false
             }
         }
     }
