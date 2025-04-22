@@ -8,7 +8,7 @@ struct InitiationDetailsView: View {
     @State private var selectedYear = String(Calendar.current.component(.year, from: Date()))
     @State private var selectedStatus = "Collegiate"
     @State private var selectedGraduationYear = String(Calendar.current.component(.year, from: Date()) + 4)
-    @State private var navigateToPassword = false
+    @State private var navigateToSecretPassword = false
     @State private var isLoading = false
     @State private var showConfirmation = false
     @State private var lineName = ""
@@ -145,7 +145,7 @@ struct InitiationDetailsView: View {
                             .stroke(Color(.systemGray4), lineWidth: 1)
                     )
                     
-                    NavigationLink(destination: PasswordSetupView(userData: userData), isActive: $navigateToPassword) {
+                    NavigationLink(destination: SecretPasswordView(userData: userData), isActive: $navigateToSecretPassword) {
                         Button(action: {
                             Task {
                                 await checkLineMember()
@@ -175,7 +175,7 @@ struct InitiationDetailsView: View {
                 userData.year = selectedYear
                 userData.status = selectedStatus
                 userData.graduationYear = selectedStatus == "Collegiate" ? selectedGraduationYear : ""
-                navigateToPassword = true
+                navigateToSecretPassword = true
             }
             Button("No, that's not me", role: .cancel) { }
         } message: {
