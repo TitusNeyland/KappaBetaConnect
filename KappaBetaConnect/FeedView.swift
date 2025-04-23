@@ -3,6 +3,7 @@ import SwiftUI
 struct FeedView: View {
     @StateObject private var postRepository = PostRepository()
     @EnvironmentObject private var authManager: AuthManager
+    @Environment(\.dismiss) private var dismiss
     @State private var showNewPostSheet = false
     @State private var showError = false
     @State private var errorMessage = ""
@@ -57,6 +58,26 @@ struct FeedView: View {
                 Toast(message: "Post uploaded successfully", isShowing: $showToast)
             }
         }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                NavigationLink(destination: EmptyView()) {
+                    EmptyView()
+                }
+                .opacity(0)
+            }
+        }
+        .toolbarColorScheme(.light, for: .navigationBar)
+        .navigationBarBackButtonHidden(true)
+        .navigationBarItems(leading: Button(action: {
+            dismiss()
+        }) {
+            HStack {
+                Image(systemName: "chevron.left")
+                    .foregroundColor(.black)
+                Text("Back")
+                    .foregroundColor(.black)
+            }
+        })
         .sheet(isPresented: $showNewPostSheet) {
             CreatePostSheet(
                 postRepository: postRepository,

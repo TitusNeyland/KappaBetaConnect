@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct InitiationDetailsView: View {
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var userData: UserSignupData
     @StateObject private var lineRepository = LineRepository()
     @State private var selectedLineNumber = "1"
@@ -168,6 +169,22 @@ struct InitiationDetailsView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .background(Color(.systemBackground))
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    dismiss()
+                }) {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                            .foregroundColor(.black)
+                        Text("Back")
+                            .foregroundColor(.black)
+                    }
+                }
+            }
+        }
+        .toolbarColorScheme(.light, for: .navigationBar)
         .alert("Confirm Your Info", isPresented: $showConfirmation) {
             Button("Yes, that's me") {
                 userData.lineNumber = selectedLineNumber

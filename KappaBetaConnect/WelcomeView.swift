@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WelcomeView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var navigateToProfile = false
     var userData: UserSignupData
     
@@ -22,6 +23,23 @@ struct WelcomeView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    dismiss()
+                }) {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                            .foregroundColor(.black)
+                        Text("Back")
+                            .foregroundColor(.black)
+                    }
+                }
+            }
+        }
+        .toolbarColorScheme(.light, for: .navigationBar)
         .onAppear {
             // Automatically navigate to ProfileSetupView after 2 seconds
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
