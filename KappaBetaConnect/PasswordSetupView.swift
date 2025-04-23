@@ -25,28 +25,46 @@ struct PasswordSetupView: View {
                 VStack(spacing: 15) {
                     // Password Field
                     ZStack(alignment: .trailing) {
-                        CustomTextField(text: $password, placeholder: "Password", textContentType: .newPassword, isSecure: !showPassword)
-                            .customTextField()
+                        if showPassword {
+                            CustomTextField(text: $password, placeholder: "Password", textContentType: .newPassword, isSecure: false)
+                                .customTextField()
+                        } else {
+                            CustomTextField(text: $password, placeholder: "Password", textContentType: .newPassword, isSecure: true)
+                                .customTextField()
+                        }
                         
                         Button(action: {
                             showPassword.toggle()
                         }) {
                             Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
                                 .foregroundColor(.gray)
+                                .font(.system(size: 20))
+                                .frame(width: 44, height: 44)
+                                .background(Color(.systemBackground))
+                                .clipShape(Circle())
                         }
                         .padding(.trailing, 8)
                     }
                     
                     // Confirm Password Field
                     ZStack(alignment: .trailing) {
-                        CustomTextField(text: $confirmPassword, placeholder: "Confirm Password", textContentType: .newPassword, isSecure: !showConfirmPassword)
-                            .customTextField()
+                        if showConfirmPassword {
+                            CustomTextField(text: $confirmPassword, placeholder: "Confirm Password", textContentType: .newPassword, isSecure: false)
+                                .customTextField()
+                        } else {
+                            CustomTextField(text: $confirmPassword, placeholder: "Confirm Password", textContentType: .newPassword, isSecure: true)
+                                .customTextField()
+                        }
                         
                         Button(action: {
                             showConfirmPassword.toggle()
                         }) {
                             Image(systemName: showConfirmPassword ? "eye.slash.fill" : "eye.fill")
                                 .foregroundColor(.gray)
+                                .font(.system(size: 20))
+                                .frame(width: 44, height: 44)
+                                .background(Color(.systemBackground))
+                                .clipShape(Circle())
                         }
                         .padding(.trailing, 8)
                     }
