@@ -210,6 +210,22 @@ struct SignUpView: View {
         } message: {
             Text(errorMessage)
         }
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    dismiss()
+                }) {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                            .foregroundColor(.black)
+                        Text("Back")
+                            .foregroundColor(.black)
+                    }
+                }
+            }
+        }
+        .toolbarColorScheme(.light, for: .navigationBar)
     }
     
     private func validateAndProceed() {

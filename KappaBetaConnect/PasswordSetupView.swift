@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct PasswordSetupView: View {
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var userData: UserSignupData
     @State private var password = ""
     @State private var confirmPassword = ""
@@ -77,6 +78,22 @@ struct PasswordSetupView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .background(Color(.systemBackground))
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    dismiss()
+                }) {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                            .foregroundColor(.black)
+                        Text("Back")
+                            .foregroundColor(.black)
+                    }
+                }
+            }
+        }
+        .toolbarColorScheme(.light, for: .navigationBar)
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
         } message: {

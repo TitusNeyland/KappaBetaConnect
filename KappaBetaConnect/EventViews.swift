@@ -348,6 +348,26 @@ struct EventDetailView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                NavigationLink(destination: EmptyView()) {
+                    EmptyView()
+                }
+                .opacity(0)
+            }
+        }
+        .toolbarColorScheme(.light, for: .navigationBar)
+        .navigationBarBackButtonHidden(true)
+        .navigationBarItems(leading: Button(action: {
+            dismiss()
+        }) {
+            HStack {
+                Image(systemName: "chevron.left")
+                    .foregroundColor(.black)
+                Text("Back")
+                    .foregroundColor(.black)
+            }
+        })
         .sheet(isPresented: $showEditSheet) {
             if let event = event {
                 EditEventView(eventRepository: eventRepository, event: event)

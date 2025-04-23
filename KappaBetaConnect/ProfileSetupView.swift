@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ProfileSetupView: View {
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var userData: UserSignupData
     @State private var navigateToInitiation = false
     @State private var isLoading = false
@@ -117,6 +118,22 @@ struct ProfileSetupView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .background(Color(.systemBackground))
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    dismiss()
+                }) {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                            .foregroundColor(.black)
+                        Text("Back")
+                            .foregroundColor(.black)
+                    }
+                }
+            }
+        }
+        .toolbarColorScheme(.light, for: .navigationBar)
     }
 }
 

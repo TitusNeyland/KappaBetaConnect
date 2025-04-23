@@ -21,6 +21,7 @@ struct CharacterBoxView: View {
 }
 
 struct SecretPasswordView: View {
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var userData: UserSignupData
     @State private var secretPassword = ""
     @State private var showError = false
@@ -140,6 +141,22 @@ struct SecretPasswordView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .background(Color(.systemBackground))
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    dismiss()
+                }) {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                            .foregroundColor(.black)
+                        Text("Back")
+                            .foregroundColor(.black)
+                    }
+                }
+            }
+        }
+        .toolbarColorScheme(.light, for: .navigationBar)
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) {
                 // Re-enable input focus when alert is dismissed

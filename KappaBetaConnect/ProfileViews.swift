@@ -449,6 +449,7 @@ struct ProfileView: View {
     @StateObject private var userRepository = UserRepository()
     @StateObject private var lineRepository = LineRepository()
     @EnvironmentObject private var authManager: AuthManager
+    @Environment(\.dismiss) private var dismiss
     @State private var showLogoutAlert = false
     @State private var navigateToLogin = false
     @State private var showError = false
@@ -910,6 +911,26 @@ struct ProfileView: View {
                 EnlargedImageView(image: image, isPresented: $showEnlargedImage)
             }
         }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                NavigationLink(destination: EmptyView()) {
+                    EmptyView()
+                }
+                .opacity(0)
+            }
+        }
+        .toolbarColorScheme(.light, for: .navigationBar)
+        .navigationBarBackButtonHidden(true)
+        .navigationBarItems(leading: Button(action: {
+            dismiss()
+        }) {
+            HStack {
+                Image(systemName: "chevron.left")
+                    .foregroundColor(.black)
+                Text("Back")
+                    .foregroundColor(.black)
+            }
+        })
         .onChange(of: selectedItem) { newItem in
             Task {
                 if let data = try? await newItem?.loadTransferable(type: Data.self),
