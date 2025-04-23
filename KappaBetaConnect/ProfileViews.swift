@@ -477,6 +477,7 @@ struct ProfileView: View {
     @State private var userAlias: String?
     @State private var dialogTitle = "Error"
     @State private var shouldSignOut = false
+    @State private var showHelpAndFAQ = false
     
     // Optional parameter to view a different user's profile
     var userId: String?
@@ -910,6 +911,29 @@ struct ProfileView: View {
             if showEnlargedImage, let image = enlargedImage {
                 EnlargedImageView(image: image, isPresented: $showEnlargedImage)
             }
+            
+            // Add floating Help & FAQ button
+            if isCurrentUserProfile {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            showHelpAndFAQ = true
+                        }) {
+                            Image(systemName: "questionmark.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.black)
+                                .frame(width: 50, height: 50)
+                                .background(Color(.systemBackground))
+                                .clipShape(Circle())
+                                .shadow(radius: 3)
+                        }
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 20)
+                    }
+                }
+            }
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -921,16 +945,18 @@ struct ProfileView: View {
         }
         .toolbarColorScheme(.light, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
-        .navigationBarItems(leading: Button(action: {
-            dismiss()
-        }) {
-            HStack {
-                Image(systemName: "chevron.left")
-                    .foregroundColor(.black)
-                Text("Back")
-                    .foregroundColor(.black)
+        .navigationBarItems(
+            leading: Button(action: {
+                dismiss()
+            }) {
+                HStack {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(.black)
+                    Text("Back")
+                        .foregroundColor(.black)
+                }
             }
-        })
+        )
         .onChange(of: selectedItem) { newItem in
             Task {
                 if let data = try? await newItem?.loadTransferable(type: Data.self),
@@ -1077,6 +1103,9 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showManageProfile) {
             ManageProfileView(userRepository: userRepository)
+        }
+        .sheet(isPresented: $showHelpAndFAQ) {
+            HelpAndFAQView()
         }
     }
     

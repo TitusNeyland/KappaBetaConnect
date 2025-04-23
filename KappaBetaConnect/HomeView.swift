@@ -174,7 +174,7 @@ struct HomeView: View {
                 } else {
                     VStack(spacing: 20) {
                         ForEach(upcomingEvents) { event in
-                            NavigationLink(destination: EventDetailView(userRepository: UserRepository(), eventRepository: eventRepository, eventId: event.id ?? "")) {
+                            NavigationLink(destination: EventDetailView(userRepository: userRepository, eventRepository: eventRepository, eventId: event.id ?? "")) {
                                 HStack {
                                     // Date column
                                     let calendar = Calendar.current
