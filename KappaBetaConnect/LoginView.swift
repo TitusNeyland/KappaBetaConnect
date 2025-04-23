@@ -39,6 +39,10 @@ struct LoginView: View {
                         }) {
                             Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
                                 .foregroundColor(.gray)
+                                .font(.system(size: 20))
+                                .frame(width: 44, height: 44)
+                                .background(Color(.systemBackground))
+                                .clipShape(Circle())
                         }
                         .padding(.trailing, 8)
                     }
