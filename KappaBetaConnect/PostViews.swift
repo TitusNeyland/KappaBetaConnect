@@ -351,8 +351,12 @@ struct PostUserInfoView: View {
                 }
             } label: {
                 Image(systemName: "ellipsis")
+                    .font(.system(size: 20))
                     .foregroundColor(.gray)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(PlainButtonStyle())
         }
     }
 }
