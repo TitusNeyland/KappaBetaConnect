@@ -6,7 +6,7 @@ struct PasswordSetupView: View {
     @State private var confirmPassword = ""
     @State private var showPassword = false
     @State private var showConfirmPassword = false
-    @State private var navigateToMain = false
+    @State private var navigateToProfilePicture = false
     @State private var isLoading = false
     @State private var showError = false
     @State private var errorMessage = ""
@@ -70,8 +70,8 @@ struct PasswordSetupView: View {
                 .padding(.horizontal, 30)
             }
             
-            // Hidden NavigationLink for navigation to MainTabView
-            NavigationLink(destination: MainTabView().navigationBarBackButtonHidden(true), isActive: $navigateToMain) {
+            // Hidden NavigationLink for navigation to ProfilePicturePromptView
+            NavigationLink(destination: ProfilePicturePromptView().navigationBarBackButtonHidden(true), isActive: $navigateToProfilePicture) {
                 EmptyView()
             }
         }
@@ -115,7 +115,7 @@ struct PasswordSetupView: View {
                 // Update UI on main thread
                 DispatchQueue.main.async {
                     isLoading = false
-                    navigateToMain = true
+                    navigateToProfilePicture = true
                 }
             } catch {
                 DispatchQueue.main.async {
