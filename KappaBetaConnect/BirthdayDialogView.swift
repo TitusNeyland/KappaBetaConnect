@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct BirthdayDialogView: View {
-    @Environment(\.dismiss) private var dismiss
     @ObservedObject var userRepository: UserRepository
+    @EnvironmentObject private var birthdayService: BirthdayService
     @State private var birthdayUsers: [User] = []
     @State private var isLoading = true
     
@@ -12,7 +12,9 @@ struct BirthdayDialogView: View {
             Color.black.opacity(0.2)
                 .ignoresSafeArea()
                 .onTapGesture {
-                    dismiss()
+                    withAnimation {
+                        birthdayService.shouldShowBirthdayDialog = false
+                    }
                 }
             
             // Dialog content
@@ -25,11 +27,6 @@ struct BirthdayDialogView: View {
                     Text("Birthdays Today")
                         .font(.headline)
                     Spacer()
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.gray)
-                            .font(.title3)
-                    }
                 }
                 .padding(.top, 20)
                 .padding(.horizontal, 24)
@@ -111,11 +108,15 @@ struct BirthdayDialogView: View {
                         }
                         .padding(.vertical, 8)
                     }
-                    .frame(maxHeight: 250) // Increased scrollable area height
+                    .frame(maxHeight: 250)
                 }
                 
                 // Footer
-                Button(action: { dismiss() }) {
+                Button(action: { 
+                    withAnimation {
+                        birthdayService.shouldShowBirthdayDialog = false
+                    }
+                }) {
                     Text("Close")
                         .font(.headline)
                         .foregroundColor(.white)
@@ -127,7 +128,7 @@ struct BirthdayDialogView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 20)
             }
-            .frame(maxWidth: 320) // Slightly increased max width
+            .frame(maxWidth: 320)
             .background(Color(.systemBackground))
             .cornerRadius(16)
             .shadow(radius: 20, x: 0, y: 10)
