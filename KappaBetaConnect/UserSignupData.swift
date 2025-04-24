@@ -12,6 +12,7 @@ class UserSignupData: ObservableObject {
     @Published var state: String = ""
     @Published var homeCity: String = ""
     @Published var homeState: String = ""
+    @Published var birthday: Date = Date()
     
     // Security
     @Published var password: String = ""
@@ -43,6 +44,7 @@ class UserSignupData: ObservableObject {
             state: state.isEmpty ? nil : state,
             homeCity: homeCity.isEmpty ? nil : homeCity,
             homeState: homeState.isEmpty ? nil : homeState,
+            birthday: birthday,
             password: password,
             careerField: careerField.isEmpty ? nil : careerField,
             major: major.isEmpty ? nil : major,

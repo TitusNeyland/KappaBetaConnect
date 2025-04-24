@@ -8,6 +8,7 @@ class AuthManager: ObservableObject {
     @Published var userId: String?
     
     private var userRepository = UserRepository()
+    private var birthdayService = BirthdayService.shared
     private var cancellables = Set<AnyCancellable>()
     
     init() {
@@ -22,6 +23,9 @@ class AuthManager: ObservableObject {
                 if let userData = try? await userRepository.getUser(withId: user.uid) {
                     await MainActor.run {
                         self.currentUser = userData
+                        if userData.isFirstSignIn {
+                            self.handleFirstTimeSignIn(userId: user.uid)
+                        }
                     }
                 }
             }
@@ -38,6 +42,9 @@ class AuthManager: ObservableObject {
                     do {
                         if let user = try await self?.userRepository.getUser(withId: userId) {
                             self?.currentUser = user
+                            if user.isFirstSignIn {
+                                self?.handleFirstTimeSignIn(userId: userId)
+                            }
                         }
                     } catch {
                         print("Error fetching user: \(error.localizedDescription)")
@@ -45,6 +52,22 @@ class AuthManager: ObservableObject {
                 } else {
                     self?.currentUser = nil
                 }
+            }
+        }
+    }
+    
+    private func handleFirstTimeSignIn(userId: String) {
+        Task {
+            do {
+                // Mark first sign-in as complete
+                try await userRepository.markFirstSignInComplete(forUser: userId)
+                
+                // Show birthday dialog
+                await MainActor.run {
+                    birthdayService.checkAndShowBirthdayDialog()
+                }
+            } catch {
+                print("Error handling first-time sign-in: \(error.localizedDescription)")
             }
         }
     }

@@ -173,6 +173,21 @@ struct SignUpView: View {
                         
                         CustomTextField(text: $userData.phoneNumber, placeholder: "Phone Number", keyboardType: .phonePad, textContentType: .telephoneNumber)
                             .customTextField()
+                            
+                        // Birthday Picker
+                        DatePicker(
+                            "Birthday",
+                            selection: $userData.birthday,
+                            displayedComponents: [.date]
+                        )
+                        .datePickerStyle(.compact)
+                        .padding()
+                        .background(Color(.systemBackground))
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(.systemGray4), lineWidth: 1)
+                        )
                     }
                     .padding(.horizontal, 30)
                 }
@@ -264,6 +279,14 @@ struct SignUpView: View {
         
         if userData.phoneNumber.isEmpty {
             showError(message: "Please enter your phone number")
+            return
+        }
+        
+        // Validate birthday
+        let calendar = Calendar.current
+        let ageComponents = calendar.dateComponents([.year], from: userData.birthday, to: Date())
+        if let age = ageComponents.year, age < 13 {
+            showError(message: "You must be at least 13 years old to use this app")
             return
         }
         

@@ -84,6 +84,7 @@ struct ManageProfileView: View {
     @State private var dialogTitle = "Error"
     @State private var shouldSignOut = false
     @EnvironmentObject private var authManager: AuthManager
+    @State private var birthday = Date()
     
     let prefixes = ["Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Rev.", "Hon."]
     let suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "M.D.", "Esq."]
@@ -150,6 +151,9 @@ struct ManageProfileView: View {
                             .pickerStyle(.menu)
                             .frame(width: 100)
                         }
+                        
+                        DatePicker("Birthday", selection: $birthday, displayedComponents: .date)
+                            .datePickerStyle(.compact)
                         
                         TextField("Email", text: $email)
                             .textContentType(.emailAddress)
@@ -306,6 +310,7 @@ struct ManageProfileView: View {
             semester = user.semester ?? ""
             year = user.year ?? ""
             status = user.status ?? ""
+            birthday = user.birthday ?? Date()
         }
     }
     
@@ -400,6 +405,7 @@ struct ManageProfileView: View {
                 updatedUser.year = year
                 updatedUser.status = status
                 updatedUser.updatedAt = Date()
+                updatedUser.birthday = birthday
                 
                 // If email changed, update both Firestore and Firebase Auth
                 if emailChanged {
@@ -710,6 +716,15 @@ struct ProfileView: View {
                                                     .font(.subheadline)
                                                     .foregroundColor(.gray)
                                             }
+                                        }
+                                        
+                                        // Add birthday
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "calendar")
+                                                .foregroundColor(.gray)
+                                            Text("Birthday: \(formatDate(user.birthday))")
+                                                .font(.subheadline)
+                                                .foregroundColor(.gray)
                                         }
                                     }
                                     .padding(.top, 16)
@@ -1282,6 +1297,13 @@ struct ProfileView: View {
                 .padding(.horizontal, 20)
             }
         }
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter.string(from: date)
     }
 }
 

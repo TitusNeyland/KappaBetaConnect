@@ -21,12 +21,15 @@ struct KappaBetaConnectApp: App {
     
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var authManager = AuthManager()
+    @StateObject private var userRepository = UserRepository()
+    @StateObject private var birthdayService = BirthdayService.shared
     
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(authManager)
-                .preferredColorScheme(.light)
+                .environmentObject(userRepository)
+                .environmentObject(birthdayService)
         }
     }
 }
