@@ -927,7 +927,7 @@ struct ProfileView: View {
                 EnlargedImageView(image: image, isPresented: $showEnlargedImage)
             }
             
-            // Add floating Help & FAQ button
+            // Add floating Help & FAQ button and Email button
             if isCurrentUserProfile {
                 VStack {
                     Spacer()
@@ -946,6 +946,29 @@ struct ProfileView: View {
                         }
                         .padding(.trailing, 20)
                         .padding(.bottom, 20)
+                    }
+                }
+            } else if let user = displayedUser {
+                // Show email button only for other users' profiles
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            if let url = URL(string: "mailto:\(user.email)") {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            Image(systemName: "envelope.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.black)
+                                .frame(width: 50, height: 50)
+                                .background(Color(.systemBackground))
+                                .clipShape(Circle())
+                                .shadow(radius: 3)
+                        }
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 80) // Position above the Help & FAQ button
                     }
                 }
             }
