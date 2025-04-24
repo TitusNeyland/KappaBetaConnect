@@ -371,10 +371,14 @@ struct HomeView: View {
                 .filter { $0.id != currentUser.id }
                 .map { user -> (User, Double) in
                     let score = calculateSimilarityScore(currentUser: currentUser, otherUser: user)
-                    return (user, score)
+                    // Add a small random factor (between 0 and 0.1) to the score
+                    let randomFactor = Double.random(in: 0...0.1)
+                    return (user, score + randomFactor)
                 }
                 .sorted { $0.1 > $1.1 }
-                .prefix(5)
+                .prefix(10) // Get more candidates than we need
+                .shuffled() // Shuffle the top candidates
+                .prefix(5) // Take the first 5 after shuffling
                 .map { $0.0 }
             
             await MainActor.run {
@@ -388,41 +392,51 @@ struct HomeView: View {
     private func calculateSimilarityScore(currentUser: User, otherUser: User) -> Double {
         var score = 0.0
         
-        // Same city and state (highest weight)
-        if currentUser.city == otherUser.city && currentUser.state == otherUser.state {
-            score += 5.0
+        // Hometown match (strong connection)
+        if currentUser.homeCity == otherUser.homeCity && currentUser.homeState == otherUser.homeState {
+            score += 0.3
         }
         
-        // Same career field
-        if currentUser.careerField == otherUser.careerField {
-            score += 4.0
+        // Current location match
+        if currentUser.city == otherUser.city && currentUser.state == otherUser.state {
+            score += 0.2
+        }
+        
+        // Same line number (strong connection)
+        if currentUser.lineNumber == otherUser.lineNumber {
+            score += 0.3
         }
         
         // Same company
         if currentUser.company == otherUser.company {
-            score += 4.0
+            score += 0.2
         }
         
-        // Same major
-        if currentUser.major == otherUser.major {
-            score += 3.0
-        }
-        
-        // Same line number
-        if currentUser.lineNumber == otherUser.lineNumber {
-            score += 3.0
-        }
-        
-        // Same initiation semester/year
-        if currentUser.semester == otherUser.semester && currentUser.year == otherUser.year {
-            score += 2.0
+        // Same career field
+        if currentUser.careerField == otherUser.careerField {
+            score += 0.15
         }
         
         // Shared interests
         if let currentInterests = currentUser.interests,
            let otherInterests = otherUser.interests {
-            let commonInterests = Set(currentInterests).intersection(Set(otherInterests))
-            score += Double(commonInterests.count)
+            let sharedInterests = Set(currentInterests).intersection(Set(otherInterests))
+            score += Double(sharedInterests.count) * 0.1
+        }
+        
+        // Same graduation year (for alumni)
+        if currentUser.graduationYear == otherUser.graduationYear {
+            score += 0.1
+        }
+        
+        // Same status (collegiate/alumni)
+        if currentUser.status == otherUser.status {
+            score += 0.05
+        }
+        
+        // Same major (for current students)
+        if currentUser.major == otherUser.major {
+            score += 0.1
         }
         
         return score
