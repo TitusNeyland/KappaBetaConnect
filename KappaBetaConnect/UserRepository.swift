@@ -388,4 +388,11 @@ class UserRepository: ObservableObject {
         
         return user
     }
+    
+    func getAllUsers() async throws -> [User] {
+        let snapshot = try await db.collection(usersCollection).getDocuments()
+        return try snapshot.documents.compactMap { document in
+            try? dictionaryToUser(document.data(), id: document.documentID)
+        }
+    }
 } 

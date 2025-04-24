@@ -3,6 +3,8 @@ import SwiftUI
 struct MainTabView: View {
     @State private var selectedTab = 0
     @EnvironmentObject private var authManager: AuthManager
+    @EnvironmentObject private var birthdayService: BirthdayService
+    @EnvironmentObject private var userRepository: UserRepository
     
     let tabs = ["Home", "Feed", "Directory", "Events", /*"Messages",*/ "Profile"]
     
@@ -80,6 +82,16 @@ struct MainTabView: View {
             }
         }
         .navigationBarHidden(true)
+        .overlay {
+            if birthdayService.shouldShowBirthdayDialog {
+                BirthdayDialogView(userRepository: userRepository)
+            }
+        }
+        .task {
+            // Wait a short delay to ensure the view is fully loaded
+            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
+            birthdayService.checkAndShowBirthdayDialog()
+        }
     }
 }
 
