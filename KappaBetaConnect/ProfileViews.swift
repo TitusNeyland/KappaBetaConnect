@@ -711,6 +711,15 @@ struct ProfileView: View {
                                                     .foregroundColor(.gray)
                                             }
                                         }
+                                        
+                                        // Add birthday
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "calendar")
+                                                .foregroundColor(.gray)
+                                            Text("Birthday: \(formatDate(user.birthday))")
+                                                .font(.subheadline)
+                                                .foregroundColor(.gray)
+                                        }
                                     }
                                     .padding(.top, 16)
                                 }
@@ -1282,6 +1291,13 @@ struct ProfileView: View {
                 .padding(.horizontal, 20)
             }
         }
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter.string(from: date)
     }
 }
 
