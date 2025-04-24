@@ -85,8 +85,8 @@ struct BirthdayDialogView: View {
                                             .font(.subheadline)
                                             .fontWeight(.medium)
                                         
-                                        if let lineNumber = user.lineNumber {
-                                            Text("Line #\(lineNumber)")
+                                        if let city = user.city, let state = user.state {
+                                            Text("\(city), \(state)")
                                                 .font(.caption)
                                                 .foregroundColor(.gray)
                                         }
@@ -95,13 +95,21 @@ struct BirthdayDialogView: View {
                                     Spacer()
                                     
                                     Button(action: {
-                                        // TODO: Implement birthday wish functionality
+                                        let phoneNumber = user.phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        if !phoneNumber.isEmpty {
+                                            let message = "Happy Birthday \(user.firstName)! 🎉🎂"
+                                            let urlString = "sms:\(phoneNumber)&body=\(message)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                                            if let url = URL(string: urlString), UIApplication.shared.canOpenURL(url) {
+                                                UIApplication.shared.open(url)
+                                            }
+                                        }
                                     }) {
                                         Image(systemName: "gift.fill")
                                             .foregroundColor(.orange)
                                             .font(.title3)
                                     }
                                     .padding(8)
+                                    .disabled(user.phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                                 }
                                 .padding(.horizontal, 24)
                             }
