@@ -15,6 +15,7 @@ struct User: Identifiable, Codable {
     var state: String?
     var homeCity: String?
     var homeState: String?
+    var birthday: Date
     
     // Security
     var password: String // Note: In a real app, passwords should not be stored directly. Firebase Auth handles this.
@@ -53,6 +54,7 @@ struct User: Identifiable, Codable {
     enum CodingKeys: String, CodingKey {
         case id
         case prefix, firstName, lastName, suffix, email, phoneNumber, city, state, homeCity, homeState
+        case birthday
         case password
         case careerField, major, jobTitle, company, bio, interests
         case lineNumber, semester, year, status, graduationYear
@@ -72,6 +74,7 @@ struct User: Identifiable, Codable {
          state: String? = nil,
          homeCity: String? = nil,
          homeState: String? = nil,
+         birthday: Date = Date(),
          password: String,
          careerField: String? = nil, 
          major: String? = nil, 
@@ -104,6 +107,7 @@ struct User: Identifiable, Codable {
         self.state = state
         self.homeCity = homeCity
         self.homeState = homeState
+        self.birthday = birthday
         self.password = password
         self.careerField = careerField
         self.major = major

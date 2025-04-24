@@ -185,6 +185,7 @@ class UserRepository: ObservableObject {
             "email": user.email,
             "phoneNumber": user.phoneNumber,
             "password": user.password,
+            "birthday": Timestamp(date: user.birthday),
             "createdAt": Timestamp(date: user.createdAt),
             "updatedAt": Timestamp(date: user.updatedAt),
             "isActive": user.isActive
@@ -226,6 +227,7 @@ class UserRepository: ObservableObject {
               let email = dict["email"] as? String,
               let phoneNumber = dict["phoneNumber"] as? String,
               let password = dict["password"] as? String,
+              let birthday = (dict["birthday"] as? Timestamp)?.dateValue(),
               let isActive = dict["isActive"] as? Bool else {
             throw NSError(domain: "UserRepository", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid user data"])
         }
@@ -246,6 +248,7 @@ class UserRepository: ObservableObject {
             state: dict["state"] as? String,
             homeCity: dict["homeCity"] as? String,
             homeState: dict["homeState"] as? String,
+            birthday: birthday,
             password: password,
             careerField: dict["careerField"] as? String,
             major: dict["major"] as? String,
@@ -276,6 +279,7 @@ class UserRepository: ObservableObject {
             "email": user.email,
             "phoneNumber": user.phoneNumber,
             "password": user.password,
+            "birthday": user.birthday,
             "createdAt": user.createdAt,
             "updatedAt": user.updatedAt,
             "isActive": user.isActive
@@ -314,6 +318,7 @@ class UserRepository: ObservableObject {
               let email = data["email"] as? String,
               let phoneNumber = data["phoneNumber"] as? String,
               let password = data["password"] as? String,
+              let birthday = (data["birthday"] as? Timestamp)?.dateValue(),
               let createdAt = (data["createdAt"] as? Timestamp)?.dateValue(),
               let updatedAt = (data["updatedAt"] as? Timestamp)?.dateValue(),
               let isActive = data["isActive"] as? Bool else {
@@ -355,12 +360,14 @@ class UserRepository: ObservableObject {
             state: state,
             homeCity: homeCity,
             homeState: homeState,
+            birthday: birthday,
             password: password,
             careerField: careerField,
             major: major,
             jobTitle: jobTitle,
             company: company,
             bio: bio,
+            interests: [],
             lineNumber: lineNumber,
             semester: semester,
             year: year,
@@ -372,7 +379,8 @@ class UserRepository: ObservableObject {
             twitterURL: twitterURL,
             snapchatURL: snapchatURL,
             facebookURL: facebookURL,
-            isActive: isActive
+            isActive: isActive,
+            yearsOfExperience: ""
         )
         
         user.createdAt = createdAt
