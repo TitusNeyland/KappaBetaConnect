@@ -188,7 +188,8 @@ class UserRepository: ObservableObject {
             "birthday": Timestamp(date: user.birthday),
             "createdAt": Timestamp(date: user.createdAt),
             "updatedAt": Timestamp(date: user.updatedAt),
-            "isActive": user.isActive
+            "isActive": user.isActive,
+            "isFirstSignIn": user.isFirstSignIn
         ]
         
         // Add optional fields if they have values
@@ -236,6 +237,8 @@ class UserRepository: ObservableObject {
         let createdAt = (dict["createdAt"] as? Timestamp)?.dateValue() ?? Date()
         let updatedAt = (dict["updatedAt"] as? Timestamp)?.dateValue() ?? Date()
         
+        let isFirstSignIn = dict["isFirstSignIn"] as? Bool ?? false
+        
         return User(
             id: id,
             prefix: dict["prefix"] as? String,
@@ -268,7 +271,8 @@ class UserRepository: ObservableObject {
             snapchatURL: dict["snapchatURL"] as? String,
             facebookURL: dict["facebookURL"] as? String,
             isActive: isActive,
-            yearsOfExperience: dict["yearsOfExperience"] as? String
+            yearsOfExperience: dict["yearsOfExperience"] as? String,
+            isFirstSignIn: isFirstSignIn
         )
     }
     
@@ -282,7 +286,8 @@ class UserRepository: ObservableObject {
             "birthday": user.birthday,
             "createdAt": user.createdAt,
             "updatedAt": user.updatedAt,
-            "isActive": user.isActive
+            "isActive": user.isActive,
+            "isFirstSignIn": user.isFirstSignIn
         ]
         
         // Optional fields
@@ -324,6 +329,8 @@ class UserRepository: ObservableObject {
               let isActive = data["isActive"] as? Bool else {
             return nil
         }
+        
+        let isFirstSignIn = data["isFirstSignIn"] as? Bool ?? false
         
         let prefix = data["prefix"] as? String
         let suffix = data["suffix"] as? String
@@ -380,7 +387,8 @@ class UserRepository: ObservableObject {
             snapchatURL: snapchatURL,
             facebookURL: facebookURL,
             isActive: isActive,
-            yearsOfExperience: ""
+            yearsOfExperience: "",
+            isFirstSignIn: isFirstSignIn
         )
         
         user.createdAt = createdAt
@@ -394,5 +402,13 @@ class UserRepository: ObservableObject {
         return try snapshot.documents.compactMap { document in
             try? dictionaryToUser(document.data(), id: document.documentID)
         }
+    }
+    
+    func markFirstSignInComplete(forUser userId: String) async throws {
+        let docRef = db.collection(usersCollection).document(userId)
+        try await docRef.updateData([
+            "isFirstSignIn": false,
+            "updatedAt": Date()
+        ])
     }
 } 

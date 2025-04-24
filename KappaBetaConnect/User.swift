@@ -39,6 +39,7 @@ struct User: Identifiable, Codable {
     var createdAt: Date
     var updatedAt: Date
     var isActive: Bool
+    var isFirstSignIn: Bool
     
     // Optional social info
     var profileImageURL: String?
@@ -58,7 +59,7 @@ struct User: Identifiable, Codable {
         case password
         case careerField, major, jobTitle, company, bio, interests
         case lineNumber, semester, year, status, graduationYear
-        case createdAt, updatedAt, isActive
+        case createdAt, updatedAt, isActive, isFirstSignIn
         case profileImageURL, linkedInURL, instagramURL, twitterURL, snapchatURL, facebookURL
         case yearsOfExperience
     }
@@ -94,7 +95,8 @@ struct User: Identifiable, Codable {
          snapchatURL: String? = nil,
          facebookURL: String? = nil,
          isActive: Bool = true,
-         yearsOfExperience: String? = nil) {
+         yearsOfExperience: String? = nil,
+         isFirstSignIn: Bool = true) {
         
         self.id = id
         self.prefix = prefix
@@ -129,6 +131,7 @@ struct User: Identifiable, Codable {
         self.createdAt = Date()
         self.updatedAt = Date()
         self.isActive = isActive
+        self.isFirstSignIn = isFirstSignIn
         self.yearsOfExperience = yearsOfExperience
     }
 } 

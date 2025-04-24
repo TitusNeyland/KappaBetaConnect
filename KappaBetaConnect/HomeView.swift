@@ -392,6 +392,15 @@ struct HomeView: View {
     private func calculateSimilarityScore(currentUser: User, otherUser: User) -> Double {
         var score = 0.0
         
+        // Birthday match (highest priority)
+        let calendar = Calendar.current
+        let currentUserBirthday = calendar.dateComponents([.month, .day], from: currentUser.birthday)
+        let otherUserBirthday = calendar.dateComponents([.month, .day], from: otherUser.birthday)
+        if currentUserBirthday.month == otherUserBirthday.month && 
+           currentUserBirthday.day == otherUserBirthday.day {
+            score += 0.5 // Highest weight for birthday match
+        }
+        
         // Hometown match (strong connection)
         if currentUser.homeCity == otherUser.homeCity && currentUser.homeState == otherUser.homeState {
             score += 0.3
@@ -446,6 +455,16 @@ struct HomeView: View {
         guard let currentUser = currentUser else { return nil }
         
         // Check commonalities in priority order
+        
+        // Check birthday match first
+        let calendar = Calendar.current
+        let currentUserBirthday = calendar.dateComponents([.month, .day], from: currentUser.birthday)
+        let otherUserBirthday = calendar.dateComponents([.month, .day], from: otherUser.birthday)
+        if currentUserBirthday.month == otherUserBirthday.month && 
+           currentUserBirthday.day == otherUserBirthday.day {
+            return "Shares your birthday!"
+        }
+        
         if currentUser.company == otherUser.company {
             return "Works at \(otherUser.company ?? "")"
         }
