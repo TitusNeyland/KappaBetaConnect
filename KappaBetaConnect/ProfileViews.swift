@@ -949,26 +949,44 @@ struct ProfileView: View {
                     }
                 }
             } else if let user = displayedUser {
-                // Show email button only for other users' profiles
+                // Show email and chat buttons only for other users' profiles
                 VStack {
                     Spacer()
                     HStack {
                         Spacer()
-                        Button(action: {
-                            if let url = URL(string: "mailto:\(user.email)") {
-                                UIApplication.shared.open(url)
+                        VStack(spacing: 20) {  // Increased spacing from 10 to 20 points
+                            // Chat/Text Message Button
+                            Button(action: {
+                                if let url = URL(string: "sms:\(user.phoneNumber)") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Image(systemName: "message.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.black)
+                                    .frame(width: 50, height: 50)
+                                    .background(Color(.systemBackground))
+                                    .clipShape(Circle())
+                                    .shadow(radius: 3)
                             }
-                        }) {
-                            Image(systemName: "envelope.circle.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.black)
-                                .frame(width: 50, height: 50)
-                                .background(Color(.systemBackground))
-                                .clipShape(Circle())
-                                .shadow(radius: 3)
+                            
+                            // Email Button
+                            Button(action: {
+                                if let url = URL(string: "mailto:\(user.email)") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Image(systemName: "envelope.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.black)
+                                    .frame(width: 50, height: 50)
+                                    .background(Color(.systemBackground))
+                                    .clipShape(Circle())
+                                    .shadow(radius: 3)
+                            }
                         }
                         .padding(.trailing, 20)
-                        .padding(.bottom, 80) // Position above the Help & FAQ button
+                        .padding(.bottom, 40) // Reduced from 80 to 40 to move buttons lower
                     }
                 }
             }
