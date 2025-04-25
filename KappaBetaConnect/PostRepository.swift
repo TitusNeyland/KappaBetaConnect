@@ -4,6 +4,84 @@ import FirebaseFirestore
 class PostRepository: ObservableObject {
     private let db = Firestore.firestore()
     @Published var posts: [Post] = []
+    private var postsListener: ListenerRegistration?
+    private var postListeners: [String: ListenerRegistration] = [:]
+    
+    init() {
+        startPostsListener()
+    }
+    
+    deinit {
+        // Clean up listeners
+        postsListener?.remove()
+        postListeners.values.forEach { $0.remove() }
+    }
+    
+    private func startPostsListener() {
+        postsListener = db.collection("posts")
+            .order(by: "timestamp", descending: true)
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let self = self else { return }
+                
+                if let error = error {
+                    print("Error listening for post updates: \(error.localizedDescription)")
+                    return
+                }
+                
+                guard let snapshot = snapshot else { return }
+                
+                let fetchedPosts = snapshot.documents.compactMap { document -> Post? in
+                    do {
+                        var post = try document.data(as: Post.self)
+                        post.id = document.documentID
+                        return post
+                    } catch {
+                        print("Error decoding post: \(error.localizedDescription)")
+                        return nil
+                    }
+                }
+                
+                DispatchQueue.main.async {
+                    self.posts = fetchedPosts
+                }
+            }
+    }
+    
+    func startSinglePostListener(postId: String, completion: @escaping (Post?) -> Void) {
+        // Remove existing listener for this post if any
+        postListeners[postId]?.remove()
+        
+        // Start new listener
+        let listener = db.collection("posts").document(postId)
+            .addSnapshotListener { snapshot, error in
+                if let error = error {
+                    print("Error listening for post updates: \(error.localizedDescription)")
+                    completion(nil)
+                    return
+                }
+                
+                guard let document = snapshot else {
+                    completion(nil)
+                    return
+                }
+                
+                do {
+                    var post = try document.data(as: Post.self)
+                    post.id = document.documentID
+                    completion(post)
+                } catch {
+                    print("Error decoding post: \(error.localizedDescription)")
+                    completion(nil)
+                }
+            }
+        
+        postListeners[postId] = listener
+    }
+    
+    func stopSinglePostListener(postId: String) {
+        postListeners[postId]?.remove()
+        postListeners.removeValue(forKey: postId)
+    }
     
     func fetchPosts() async throws {
         let snapshot = try await db.collection("posts")
@@ -59,7 +137,7 @@ class PostRepository: ObservableObject {
         )
         
         _ = try await db.collection("posts").addDocument(from: post)
-        try await fetchPosts() // Refresh posts after creating new one
+        // No need to fetch posts again as the listener will handle updates
     }
     
     func toggleLike(postId: String, userId: String) async throws {
@@ -77,14 +155,6 @@ class PostRepository: ObservableObject {
                 }
                 
                 try transaction.setData(from: post, forDocument: postRef)
-                
-                // Update local posts array on main thread
-                Task { @MainActor in
-                    if let index = self.posts.firstIndex(where: { $0.id == postId }) {
-                        self.posts[index].likes = post.likes
-                    }
-                }
-                
                 return nil
             } catch {
                 errorPointer?.pointee = error as NSError
@@ -113,14 +183,6 @@ class PostRepository: ObservableObject {
                 
                 post.comments.append(comment)
                 try transaction.setData(from: post, forDocument: postRef)
-                
-                // Update local posts array on main thread
-                Task { @MainActor in
-                    if let index = self.posts.firstIndex(where: { $0.id == postId }) {
-                        self.posts[index].comments = post.comments
-                    }
-                }
-                
                 return nil
             } catch {
                 errorPointer?.pointee = error as NSError
@@ -139,18 +201,8 @@ class PostRepository: ObservableObject {
                 let postDoc = try transaction.getDocument(postRef)
                 guard var post = try? postDoc.data(as: Post.self) else { return nil }
                 
-                // Remove the comment with matching ID
                 post.comments.removeAll { $0.id == commentId }
-                
                 try transaction.setData(from: post, forDocument: postRef)
-                
-                // Update local posts array on main thread
-                Task { @MainActor in
-                    if let index = self.posts.firstIndex(where: { $0.id == postId }) {
-                        self.posts[index].comments = post.comments
-                    }
-                }
-                
                 return nil
             } catch {
                 errorPointer?.pointee = error as NSError
@@ -169,14 +221,6 @@ class PostRepository: ObservableObject {
                 
                 post.shareCount += 1
                 try transaction.setData(from: post, forDocument: postRef)
-                
-                // Update local posts array on main thread
-                Task { @MainActor in
-                    if let index = self.posts.firstIndex(where: { $0.id == postId }) {
-                        self.posts[index].shareCount = post.shareCount
-                    }
-                }
-                
                 return nil
             } catch {
                 errorPointer?.pointee = error as NSError
@@ -186,14 +230,7 @@ class PostRepository: ObservableObject {
     }
     
     func deletePost(postId: String) async throws {
-        // Delete the post from Firestore
         try await db.collection("posts").document(postId).delete()
-        
-        // Remove the post from the local posts array on main thread
-        await MainActor.run {
-            if let index = self.posts.firstIndex(where: { $0.id == postId }) {
-                self.posts.remove(at: index)
-            }
-        }
+        // The listener will handle updating the posts array
     }
 } 

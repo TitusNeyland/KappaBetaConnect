@@ -457,7 +457,17 @@ struct CommentsSheetView: View {
     @State private var selectedUser: User?
     @State private var mentionStartIndex: Int?
     @State private var authorProfileImageURL: String?
+    @State private var currentPost: Post
     let postRepository: PostRepository
+    
+    init(post: Post, showSheet: Binding<Bool>, newComment: Binding<String>, onComment: @escaping () -> Void, postRepository: PostRepository) {
+        self.post = post
+        self._showSheet = showSheet
+        self._newComment = newComment
+        self.onComment = onComment
+        self.postRepository = postRepository
+        _currentPost = State(initialValue: post)
+    }
     
     private func isCurrentUserComment(_ comment: Comment) -> Bool {
         comment.authorId == authManager.currentUser?.id
@@ -552,10 +562,10 @@ struct CommentsSheetView: View {
                             }
                             
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(post.authorName)
+                                Text(currentPost.authorName)
                                     .font(.title3)
                                     .fontWeight(.semibold)
-                                Text(post.timestamp.formatted(date: .abbreviated, time: .shortened))
+                                Text(currentPost.timestamp.formatted(date: .abbreviated, time: .shortened))
                                     .font(.subheadline)
                                     .foregroundColor(.gray)
                             }
@@ -564,22 +574,22 @@ struct CommentsSheetView: View {
                         }
                         
                         // Post content
-                        Text(post.content)
+                        Text(currentPost.content)
                             .font(.system(size: 17))
                             .fontWeight(.regular)
                             .padding(.vertical, 4)
                         
                         // Post stats
                         HStack(spacing: 20) {
-                            Text("\(post.likes.count) likes")
+                            Text("\(currentPost.likes.count) likes")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                             
-                            Text("\(post.comments.count) comments")
+                            Text("\(currentPost.comments.count) comments")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                             
-                            Text("\(post.shareCount) shares")
+                            Text("\(currentPost.shareCount) shares")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                         }
@@ -591,7 +601,7 @@ struct CommentsSheetView: View {
                     
                     // Comments list
                     List {
-                        ForEach(post.comments.reversed()) { comment in
+                        ForEach(currentPost.comments.reversed()) { comment in
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack {
                                     Text(comment.authorName)
@@ -720,11 +730,21 @@ struct CommentsSheetView: View {
             }
             .task {
                 do {
-                    let user = try await userRepository.getUser(withId: post.authorId)
+                    let user = try await userRepository.getUser(withId: currentPost.authorId)
                     authorProfileImageURL = user?.profileImageURL
                 } catch {
                     print("Error fetching user profile image: \(error.localizedDescription)")
                 }
+            }
+            .onAppear {
+                postRepository.startSinglePostListener(postId: post.id ?? "") { updatedPost in
+                    if let post = updatedPost {
+                        currentPost = post
+                    }
+                }
+            }
+            .onDisappear {
+                postRepository.stopSinglePostListener(postId: post.id ?? "")
             }
         }
     }
@@ -773,19 +793,26 @@ struct PostCard: View {
     @State private var authorProfileImageURL: String?
     @State private var showDeleteAlert = false
     @State private var selectedUser: User?
+    @State private var currentPost: Post
+    
+    init(post: Post, postRepository: PostRepository) {
+        self.post = post
+        self.postRepository = postRepository
+        _currentPost = State(initialValue: post)
+    }
     
     private var isLiked: Bool {
         guard let userId = authManager.currentUser?.id else { return false }
-        return post.likes.contains(userId)
+        return currentPost.likes.contains(userId)
     }
     
     private var isCurrentUser: Bool {
-        post.authorId == authManager.currentUser?.id
+        currentPost.authorId == authManager.currentUser?.id
     }
     
     private func createAttributedContent() -> AttributedString {
-        var attributed = AttributedString(post.content)
-        let urls = post.content.detectURLs()
+        var attributed = AttributedString(currentPost.content)
+        let urls = currentPost.content.detectURLs()
         
         for (url, range) in urls {
             if let attributedRange = Range(range, in: attributed) {
@@ -801,7 +828,7 @@ struct PostCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             PostUserInfoView(
-                post: post,
+                post: currentPost,
                 profileImageURL: authorProfileImageURL,
                 isCurrentUser: isCurrentUser,
                 onDelete: { showDeleteAlert = true }
@@ -815,21 +842,21 @@ struct PostCard: View {
                 })
             
             HStack(spacing: 20) {
-                Text("\(post.likes.count) likes")
+                Text("\(currentPost.likes.count) likes")
                     .font(.caption)
                     .foregroundColor(.gray)
                 
-                Text("\(post.comments.count) comments")
+                Text("\(currentPost.comments.count) comments")
                     .font(.caption)
                     .foregroundColor(.gray)
                 
-                Text("\(post.shareCount) shares")
+                Text("\(currentPost.shareCount) shares")
                     .font(.caption)
                     .foregroundColor(.gray)
             }
             
             PostInteractionButtonsView(
-                post: post,
+                post: currentPost,
                 isLiked: isLiked,
                 onLike: handleLike,
                 onComment: { showCommentSheet = true },
@@ -837,7 +864,7 @@ struct PostCard: View {
             )
             
             PostCommentsView(
-                post: post,
+                post: currentPost,
                 onViewAllComments: { showCommentSheet = true }
             )
         }
@@ -860,7 +887,7 @@ struct PostCard: View {
         }
         .sheet(isPresented: $showCommentSheet) {
             CommentsSheetView(
-                post: post,
+                post: currentPost,
                 showSheet: $showCommentSheet,
                 newComment: $newComment,
                 onComment: handleComment,
@@ -868,7 +895,7 @@ struct PostCard: View {
             )
         }
         .sheet(isPresented: $showShareSheet) {
-            ShareSheet(items: [post.content])
+            ShareSheet(items: [currentPost.content])
         }
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) { }
@@ -877,11 +904,21 @@ struct PostCard: View {
         }
         .task {
             do {
-                let user = try await userRepository.getUser(withId: post.authorId)
+                let user = try await userRepository.getUser(withId: currentPost.authorId)
                 authorProfileImageURL = user?.profileImageURL
             } catch {
                 print("Error fetching user profile image: \(error.localizedDescription)")
             }
+        }
+        .onAppear {
+            postRepository.startSinglePostListener(postId: post.id ?? "") { updatedPost in
+                if let post = updatedPost {
+                    currentPost = post
+                }
+            }
+        }
+        .onDisappear {
+            postRepository.stopSinglePostListener(postId: post.id ?? "")
         }
     }
     
