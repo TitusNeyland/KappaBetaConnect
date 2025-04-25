@@ -86,7 +86,7 @@ struct SecretPasswordView: View {
                         .focused($isInputFocused)
                         .opacity(0)
                         .frame(width: 0, height: 0)
-                        .onChange(of: secretPassword) { oldValue, newValue in
+                        .onChange(of: secretPassword) { newValue in
                             if newValue.count > maxLength {
                                 secretPassword = String(newValue.prefix(maxLength))
                             }
@@ -104,9 +104,9 @@ struct SecretPasswordView: View {
                     
                     Spacer()
                     
-                    // Navigation destination that's only active when verified
-                    .navigationDestination(isPresented: $isPassphraseVerified) {
-                        PasswordSetupView(userData: userData)
+                    // Navigation link that's only active when verified
+                    NavigationLink(destination: PasswordSetupView(userData: userData), isActive: $isPassphraseVerified) {
+                        EmptyView()
                     }
                     
                     // Separate button for initiating verification

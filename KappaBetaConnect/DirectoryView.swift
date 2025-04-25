@@ -60,7 +60,7 @@ struct DirectoryView: View {
                         TextField("Search by name...", text: $searchText)
                             .textFieldStyle(.plain)
                             .focused($isSearchFocused)
-                            .onChange(of: searchText) { oldValue, newValue in
+                            .onChange(of: searchText) { _ in
                                 searchTask?.cancel()
                                 searchTask = Task {
                                     try? await Task.sleep(nanoseconds: 300_000_000)
@@ -120,7 +120,7 @@ struct DirectoryView: View {
             .task {
                 await searchUsers()
             }
-            .onChange(of: scenePhase) { oldPhase, newPhase in
+            .onChange(of: scenePhase) { newPhase in
                 if newPhase != .active {
                     isSearchFocused = false
                 }

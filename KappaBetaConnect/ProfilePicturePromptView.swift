@@ -85,7 +85,7 @@ struct ProfilePicturePromptView: View {
             .padding(.bottom, 30)
         }
         .navigationBarBackButtonHidden(true)
-        .onChange(of: selectedItem) { oldValue, newItem in
+        .onChange(of: selectedItem) { newItem in
             Task {
                 if let data = try? await newItem?.loadTransferable(type: Data.self),
                    let image = UIImage(data: data) {
@@ -98,9 +98,9 @@ struct ProfilePicturePromptView: View {
         } message: {
             Text(errorMessage)
         }
-        .navigationDestination(isPresented: $navigateToMain) {
-            MainTabView()
-                .navigationBarBackButtonHidden(true)
+        
+        NavigationLink(destination: MainTabView().navigationBarBackButtonHidden(true), isActive: $navigateToMain) {
+            EmptyView()
         }
     }
     
