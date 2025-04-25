@@ -456,6 +456,7 @@ struct CommentsSheetView: View {
     @State private var searchResults: [User] = []
     @State private var selectedUser: User?
     @State private var mentionStartIndex: Int?
+    @State private var authorProfileImageURL: String?
     let postRepository: PostRepository
     
     private func isCurrentUserComment(_ comment: Comment) -> Bool {
@@ -524,7 +525,71 @@ struct CommentsSheetView: View {
     var body: some View {
         NavigationView {
             ZStack(alignment: .bottom) {
-                VStack {
+                VStack(spacing: 0) {
+                    // Post content at the top
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Author info
+                        HStack {
+                            if let profileImageURL = authorProfileImageURL,
+                               let url = URL(string: profileImageURL) {
+                                AsyncImage(url: url) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    ProgressView()
+                                }
+                                .frame(width: 48, height: 48)
+                                .clipShape(Circle())
+                            } else {
+                                Circle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .frame(width: 48, height: 48)
+                                    .overlay(
+                                        Image(systemName: "person.fill")
+                                            .foregroundColor(.gray)
+                                    )
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(post.authorName)
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                Text(post.timestamp.formatted(date: .abbreviated, time: .shortened))
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                            
+                            Spacer()
+                        }
+                        
+                        // Post content
+                        Text(post.content)
+                            .font(.system(size: 17))
+                            .fontWeight(.regular)
+                            .padding(.vertical, 4)
+                        
+                        // Post stats
+                        HStack(spacing: 20) {
+                            Text("\(post.likes.count) likes")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            
+                            Text("\(post.comments.count) comments")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            
+                            Text("\(post.shareCount) shares")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .padding()
+                    .background(Color(.secondarySystemGroupedBackground))
+                    
+                    Divider()
+                    
+                    // Comments list
                     List {
                         ForEach(post.comments.reversed()) { comment in
                             VStack(alignment: .leading, spacing: 4) {
@@ -622,8 +687,8 @@ struct CommentsSheetView: View {
                             .cornerRadius(10)
                             .shadow(radius: 5)
                             .padding(.horizontal)
-                            .frame(maxHeight: 250) // Limit the height of the search results
-                            .offset(y: -10) // Move slightly up from the input field
+                            .frame(maxHeight: 250)
+                            .offset(y: -10)
                         }
                     }
                 }
@@ -652,6 +717,14 @@ struct CommentsSheetView: View {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(errorMessage)
+            }
+            .task {
+                do {
+                    let user = try await userRepository.getUser(withId: post.authorId)
+                    authorProfileImageURL = user?.profileImageURL
+                } catch {
+                    print("Error fetching user profile image: \(error.localizedDescription)")
+                }
             }
         }
     }
