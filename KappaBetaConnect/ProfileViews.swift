@@ -85,6 +85,7 @@ struct ManageProfileView: View {
     @State private var shouldSignOut = false
     @EnvironmentObject private var authManager: AuthManager
     @State private var birthday = Date()
+    @State private var jobTitle = ""
     
     let prefixes = ["Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Rev.", "Hon."]
     let suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "M.D.", "Esq."]
@@ -219,6 +220,8 @@ struct ManageProfileView: View {
                         .tint(.black)
                     }
                     
+                    TextField("Job Title", text: $jobTitle)
+                    
                     TextField("Company", text: $company)
                     
                     TextField("Years of Experience", text: $yearsOfExperience)
@@ -305,6 +308,7 @@ struct ManageProfileView: View {
             homeState = user.homeState ?? ""
             careerField = user.careerField ?? ""
             company = user.company ?? ""
+            jobTitle = user.jobTitle ?? ""
             yearsOfExperience = user.yearsOfExperience ?? ""
             lineNumber = user.lineNumber ?? ""
             semester = user.semester ?? ""
@@ -376,7 +380,7 @@ struct ManageProfileView: View {
                     year: nil,
                     status: nil,
                     graduationYear: nil,
-                    profileImageURL: nil,
+                    profileImageURL: userRepository.currentUser?.profileImageURL,
                     linkedInURL: nil,
                     instagramURL: nil,
                     twitterURL: nil,
@@ -398,6 +402,7 @@ struct ManageProfileView: View {
                 updatedUser.homeState = homeState
                 updatedUser.careerField = careerField
                 updatedUser.company = company
+                updatedUser.jobTitle = jobTitle
                 updatedUser.yearsOfExperience = yearsOfExperience
                 updatedUser.lineNumber = lineNumber
                 updatedUser.semester = semester
