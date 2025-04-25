@@ -446,60 +446,187 @@ struct CommentsSheetView: View {
     @Binding var newComment: String
     let onComment: () -> Void
     @EnvironmentObject private var authManager: AuthManager
+    @StateObject private var userRepository = UserRepository()
     @State private var showDeleteAlert = false
     @State private var commentToDelete: Comment?
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var showUserSearch = false
+    @State private var searchQuery = ""
+    @State private var searchResults: [User] = []
+    @State private var selectedUser: User?
+    @State private var mentionStartIndex: Int?
     let postRepository: PostRepository
     
     private func isCurrentUserComment(_ comment: Comment) -> Bool {
         comment.authorId == authManager.currentUser?.id
     }
     
+    private func handleTextChange(_ text: String) {
+        newComment = text
+        
+        // Check for @ symbol
+        if let lastAtSymbolIndex = text.lastIndex(of: "@") {
+            let searchText = String(text[text.index(after: lastAtSymbolIndex)...])
+            if !searchText.isEmpty {
+                mentionStartIndex = text.distance(from: text.startIndex, to: lastAtSymbolIndex)
+                searchQuery = searchText
+                searchUsers()
+                showUserSearch = true
+            } else {
+                showUserSearch = false
+            }
+        } else {
+            showUserSearch = false
+        }
+    }
+    
+    private func searchUsers() {
+        Task {
+            do {
+                let users = try await userRepository.searchUsers(byName: searchQuery)
+                await MainActor.run {
+                    searchResults = users.filter { $0.id != authManager.currentUser?.id }
+                }
+            } catch {
+                print("Error searching users: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func selectUser(_ user: User) {
+        guard let startIndex = mentionStartIndex else { return }
+        
+        let mentionText = "@\(user.firstName) \(user.lastName)"
+        
+        // Convert integer indices to String.Index
+        let startStringIndex = newComment.index(newComment.startIndex, offsetBy: startIndex)
+        let endStringIndex = newComment.index(startStringIndex, offsetBy: newComment.count - startIndex)
+        let range = startStringIndex..<endStringIndex
+        
+        // Replace the @search with the full mention
+        newComment.replaceSubrange(range, with: mentionText)
+        
+        // Add the mention to the comment
+        let mention = Mention(
+            id: UUID().uuidString,
+            userId: user.id ?? "",
+            userName: "\(user.firstName) \(user.lastName)",
+            range: startIndex..<(startIndex + mentionText.count)
+        )
+        
+        // Store the mention (you'll need to handle this when creating the comment)
+        selectedUser = user
+        showUserSearch = false
+        mentionStartIndex = nil
+    }
+    
     var body: some View {
         NavigationView {
-            VStack {
-                List {
-                    ForEach(post.comments.reversed()) { comment in
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(comment.authorName)
-                                    .font(.headline)
-                                Spacer()
-                                Text(comment.timestamp.formatted(date: .abbreviated, time: .shortened))
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
+            ZStack(alignment: .bottom) {
+                VStack {
+                    List {
+                        ForEach(post.comments.reversed()) { comment in
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(comment.authorName)
+                                        .font(.headline)
+                                    Spacer()
+                                    Text(comment.timestamp.formatted(date: .abbreviated, time: .shortened))
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
+                                
+                                Text(createAttributedString(from: comment))
+                                    .font(.body)
                             }
-                            Text(comment.content)
-                                .font(.body)
-                        }
-                        .padding(.vertical, 4)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            if isCurrentUserComment(comment) {
-                                Button(role: .destructive) {
-                                    commentToDelete = comment
-                                    showDeleteAlert = true
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
+                            .padding(.vertical, 4)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                if isCurrentUserComment(comment) {
+                                    Button(role: .destructive) {
+                                        commentToDelete = comment
+                                        showDeleteAlert = true
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                .listStyle(.plain)
-                
-                HStack {
-                    TextField("Add a comment...", text: $newComment)
-                        .customTextField()
+                    .listStyle(.plain)
                     
-                    Button(action: onComment) {
-                        Text("Post")
-                            .fontWeight(.medium)
+                    // Comment input field with user search overlay
+                    ZStack(alignment: .top) {
+                        HStack {
+                            TextField("Add a comment...", text: $newComment)
+                                .customTextField()
+                                .onChange(of: newComment) { handleTextChange($0) }
+                            
+                            Button(action: onComment) {
+                                Text("Post")
+                                    .fontWeight(.medium)
+                            }
+                            .disabled(newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            .foregroundColor(newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray : .primary)
+                        }
+                        .padding()
+                        .background(Color(.systemBackground))
+                        
+                        // User search overlay
+                        if showUserSearch && !searchResults.isEmpty {
+                            VStack(spacing: 0) {
+                                ForEach(searchResults) { user in
+                                    Button(action: { selectUser(user) }) {
+                                        HStack {
+                                            if let profileImageURL = user.profileImageURL,
+                                               let url = URL(string: profileImageURL) {
+                                                AsyncImage(url: url) { image in
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                } placeholder: {
+                                                    ProgressView()
+                                                }
+                                                .frame(width: 40, height: 40)
+                                                .clipShape(Circle())
+                                            } else {
+                                                Circle()
+                                                    .fill(Color.gray.opacity(0.3))
+                                                    .frame(width: 40, height: 40)
+                                                    .overlay(
+                                                        Image(systemName: "person.fill")
+                                                            .foregroundColor(.gray)
+                                                    )
+                                            }
+                                            
+                                            VStack(alignment: .leading) {
+                                                Text("\(user.firstName) \(user.lastName)")
+                                                    .font(.headline)
+                                                Text(user.email ?? "")
+                                                    .font(.caption)
+                                                    .foregroundColor(.gray)
+                                            }
+                                            
+                                            Spacer()
+                                        }
+                                        .padding()
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    
+                                    if user.id != searchResults.last?.id {
+                                        Divider()
+                                    }
+                                }
+                            }
+                            .background(Color(.systemBackground))
+                            .cornerRadius(10)
+                            .shadow(radius: 5)
+                            .padding(.horizontal)
+                            .frame(maxHeight: 250) // Limit the height of the search results
+                            .offset(y: -10) // Move slightly up from the input field
+                        }
                     }
-                    .disabled(newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .foregroundColor(newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray : .primary)
                 }
-                .padding()
             }
             .navigationTitle("Comments")
             .navigationBarTitleDisplayMode(.inline)
@@ -529,6 +656,24 @@ struct CommentsSheetView: View {
         }
     }
     
+    private func createAttributedString(from comment: Comment) -> AttributedString {
+        var attributed = AttributedString(comment.content)
+        
+        // Style mentions
+        for mention in comment.mentions {
+            let startIndex = comment.content.index(comment.content.startIndex, offsetBy: mention.range.lowerBound)
+            let endIndex = comment.content.index(comment.content.startIndex, offsetBy: mention.range.upperBound)
+            let range = startIndex..<endIndex
+            
+            if let attributedRange = Range(range, in: attributed) {
+                attributed[attributedRange].foregroundColor = .blue
+                attributed[attributedRange].link = URL(string: "user://\(mention.userId)")
+            }
+        }
+        
+        return attributed
+    }
+    
     private func deleteComment(_ comment: Comment) {
         Task {
             do {
@@ -554,6 +699,7 @@ struct PostCard: View {
     @State private var errorMessage = ""
     @State private var authorProfileImageURL: String?
     @State private var showDeleteAlert = false
+    @State private var selectedUser: User?
     
     private var isLiked: Bool {
         guard let userId = authManager.currentUser?.id else { return false }
@@ -699,13 +845,35 @@ struct PostCard: View {
         let commentContent = newComment.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !commentContent.isEmpty else { return }
         
+        // Extract mentions from the comment
+        var mentions: [Mention] = []
+        let words = commentContent.components(separatedBy: .whitespacesAndNewlines)
+        var currentIndex = 0
+        
+        for word in words {
+            if word.hasPrefix("@") {
+                let userName = String(word.dropFirst())
+                if let user = selectedUser {
+                    let mention = Mention(
+                        id: UUID().uuidString,
+                        userId: user.id ?? "",
+                        userName: userName,
+                        range: currentIndex..<(currentIndex + word.count)
+                    )
+                    mentions.append(mention)
+                }
+            }
+            currentIndex += word.count + 1 // +1 for the space
+        }
+        
         Task {
             do {
                 try await postRepository.addComment(
                     postId: post.id ?? "",
                     content: commentContent,
                     authorId: currentUser.id ?? "",
-                    authorName: "\(currentUser.firstName) \(currentUser.lastName)"
+                    authorName: "\(currentUser.firstName) \(currentUser.lastName)",
+                    mentions: mentions
                 )
                 
                 await MainActor.run {

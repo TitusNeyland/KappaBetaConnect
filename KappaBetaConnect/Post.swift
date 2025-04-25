@@ -29,6 +29,7 @@ struct Comment: Identifiable, Codable {
     var authorId: String
     var authorName: String
     var timestamp: Date
+    var mentions: [Mention] = []
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -36,5 +37,20 @@ struct Comment: Identifiable, Codable {
         case authorId
         case authorName
         case timestamp
+        case mentions
+    }
+}
+
+struct Mention: Identifiable, Codable {
+    var id: String
+    var userId: String
+    var userName: String
+    var range: Range<Int>
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId
+        case userName
+        case range
     }
 } 

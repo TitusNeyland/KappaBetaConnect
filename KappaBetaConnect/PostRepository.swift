@@ -94,13 +94,14 @@ class PostRepository: ObservableObject {
     }
     
     @discardableResult
-    func addComment(postId: String, content: String, authorId: String, authorName: String) async throws -> Comment {
+    func addComment(postId: String, content: String, authorId: String, authorName: String, mentions: [Mention] = []) async throws -> Comment {
         let comment = Comment(
             id: UUID().uuidString,
             content: content,
             authorId: authorId,
             authorName: authorName,
-            timestamp: Date()
+            timestamp: Date(),
+            mentions: mentions
         )
         
         let postRef = db.collection("posts").document(postId)
