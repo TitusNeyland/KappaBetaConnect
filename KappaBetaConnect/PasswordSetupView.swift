@@ -138,9 +138,6 @@ struct PasswordSetupView: View {
             return
         }
         
-        // Set password in userData
-        userData.password = password
-        
         // Create user in Firebase
         Task {
             do {
@@ -148,12 +145,12 @@ struct PasswordSetupView: View {
                 _ = try await authManager.signUp(email: userData.email, password: password, userData: user)
                 
                 // Update UI on main thread
-                DispatchQueue.main.async {
+                await MainActor.run {
                     isLoading = false
                     navigateToProfilePicture = true
                 }
             } catch {
-                DispatchQueue.main.async {
+                await MainActor.run {
                     showError(message: "Failed to create account: \(error.localizedDescription)")
                 }
             }

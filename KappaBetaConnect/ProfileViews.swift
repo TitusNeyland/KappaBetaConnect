@@ -353,8 +353,8 @@ struct ManageProfileView: View {
                 let emailChanged = email != currentEmail
                 
                 // Update user in Firestore
-                var updatedUser = userRepository.currentUser ?? User(
-                    id: "",
+                var updatedUser = User(
+                    id: userRepository.currentUser?.id ?? "",
                     prefix: nil,
                     firstName: "",
                     lastName: "",
@@ -365,7 +365,6 @@ struct ManageProfileView: View {
                     state: nil,
                     homeCity: nil,
                     homeState: nil,
-                    password: "",
                     careerField: nil,
                     major: nil,
                     jobTitle: nil,
@@ -635,7 +634,7 @@ struct ProfileView: View {
                                     InfoColumn(title: "Industry", value: "Not specified")
                                 }
                                 
-                                if let yearsOfExperience = user.yearsOfExperience {
+                                if let yearsOfExperience = user.yearsOfExperience, !yearsOfExperience.isEmpty {
                                     InfoColumn(title: "Experience", value: "\(yearsOfExperience) years")
                                 } else {
                                     InfoColumn(title: "Experience", value: "Not specified")
@@ -1159,6 +1158,14 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showManageProfile) {
             ManageProfileView(userRepository: userRepository)
+        }
+        .onChange(of: showManageProfile) { oldValue, isPresented in
+            if !isPresented {
+                // Sheet was dismissed, refresh user data
+                Task {
+                    await fetchUserData()
+                }
+            }
         }
         .sheet(isPresented: $showHelpAndFAQ) {
             HelpAndFAQView()
