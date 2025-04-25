@@ -184,7 +184,6 @@ class UserRepository: ObservableObject {
             "lastName": user.lastName,
             "email": user.email,
             "phoneNumber": user.phoneNumber,
-            "password": user.password,
             "birthday": Timestamp(date: user.birthday),
             "createdAt": Timestamp(date: user.createdAt),
             "updatedAt": Timestamp(date: user.updatedAt),
@@ -227,7 +226,6 @@ class UserRepository: ObservableObject {
               let lastName = dict["lastName"] as? String,
               let email = dict["email"] as? String,
               let phoneNumber = dict["phoneNumber"] as? String,
-              let password = dict["password"] as? String,
               let birthday = (dict["birthday"] as? Timestamp)?.dateValue(),
               let isActive = dict["isActive"] as? Bool else {
             throw NSError(domain: "UserRepository", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid user data"])
@@ -239,41 +237,68 @@ class UserRepository: ObservableObject {
         
         let isFirstSignIn = dict["isFirstSignIn"] as? Bool ?? false
         
-        return User(
+        let prefix = dict["prefix"] as? String
+        let suffix = dict["suffix"] as? String
+        let city = dict["city"] as? String
+        let state = dict["state"] as? String
+        let homeCity = dict["homeCity"] as? String
+        let homeState = dict["homeState"] as? String
+        let careerField = dict["careerField"] as? String
+        let major = dict["major"] as? String
+        let jobTitle = dict["jobTitle"] as? String
+        let company = dict["company"] as? String
+        let bio = dict["bio"] as? String
+        let lineNumber = dict["lineNumber"] as? String
+        let semester = dict["semester"] as? String
+        let year = dict["year"] as? String
+        let status = dict["status"] as? String
+        let graduationYear = dict["graduationYear"] as? String
+        let profileImageURL = dict["profileImageURL"] as? String
+        let linkedInURL = dict["linkedInURL"] as? String
+        let instagramURL = dict["instagramURL"] as? String
+        let twitterURL = dict["twitterURL"] as? String
+        let snapchatURL = dict["snapchatURL"] as? String
+        let facebookURL = dict["facebookURL"] as? String
+        
+        var user = User(
             id: id,
-            prefix: dict["prefix"] as? String,
+            prefix: prefix,
             firstName: firstName,
             lastName: lastName,
-            suffix: dict["suffix"] as? String,
+            suffix: suffix,
             email: email,
             phoneNumber: phoneNumber,
-            city: dict["city"] as? String,
-            state: dict["state"] as? String,
-            homeCity: dict["homeCity"] as? String,
-            homeState: dict["homeState"] as? String,
+            city: city,
+            state: state,
+            homeCity: homeCity,
+            homeState: homeState,
             birthday: birthday,
-            password: password,
-            careerField: dict["careerField"] as? String,
-            major: dict["major"] as? String,
-            jobTitle: dict["jobTitle"] as? String,
-            company: dict["company"] as? String,
-            bio: dict["bio"] as? String,
-            interests: dict["interests"] as? [String],
-            lineNumber: dict["lineNumber"] as? String,
-            semester: dict["semester"] as? String,
-            year: dict["year"] as? String,
-            status: dict["status"] as? String,
-            graduationYear: dict["graduationYear"] as? String,
-            profileImageURL: dict["profileImageURL"] as? String,
-            linkedInURL: dict["linkedInURL"] as? String,
-            instagramURL: dict["instagramURL"] as? String,
-            twitterURL: dict["twitterURL"] as? String,
-            snapchatURL: dict["snapchatURL"] as? String,
-            facebookURL: dict["facebookURL"] as? String,
+            careerField: careerField,
+            major: major,
+            jobTitle: jobTitle,
+            company: company,
+            bio: bio,
+            interests: dict["interests"] as? [String] ?? [],
+            lineNumber: lineNumber,
+            semester: semester,
+            year: year,
+            status: status,
+            graduationYear: graduationYear,
+            profileImageURL: profileImageURL,
+            linkedInURL: linkedInURL,
+            instagramURL: instagramURL,
+            twitterURL: twitterURL,
+            snapchatURL: snapchatURL,
+            facebookURL: facebookURL,
             isActive: isActive,
-            yearsOfExperience: dict["yearsOfExperience"] as? String,
+            yearsOfExperience: dict["yearsOfExperience"] as? String ?? "",
             isFirstSignIn: isFirstSignIn
         )
+        
+        user.createdAt = createdAt
+        user.updatedAt = updatedAt
+        
+        return user
     }
     
     func toFirestoreData(user: User) -> [String: Any] {
@@ -282,7 +307,6 @@ class UserRepository: ObservableObject {
             "lastName": user.lastName,
             "email": user.email,
             "phoneNumber": user.phoneNumber,
-            "password": user.password,
             "birthday": user.birthday,
             "createdAt": user.createdAt,
             "updatedAt": user.updatedAt,
@@ -322,7 +346,6 @@ class UserRepository: ObservableObject {
               let lastName = data["lastName"] as? String,
               let email = data["email"] as? String,
               let phoneNumber = data["phoneNumber"] as? String,
-              let password = data["password"] as? String,
               let birthday = (data["birthday"] as? Timestamp)?.dateValue(),
               let createdAt = (data["createdAt"] as? Timestamp)?.dateValue(),
               let updatedAt = (data["updatedAt"] as? Timestamp)?.dateValue(),
@@ -368,7 +391,6 @@ class UserRepository: ObservableObject {
             homeCity: homeCity,
             homeState: homeState,
             birthday: birthday,
-            password: password,
             careerField: careerField,
             major: major,
             jobTitle: jobTitle,

@@ -14,9 +14,6 @@ class UserSignupData: ObservableObject {
     @Published var homeState: String = ""
     @Published var birthday: Date = Date()
     
-    // Security
-    @Published var password: String = ""
-    
     // Profile Information
     @Published var careerField: String = ""
     @Published var major: String = ""
@@ -45,7 +42,6 @@ class UserSignupData: ObservableObject {
             homeCity: homeCity.isEmpty ? nil : homeCity,
             homeState: homeState.isEmpty ? nil : homeState,
             birthday: birthday,
-            password: password,
             careerField: careerField.isEmpty ? nil : careerField,
             major: major.isEmpty ? nil : major,
             jobTitle: jobTitle.isEmpty ? nil : jobTitle,
