@@ -39,10 +39,12 @@ class PostRepository: ObservableObject {
         guard var updatedPost = try? document.data(as: Post.self) else { return }
         updatedPost.id = document.documentID
         
+        // Create a local copy of updatedPost to avoid capture issues
+        let finalPost = updatedPost
         await MainActor.run {
             // Update the specific post in the posts array
             if let index = self.posts.firstIndex(where: { $0.id == postId }) {
-                self.posts[index] = updatedPost
+                self.posts[index] = finalPost
             }
         }
     }
@@ -58,37 +60,31 @@ class PostRepository: ObservableObject {
             shareCount: 0
         )
         
-        _ = try await db.collection("posts").addDocument(from: post)
+        try await db.collection("posts").addDocument(from: post)
         try await fetchPosts() // Refresh posts after creating new one
     }
     
     func toggleLike(postId: String, userId: String) async throws {
         let postRef = db.collection("posts").document(postId)
         
-        try await db.runTransaction { transaction, errorPointer in
-            do {
-                let postDoc = try transaction.getDocument(postRef)
-                guard var post = try? postDoc.data(as: Post.self) else { return nil }
-                
-                if post.likes.contains(userId) {
-                    post.likes.removeAll { $0 == userId }
-                } else {
-                    post.likes.append(userId)
-                }
-                
-                try transaction.setData(from: post, forDocument: postRef)
-                
-                // Update local posts array on main thread
-                Task { @MainActor in
-                    if let index = self.posts.firstIndex(where: { $0.id == postId }) {
-                        self.posts[index].likes = post.likes
-                    }
-                }
-                
-                return nil
-            } catch {
-                errorPointer?.pointee = error as NSError
-                return nil
+        // First get the current post
+        let postDoc = try await postRef.getDocument()
+        guard var post = try? postDoc.data(as: Post.self) else { return }
+        
+        // Update likes
+        if post.likes.contains(userId) {
+            post.likes.removeAll { $0 == userId }
+        } else {
+            post.likes.append(userId)
+        }
+        
+        // Update in Firestore
+        try await postRef.setData(from: post)
+        
+        // Update local posts array on main thread
+        await MainActor.run {
+            if let index = self.posts.firstIndex(where: { $0.id == postId }) {
+                self.posts[index].likes = post.likes
             }
         }
     }
@@ -105,25 +101,23 @@ class PostRepository: ObservableObject {
         
         let postRef = db.collection("posts").document(postId)
         
-        try await db.runTransaction { transaction, errorPointer in
-            do {
-                let postDoc = try transaction.getDocument(postRef)
-                guard var post = try? postDoc.data(as: Post.self) else { return nil }
-                
-                post.comments.append(comment)
-                try transaction.setData(from: post, forDocument: postRef)
-                
-                // Update local posts array on main thread
-                Task { @MainActor in
-                    if let index = self.posts.firstIndex(where: { $0.id == postId }) {
-                        self.posts[index].comments = post.comments
-                    }
-                }
-                
-                return nil
-            } catch {
-                errorPointer?.pointee = error as NSError
-                return nil
+        // First get the current post
+        let postDoc = try await postRef.getDocument()
+        guard let existingPost = try? postDoc.data(as: Post.self) else {
+            throw NSError(domain: "PostRepository", code: 1, userInfo: [NSLocalizedDescriptionKey: "Post not found"])
+        }
+        
+        // Create a new post with the updated comments
+        var updatedPost = existingPost
+        updatedPost.comments.append(comment)
+        
+        // Update in Firestore
+        try await postRef.setData(from: updatedPost)
+        
+        // Update local posts array on main thread
+        await MainActor.run {
+            if let index = self.posts.firstIndex(where: { $0.id == postId }) {
+                self.posts[index].comments = updatedPost.comments
             }
         }
         
@@ -133,7 +127,7 @@ class PostRepository: ObservableObject {
     func deleteComment(postId: String, commentId: String) async throws {
         let postRef = db.collection("posts").document(postId)
         
-        try await db.runTransaction { transaction, errorPointer in
+        let _ = try await db.runTransaction { transaction, errorPointer in
             do {
                 let postDoc = try transaction.getDocument(postRef)
                 guard var post = try? postDoc.data(as: Post.self) else { return nil }
@@ -161,7 +155,7 @@ class PostRepository: ObservableObject {
     func incrementShareCount(postId: String) async throws {
         let postRef = db.collection("posts").document(postId)
         
-        try await db.runTransaction { transaction, errorPointer in
+        let _ = try await db.runTransaction { transaction, errorPointer in
             do {
                 let postDoc = try transaction.getDocument(postRef)
                 guard var post = try? postDoc.data(as: Post.self) else { return nil }

@@ -10,6 +10,7 @@ class AuthManager: ObservableObject {
     private var userRepository = UserRepository()
     private var birthdayService = BirthdayService.shared
     private var cancellables = Set<AnyCancellable>()
+    private var authStateHandle: AuthStateDidChangeListenerHandle?
     
     init() {
         setupAuthStateListener()
@@ -32,8 +33,14 @@ class AuthManager: ObservableObject {
         }
     }
     
+    deinit {
+        if let handle = authStateHandle {
+            Auth.auth().removeStateDidChangeListener(handle)
+        }
+    }
+    
     private func setupAuthStateListener() {
-        Auth.auth().addStateDidChangeListener { [weak self] _, user in
+        authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in
                 self?.isAuthenticated = user != nil
                 self?.userId = user?.uid
@@ -79,12 +86,17 @@ class AuthManager: ObservableObject {
         var user = userData
         user.id = userId
         
-        try await userRepository.createUser(user)
+        // Create the user and store the ID
+        _ = try await userRepository.createUser(user)
         
+        // Create a local copy for the MainActor closure
+        let finalUser = user
+        
+        // Update auth state on main actor
         await MainActor.run {
             self.isAuthenticated = true
             self.userId = userId
-            self.currentUser = user
+            self.currentUser = finalUser
         }
         
         return userId

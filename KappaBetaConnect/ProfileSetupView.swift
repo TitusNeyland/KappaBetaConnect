@@ -91,29 +91,29 @@ struct ProfileSetupView: View {
                 }
                 
                 // Continue Button
-                NavigationLink(destination: InitiationDetailsView(userData: userData), isActive: $navigateToInitiation) {
-                    Button(action: {
-                        navigateToInitiation = true
-                    }) {
-                        if isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        } else {
-                            Text("Continue")
-                                .foregroundColor(.white)
-                                .font(.headline)
-                        }
+                Button(action: {
+                    navigateToInitiation = true
+                }) {
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else {
+                        Text("Continue")
+                            .foregroundColor(.white)
+                            .font(.headline)
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 55)
-                    .background(Color.black)
-                    .cornerRadius(10)
-                    .padding(.horizontal, 30)
-                    .padding(.top, 40)
-                    .padding(.bottom, 30)
-                    .disabled(isLoading)
                 }
-                .buttonStyle(PlainButtonStyle())
+                .frame(maxWidth: .infinity)
+                .frame(height: 55)
+                .background(Color.black)
+                .cornerRadius(10)
+                .padding(.horizontal, 30)
+                .padding(.top, 40)
+                .padding(.bottom, 30)
+                .disabled(isLoading)
+                .navigationDestination(isPresented: $navigateToInitiation) {
+                    InitiationDetailsView(userData: userData)
+                }
             }
         }
         .navigationBarTitleDisplayMode(.inline)
