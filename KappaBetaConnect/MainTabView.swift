@@ -72,7 +72,7 @@ struct MainTabView: View {
                     .tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .onChange(of: selectedTab) { oldValue, newValue in
+            .onChange(of: selectedTab) { newValue in
                 // Scroll to keep selected tab in view
                 withAnimation {
                     scrollProxy?.scrollTo(newValue, anchor: .center)

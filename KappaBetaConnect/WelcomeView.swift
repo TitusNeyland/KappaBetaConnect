@@ -16,9 +16,9 @@ struct WelcomeView: View {
             
             Spacer()
             
-            // Navigation destination
-            .navigationDestination(isPresented: $navigateToProfile) {
-                ProfileSetupView(userData: userData)
+            // Hidden NavigationLink
+            NavigationLink(destination: ProfileSetupView(userData: userData), isActive: $navigateToProfile) {
+                EmptyView()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

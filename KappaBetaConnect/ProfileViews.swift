@@ -310,7 +310,7 @@ struct ManageProfileView: View {
             semester = user.semester ?? ""
             year = user.year ?? ""
             status = user.status ?? ""
-            birthday = user.birthday
+            birthday = user.birthday ?? Date()
         }
     }
     
@@ -972,7 +972,7 @@ struct ProfileView: View {
                 }
             }
         )
-        .onChange(of: selectedItem) { oldValue, newItem in
+        .onChange(of: selectedItem) { newItem in
             Task {
                 if let data = try? await newItem?.loadTransferable(type: Data.self),
                    let image = UIImage(data: data) {
@@ -998,7 +998,7 @@ struct ProfileView: View {
             await fetchUserData()
             await fetchUserPosts()
         }
-        .onChange(of: displayedUserId) { oldValue, newValue in
+        .onChange(of: displayedUserId) { _ in
             Task {
                 await fetchUserData()
                 await fetchUserPosts()
@@ -1083,7 +1083,7 @@ struct ProfileView: View {
         .sheet(isPresented: $showBioEditSheet) {
             BioEditView(userRepository: userRepository, currentBio: displayedUser?.bio, didSave: $bioDidSave)
         }
-        .onChange(of: showBioEditSheet) { oldValue, isPresented in
+        .onChange(of: showBioEditSheet) { isPresented in
             if !isPresented && bioDidSave {
                 // Sheet was dismissed and changes were saved
                 Task {
@@ -1095,7 +1095,7 @@ struct ProfileView: View {
         .sheet(isPresented: $showInterestsEditSheet) {
             InterestsEditView(userRepository: userRepository, didSave: $interestsDidSave)
         }
-        .onChange(of: showInterestsEditSheet) { oldValue, isPresented in
+        .onChange(of: showInterestsEditSheet) { isPresented in
             if !isPresented && interestsDidSave {
                 // Sheet was dismissed and changes were saved
                 Task {
@@ -1107,7 +1107,7 @@ struct ProfileView: View {
         .sheet(isPresented: $showSocialMediaEditSheet) {
             SocialMediaEditView(userRepository: userRepository, didSave: $socialMediaDidSave)
         }
-        .onChange(of: showSocialMediaEditSheet) { oldValue, isPresented in
+        .onChange(of: showSocialMediaEditSheet) { isPresented in
             if !isPresented && socialMediaDidSave {
                 // Sheet was dismissed and changes were saved
                 Task {

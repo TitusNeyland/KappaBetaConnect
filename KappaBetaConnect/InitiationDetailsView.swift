@@ -146,6 +146,7 @@ struct InitiationDetailsView: View {
                             .stroke(Color(.systemGray4), lineWidth: 1)
                     )
                     
+                    NavigationLink(destination: SecretPasswordView(userData: userData), isActive: $navigateToSecretPassword) {
                         Button(action: {
                             Task {
                                 await checkLineMember()
@@ -160,12 +161,11 @@ struct InitiationDetailsView: View {
                         .background(Color.black)
                         .cornerRadius(10)
                         .disabled(isLoading)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.horizontal, 30)
             }
-        }
-        .navigationDestination(isPresented: $navigateToSecretPassword) {
-            SecretPasswordView(userData: userData)
         }
         .navigationBarTitleDisplayMode(.inline)
         .background(Color(.systemBackground))
@@ -238,4 +238,3 @@ struct InitiationDetailsView: View {
         InitiationDetailsView(userData: UserSignupData())
     }
 } 
-

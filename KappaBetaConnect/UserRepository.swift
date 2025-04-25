@@ -12,7 +12,7 @@ class UserRepository: ObservableObject {
     init() {
         //print("UserRepository initialized")
         // Listen for auth state changes
-        _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+        Auth.auth().addStateDidChangeListener { [weak self] _, user in
             //print("Auth state changed. User ID: \(user?.uid ?? "nil")")
             if let user = user {
                 Task {
@@ -66,7 +66,7 @@ class UserRepository: ObservableObject {
         }
         
         let docRef = db.collection(usersCollection).document(userId)
-        let userToSave = user
+        var userToSave = user
         
         // Convert user to dictionary
         let userData = try userToDictionary(userToSave)
@@ -104,42 +104,7 @@ class UserRepository: ObservableObject {
             throw NSError(domain: "UserRepository", code: 1, userInfo: [NSLocalizedDescriptionKey: "User has no ID"])
         }
         
-        // Create a local copy of the user to avoid capture issues
-        let userToUpdate = user
-        var updatedUser = User(
-            id: userToUpdate.id,
-            prefix: userToUpdate.prefix,
-            firstName: userToUpdate.firstName,
-            lastName: userToUpdate.lastName,
-            suffix: userToUpdate.suffix,
-            email: userToUpdate.email,
-            phoneNumber: userToUpdate.phoneNumber,
-            city: userToUpdate.city,
-            state: userToUpdate.state,
-            homeCity: userToUpdate.homeCity,
-            homeState: userToUpdate.homeState,
-            password: userToUpdate.password,
-            careerField: userToUpdate.careerField,
-            major: userToUpdate.major,
-            jobTitle: userToUpdate.jobTitle,
-            company: userToUpdate.company,
-            bio: userToUpdate.bio,
-            interests: userToUpdate.interests,
-            lineNumber: userToUpdate.lineNumber,
-            semester: userToUpdate.semester,
-            year: userToUpdate.year,
-            status: userToUpdate.status,
-            graduationYear: userToUpdate.graduationYear,
-            profileImageURL: userToUpdate.profileImageURL,
-            linkedInURL: userToUpdate.linkedInURL,
-            instagramURL: userToUpdate.instagramURL,
-            twitterURL: userToUpdate.twitterURL,
-            snapchatURL: userToUpdate.snapchatURL,
-            facebookURL: userToUpdate.facebookURL,
-            isActive: userToUpdate.isActive
-        )
-        
-        // Set the updatedAt date after initialization
+        var updatedUser = user
         updatedUser.updatedAt = Date()
         
         // Convert user to dictionary
@@ -148,13 +113,10 @@ class UserRepository: ObservableObject {
         let docRef = db.collection(usersCollection).document(userId)
         try await docRef.setData(userData)
         
-        // Create a final copy for the MainActor update
-        let finalUser = updatedUser
-        
         // Update the currentUser property on the main thread
         await MainActor.run {
             if self.currentUser?.id == userId {
-                self.currentUser = finalUser
+                self.currentUser = updatedUser
             }
         }
     }
@@ -177,7 +139,7 @@ class UserRepository: ObservableObject {
             let snapshot = try await db.collection(usersCollection)
                 .getDocuments()
             
-            return snapshot.documents.compactMap { document in
+            return try snapshot.documents.compactMap { document in
                 try? dictionaryToUser(document.data(), id: document.documentID)
             }
         }
@@ -188,7 +150,7 @@ class UserRepository: ObservableObject {
         let snapshot = try await db.collection(usersCollection)
             .getDocuments()
         
-        let allUsers = snapshot.documents.compactMap { document in
+        let allUsers = try snapshot.documents.compactMap { document in
             try? dictionaryToUser(document.data(), id: document.documentID)
         }
         
@@ -215,6 +177,8 @@ class UserRepository: ObservableObject {
     
     // Helper function to convert User to Firestore dictionary
     private func userToDictionary(_ user: User) throws -> [String: Any] {
+        let dateFormatter = ISO8601DateFormatter()
+        
         var dict: [String: Any] = [
             "firstName": user.firstName,
             "lastName": user.lastName,
@@ -268,6 +232,10 @@ class UserRepository: ObservableObject {
               let isActive = dict["isActive"] as? Bool else {
             throw NSError(domain: "UserRepository", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid user data"])
         }
+        
+        // Convert Firestore timestamps to Date
+        let createdAt = (dict["createdAt"] as? Timestamp)?.dateValue() ?? Date()
+        let updatedAt = (dict["updatedAt"] as? Timestamp)?.dateValue() ?? Date()
         
         let isFirstSignIn = dict["isFirstSignIn"] as? Bool ?? false
         
@@ -431,7 +399,7 @@ class UserRepository: ObservableObject {
     
     func getAllUsers() async throws -> [User] {
         let snapshot = try await db.collection(usersCollection).getDocuments()
-        return snapshot.documents.compactMap { document in
+        return try snapshot.documents.compactMap { document in
             try? dictionaryToUser(document.data(), id: document.documentID)
         }
     }

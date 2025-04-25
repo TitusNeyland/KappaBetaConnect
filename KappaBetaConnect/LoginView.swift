@@ -100,7 +100,7 @@ struct LoginView: View {
         } message: {
             Text(errorMessage)
         }
-        .onChange(of: authManager.isAuthenticated) { oldValue, newValue in
+        .onChange(of: authManager.isAuthenticated) { newValue in
             if newValue {
                 isLoading = false
                 dismiss()

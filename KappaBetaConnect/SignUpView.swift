@@ -193,27 +193,29 @@ struct SignUpView: View {
                 }
                 
                 // Continue Button
-                Button(action: {
-                    validateAndProceed()
-                }) {
-                    if isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    } else {
-                        Text("Continue")
-                            .foregroundColor(.white)
-                            .font(.headline)
+                NavigationLink(destination: WelcomeView(userData: userData), isActive: $navigateToWelcome) {
+                    Button(action: {
+                        validateAndProceed()
+                    }) {
+                        if isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        } else {
+                            Text("Continue")
+                                .foregroundColor(.white)
+                                .font(.headline)
+                        }
                     }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 55)
+                    .background(Color.black)
+                    .cornerRadius(10)
+                    .padding(.horizontal, 30)
+                    .padding(.top, 40)
+                    .padding(.bottom, 30)
+                    .disabled(isLoading)
                 }
-                .frame(maxWidth: .infinity)
-                .frame(height: 55)
-                .background(Color.black)
-                .cornerRadius(10)
-                .padding(.horizontal, 30)
-                .padding(.top, 20)
-                .navigationDestination(isPresented: $navigateToWelcome) {
-                    WelcomeView(userData: userData)
-                }
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .navigationBarTitleDisplayMode(.inline)
