@@ -89,9 +89,10 @@ struct PasswordSetupView: View {
                 .padding(.horizontal, 30)
             }
             
-            // Hidden NavigationLink for navigation to ProfilePicturePromptView
-            NavigationLink(destination: ProfilePicturePromptView().navigationBarBackButtonHidden(true), isActive: $navigateToProfilePicture) {
-                EmptyView()
+            // Navigation destination for ProfilePicturePromptView
+            .navigationDestination(isPresented: $navigateToProfilePicture) {
+                ProfilePicturePromptView()
+                    .navigationBarBackButtonHidden(true)
             }
         }
         .navigationBarTitleDisplayMode(.inline)

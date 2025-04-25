@@ -21,6 +21,7 @@ class EventRepository: ObservableObject {
                     try? document.data(as: Event.self)
                 }
                 
+                // Dispatch to main actor using Task
                 Task { @MainActor in
                     self?.events = fetchedEvents
                 }
@@ -53,6 +54,7 @@ class EventRepository: ObservableObject {
             try document.data(as: Event.self)
         }
         
+        // Update on main actor
         await MainActor.run {
             self.events = fetchedEvents
         }
@@ -61,7 +63,7 @@ class EventRepository: ObservableObject {
     func toggleEventAttendance(eventId: String, userId: String) async throws {
         let eventRef = db.collection(eventsCollection).document(eventId)
         
-        try await db.runTransaction { transaction, errorPointer in
+        let _ = try await db.runTransaction { [self] transaction, errorPointer -> Any? in
             do {
                 let eventDocument = try transaction.getDocument(eventRef)
                 guard var event = try? eventDocument.data(as: Event.self) else {
@@ -76,12 +78,20 @@ class EventRepository: ObservableObject {
                     event.attendees.append(userId)
                 }
                 
-                try transaction.setData(from: event, forDocument: eventRef)
+                do {
+                    try transaction.setData(from: event, forDocument: eventRef)
+                } catch {
+                    errorPointer?.pointee = error as NSError
+                    return nil
+                }
                 
-                // Update local events array on main thread
+                // Store the updated attendees for later use
+                let updatedAttendees = event.attendees
+                
+                // Schedule the UI update after the transaction completes
                 Task { @MainActor in
                     if let index = self.events.firstIndex(where: { $0.id == eventId }) {
-                        self.events[index].attendees = event.attendees
+                        self.events[index].attendees = updatedAttendees
                     }
                 }
                 
@@ -96,7 +106,7 @@ class EventRepository: ObservableObject {
     func deleteEvent(eventId: String) async throws {
         try await db.collection(eventsCollection).document(eventId).delete()
         
-        // Remove the event from the local events array on main thread
+        // Update on main actor
         await MainActor.run {
             if let index = self.events.firstIndex(where: { $0.id == eventId }) {
                 self.events.remove(at: index)
@@ -129,7 +139,7 @@ class EventRepository: ObservableObject {
         
         try await eventRef.setData(from: updatedEvent)
         
-        // Update the local events array on main thread
+        // Update on main actor
         await MainActor.run {
             if let index = self.events.firstIndex(where: { $0.id == eventId }) {
                 self.events[index] = updatedEvent
