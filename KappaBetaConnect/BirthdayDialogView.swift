@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct BirthdayDialogView: View {
     @ObservedObject var userRepository: UserRepository
@@ -80,7 +81,7 @@ struct BirthdayDialogView: View {
                                             )
                                     }
                                     
-                                    VStack(alignment: .leading, spacing: 4) {
+                                    VStack(alignment: .leading) {
                                         Text("\(user.firstName) \(user.lastName)")
                                             .font(.subheadline)
                                             .fontWeight(.medium)
@@ -141,26 +142,30 @@ struct BirthdayDialogView: View {
             .cornerRadius(16)
             .shadow(radius: 20, x: 0, y: 10)
         }
-        .onAppear {
-            fetchBirthdayUsers()
+        .task {
+            await fetchBirthdayUsers()
         }
     }
     
-    private func fetchBirthdayUsers() {
-        Task {
-            do {
-                let users = try await userRepository.getAllUsers()
-                let today = Calendar.current.startOfDay(for: Date())
-                
-                birthdayUsers = users.filter { user in
-                    let userBirthday = Calendar.current.startOfDay(for: user.birthday)
-                    return Calendar.current.component(.day, from: userBirthday) == Calendar.current.component(.day, from: today) &&
-                           Calendar.current.component(.month, from: userBirthday) == Calendar.current.component(.month, from: today)
-                }
-                
+    private func fetchBirthdayUsers() async {
+        do {
+            let users = try await userRepository.getAllUsers()
+            let today = Calendar.current.startOfDay(for: Date())
+            
+            let todaysBirthdays = users.filter { user in
+                let userBirthday = Calendar.current.startOfDay(for: user.birthday)
+                return Calendar.current.component(.month, from: userBirthday) == Calendar.current.component(.month, from: today) &&
+                       Calendar.current.component(.day, from: userBirthday) == Calendar.current.component(.day, from: today)
+            }
+            
+            await MainActor.run {
+                birthdayUsers = todaysBirthdays
                 isLoading = false
-            } catch {
-                print("Error fetching birthday users: \(error)")
+            }
+        } catch {
+            print("Error fetching birthday users: \(error)")
+            await MainActor.run {
+                birthdayUsers = []
                 isLoading = false
             }
         }

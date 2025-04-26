@@ -30,6 +30,9 @@ struct KappaBetaConnectApp: App {
                 .environmentObject(authManager)
                 .environmentObject(userRepository)
                 .environmentObject(birthdayService)
+                .task {
+                    await birthdayService.setupBirthdayNotifications()
+                }
         }
     }
 }
