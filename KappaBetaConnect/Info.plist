@@ -60,5 +60,9 @@
     <string>We need access to your photo library to allow you to choose profile pictures and share photos.</string>
     <key>NSCameraUsageDescription</key>
     <string>We need access to your camera to allow you to take profile pictures and share photos.</string>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>remote-notification</string>
+    </array>
 </dict>
 </plist> 
