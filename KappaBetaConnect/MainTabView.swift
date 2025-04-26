@@ -5,92 +5,108 @@ struct MainTabView: View {
     @EnvironmentObject private var authManager: AuthManager
     @EnvironmentObject private var birthdayService: BirthdayService
     @EnvironmentObject private var userRepository: UserRepository
+    @StateObject private var notificationService = NotificationService.shared
+    @State private var showUserProfile = false
     
-    let tabs = ["Home", "Feed", "Directory", "Events", /*"Messages",*/ "Profile"]
+    let tabs = ["Home", "Feed", "Directory", "Events", "Profile"]
     
     // Add these properties
     @State private var scrollProxy: ScrollViewProxy? = nil
     @Namespace private var namespace
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Custom Tab Bar
-            ScrollView(.horizontal, showsIndicators: false) {
-                ScrollViewReader { proxy in
-                    HStack(spacing: 30) {
-                        ForEach(0..<tabs.count, id: \.self) { index in
-                            VStack {
-                                Text(tabs[index])
-                                    .foregroundColor(selectedTab == index ? .primary : .secondary)
-                                    .fontWeight(selectedTab == index ? .bold : .regular)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 12)
-                                
-                                // Active tab indicator
-                                Rectangle()
-                                    .frame(height: 2)
-                                    .foregroundColor(selectedTab == index ? Color(red: 0.831, green: 0.686, blue: 0.216) : .clear)
-                            }
-                            .id(index) // Add id for scrolling
-                            .onTapGesture {
-                                withAnimation(.easeInOut) {
-                                    selectedTab = index
-                                    // Dismiss keyboard when changing tabs
-                                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Custom Tab Bar
+                ScrollView(.horizontal, showsIndicators: false) {
+                    ScrollViewReader { proxy in
+                        HStack(spacing: 30) {
+                            ForEach(0..<tabs.count, id: \.self) { index in
+                                VStack {
+                                    Text(tabs[index])
+                                        .foregroundColor(selectedTab == index ? .primary : .secondary)
+                                        .fontWeight(selectedTab == index ? .bold : .regular)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 12)
+                                    
+                                    // Active tab indicator
+                                    Rectangle()
+                                        .frame(height: 2)
+                                        .foregroundColor(selectedTab == index ? Color(red: 0.831, green: 0.686, blue: 0.216) : .clear)
+                                }
+                                .id(index) // Add id for scrolling
+                                .onTapGesture {
+                                    withAnimation(.easeInOut) {
+                                        selectedTab = index
+                                        // Dismiss keyboard when changing tabs
+                                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                    }
                                 }
                             }
                         }
+                        .padding(.horizontal, 16)
+                        .onAppear {
+                            scrollProxy = proxy
+                        }
                     }
-                    .padding(.horizontal, 16)
-                    .onAppear {
-                        scrollProxy = proxy
+                }
+                .background(Color(.secondarySystemBackground))
+                .shadow(color: Color(.systemGray4), radius: 4, y: 2)
+                
+                // Tab Content
+                TabView(selection: $selectedTab) {
+                    HomeView()
+                        .tag(0)
+                    
+                    FeedView()
+                        .tag(1)
+                    
+                    DirectoryView()
+                        .tag(2)
+                    
+                    EventsView()
+                        .tag(3)
+                    
+                    ProfileView()
+                        .environmentObject(authManager)
+                        .tag(4)
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .onChange(of: selectedTab) { newValue in
+                    // Scroll to keep selected tab in view
+                    withAnimation {
+                        scrollProxy?.scrollTo(newValue, anchor: .center)
+                        // Dismiss keyboard when changing tabs
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     }
                 }
             }
-            .background(Color(.secondarySystemBackground))
-            .shadow(color: Color(.systemGray4), radius: 4, y: 2)
-            
-            // Tab Content
-            TabView(selection: $selectedTab) {
-                HomeView()
-                    .tag(0)
-                
-                FeedView()
-                    .tag(1)
-                
-                DirectoryView()
-                    .tag(2)
-                
-                EventsView()
-                    .tag(3)
-                
-                /*MessagesView()
-                    .tag(4)*/
-                
-                ProfileView()
-                    .environmentObject(authManager)
-                    .tag(4)
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .onChange(of: selectedTab) { newValue in
-                // Scroll to keep selected tab in view
-                withAnimation {
-                    scrollProxy?.scrollTo(newValue, anchor: .center)
-                    // Dismiss keyboard when changing tabs
-                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            .navigationBarHidden(true)
+            .overlay {
+                if birthdayService.shouldShowBirthdayDialog {
+                    BirthdayDialogView(userRepository: userRepository)
                 }
             }
-        }
-        .navigationBarHidden(true)
-        .overlay {
-            if birthdayService.shouldShowBirthdayDialog {
-                BirthdayDialogView(userRepository: userRepository)
+            .task {
+                // Wait a short delay to ensure the view is fully loaded
+                try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
+                birthdayService.checkAndShowBirthdayDialog()
             }
-        }
-        .task {
-            // Wait a short delay to ensure the view is fully loaded
-            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
-            birthdayService.checkAndShowBirthdayDialog()
+            .onChange(of: notificationService.selectedUserId) { userId in
+                if let userId = userId {
+                    selectedTab = 2 // Switch to Directory tab
+                    showUserProfile = true
+                }
+            }
+            .sheet(isPresented: $showUserProfile) {
+                if let userId = notificationService.selectedUserId {
+                    ProfileView(userId: userId)
+                        .environmentObject(authManager)
+                        .onDisappear {
+                            notificationService.selectedUserId = nil
+                        }
+                }
+            }
         }
     }
 }
