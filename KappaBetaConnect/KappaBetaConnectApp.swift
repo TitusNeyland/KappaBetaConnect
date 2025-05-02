@@ -23,6 +23,7 @@ struct KappaBetaConnectApp: App {
                 .environmentObject(userRepository)
                 .environmentObject(birthdayService)
                 .environmentObject(notificationService)
+                .preferredColorScheme(.light)
                 .task {
                     await birthdayService.setupBirthdayNotifications()
                     do {
