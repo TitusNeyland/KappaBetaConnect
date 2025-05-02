@@ -3,6 +3,30 @@ import FirebaseFirestore
 import Combine
 import FirebaseAuth
 
+class ProfileImageCache {
+    static let shared = ProfileImageCache()
+    private var cache: [String: String] = [:]
+    private let queue = DispatchQueue(label: "com.kappabeta.profileimagecache")
+    
+    func getProfileImage(for userId: String) -> String? {
+        queue.sync {
+            return cache[userId]
+        }
+    }
+    
+    func setProfileImage(for userId: String, url: String) {
+        queue.async {
+            self.cache[userId] = url
+        }
+    }
+    
+    func clearCache() {
+        queue.async {
+            self.cache.removeAll()
+        }
+    }
+}
+
 class UserRepository: ObservableObject {
     let db = Firestore.firestore()
     private let usersCollection = "users"

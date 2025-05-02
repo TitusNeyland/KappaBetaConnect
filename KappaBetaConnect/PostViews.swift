@@ -303,60 +303,65 @@ struct PostUserInfoView: View {
     var body: some View {
         HStack {
             NavigationLink(destination: ProfileView(userId: post.authorId)) {
-                HStack {
-                    // Profile Image
-                    if let profileImageURL = profileImageURL,
-                       let url = URL(string: profileImageURL) {
-                        AsyncImage(url: url) { image in
+                if let profileURL = profileImageURL,
+                   let url = URL(string: profileURL) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                                .frame(width: 40, height: 40)
+                        case .success(let image):
                             image
                                 .resizable()
                                 .scaledToFill()
-                        } placeholder: {
-                            ProgressView()
+                        case .failure(_):
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.gray)
+                                .frame(width: 40, height: 40)
+                        @unknown default:
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.gray)
+                                .frame(width: 40, height: 40)
                         }
+                    }
+                    .frame(width: 40, height: 40)
+                    .clipShape(Circle())
+                } else {
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
                         .frame(width: 40, height: 40)
-                        .clipShape(Circle())
-                    } else {
-                        Circle()
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(width: 40, height: 40)
-                            .overlay(
-                                Image(systemName: "person.fill")
-                                    .foregroundColor(.gray)
-                            )
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(post.authorName)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        Text(post.timestamp.formatted(date: .abbreviated, time: .shortened))
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    }
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.gray)
+                        )
                 }
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                NavigationLink(destination: ProfileView(userId: post.authorId)) {
+                    Text(post.authorName)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                }
+                
+                Text(post.timestamp.timeAgoDisplay())
+                    .font(.caption)
+                    .foregroundColor(.gray)
             }
             
             Spacer()
             
-            Menu {
-                if isCurrentUser {
+            if isCurrentUser {
+                Menu {
                     Button(role: .destructive, action: onDelete) {
                         Label("Delete Post", systemImage: "trash")
                     }
-                } else {
-                    Button(action: {}) {
-                        Label("Report", systemImage: "flag")
-                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundColor(.gray)
+                        .padding(8)
                 }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 20))
-                    .foregroundColor(.gray)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
             }
-            .buttonStyle(PlainButtonStyle())
         }
     }
 }
@@ -799,6 +804,11 @@ struct PostCard: View {
         self.post = post
         self.postRepository = postRepository
         _currentPost = State(initialValue: post)
+        
+        // Initialize with cached profile image URL if available
+        if let cachedURL = ProfileImageCache.shared.getProfileImage(for: post.authorId) {
+            _authorProfileImageURL = State(initialValue: cachedURL)
+        }
     }
     
     private var isLiked: Bool {
@@ -903,11 +913,16 @@ struct PostCard: View {
             Text(errorMessage)
         }
         .task {
-            do {
-                let user = try await userRepository.getUser(withId: currentPost.authorId)
-                authorProfileImageURL = user?.profileImageURL
-            } catch {
-                print("Error fetching user profile image: \(error.localizedDescription)")
+            if authorProfileImageURL == nil {
+                do {
+                    let user = try await userRepository.getUser(withId: currentPost.authorId)
+                    if let profileURL = user?.profileImageURL {
+                        authorProfileImageURL = profileURL
+                        ProfileImageCache.shared.setProfileImage(for: currentPost.authorId, url: profileURL)
+                    }
+                } catch {
+                    print("Error fetching user profile image: \(error.localizedDescription)")
+                }
             }
         }
         .onAppear {
