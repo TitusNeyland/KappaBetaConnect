@@ -8,21 +8,13 @@
 import SwiftUI
 import FirebaseCore
 
-class AppDelegate: NSObject, UIApplicationDelegate {
-  func application(_ application: UIApplication,
-                   didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-    FirebaseApp.configure()
-    return true
-  }
-}
-
 @main
 struct KappaBetaConnectApp: App {
-    
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var authManager = AuthManager()
     @StateObject private var userRepository = UserRepository()
     @StateObject private var birthdayService = BirthdayService.shared
+    @StateObject private var notificationService = NotificationService.shared
     
     var body: some Scene {
         WindowGroup {
@@ -30,8 +22,14 @@ struct KappaBetaConnectApp: App {
                 .environmentObject(authManager)
                 .environmentObject(userRepository)
                 .environmentObject(birthdayService)
+                .environmentObject(notificationService)
                 .task {
                     await birthdayService.setupBirthdayNotifications()
+                    do {
+                        try await notificationService.requestPermission()
+                    } catch {
+                        print("Failed to request notification permission: \(error.localizedDescription)")
+                    }
                 }
         }
     }
