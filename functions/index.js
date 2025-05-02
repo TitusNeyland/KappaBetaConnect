@@ -21,7 +21,7 @@ exports.sendNewUserNotification = functions.firestore
         try {
             const message = {
                 notification: {
-                    title: '🎉 New Member Alert!',
+                    title: '🦍❄️ New Member Alert!',
                     body: `Welcome ${newUser.firstName} ${newUser.lastName} to Kappa Beta!`,
                 },
                 data: {
@@ -33,7 +33,7 @@ exports.sendNewUserNotification = functions.firestore
                     payload: {
                         aps: {
                             alert: {
-                                title: '🎉 New Member Alert!',
+                                title: '🦍❄️ New Member Alert!',
                                 body: `Welcome ${newUser.firstName} ${newUser.lastName} to Kappa Beta!`
                             },
                             sound: 'default',
