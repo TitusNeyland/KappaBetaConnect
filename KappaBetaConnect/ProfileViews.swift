@@ -458,6 +458,7 @@ struct ProfileView: View {
     @StateObject private var postRepository = PostRepository()
     @StateObject private var userRepository = UserRepository()
     @StateObject private var lineRepository = LineRepository()
+    @StateObject private var contentModeration = ContentModerationService()
     @EnvironmentObject private var authManager: AuthManager
     @Environment(\.dismiss) private var dismiss
     @State private var showLogoutAlert = false
@@ -488,6 +489,7 @@ struct ProfileView: View {
     @State private var dialogTitle = "Error"
     @State private var shouldSignOut = false
     @State private var showHelpAndFAQ = false
+    @State private var isUserBlocked = false
     
     // Optional parameter to view a different user's profile
     var userId: String?
@@ -873,6 +875,23 @@ struct ProfileView: View {
                                 .padding(.horizontal, 10)
                                 .padding(.top, 10)
                             }
+                            
+                            // Unblock button under Connect With Me
+                            if !isCurrentUserProfile && isUserBlocked {
+                                Button(action: {
+                                    unblockUser()
+                                }) {
+                                    Text("Unblock User")
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(Color.red)
+                                        .cornerRadius(10)
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.top, 10)
+                            }
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
@@ -1042,11 +1061,13 @@ struct ProfileView: View {
         .task {
             await fetchUserData()
             await fetchUserPosts()
+            await checkIfUserIsBlocked()
         }
         .onChange(of: displayedUserId) { _ in
             Task {
                 await fetchUserData()
                 await fetchUserPosts()
+                await checkIfUserIsBlocked()
             }
         }
         .refreshable {
@@ -1357,6 +1378,41 @@ struct ProfileView: View {
         formatter.dateStyle = .medium
         formatter.timeStyle = .none
         return formatter.string(from: date)
+    }
+    
+    private func checkIfUserIsBlocked() async {
+        guard let currentUserId = authManager.currentUser?.id,
+              let displayedUserId = displayedUser?.id else { return }
+        
+        do {
+            let blockedUsers = try await contentModeration.getBlockedUsers(userId: currentUserId)
+            await MainActor.run {
+                isUserBlocked = blockedUsers.contains(displayedUserId)
+            }
+        } catch {
+            print("Error checking blocked status: \(error.localizedDescription)")
+        }
+    }
+    
+    private func unblockUser() {
+        guard let currentUserId = authManager.currentUser?.id,
+              let displayedUserId = displayedUser?.id else { return }
+        
+        Task {
+            do {
+                try await contentModeration.unblockUser(userId: currentUserId, blockedUserId: displayedUserId)
+                await MainActor.run {
+                    isUserBlocked = false
+                }
+                // Refresh the feed to show the unblocked user's posts
+                try await postRepository.fetchPosts()
+            } catch {
+                await MainActor.run {
+                    showError = true
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
     }
 }
 

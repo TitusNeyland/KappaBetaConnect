@@ -299,51 +299,40 @@ struct PostUserInfoView: View {
     let profileImageURL: String?
     let isCurrentUser: Bool
     let onDelete: () -> Void
+    let postRepository: PostRepository
+    @State private var showReportSheet = false
+    @State private var showBlockAlert = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @EnvironmentObject private var authManager: AuthManager
+    @StateObject private var contentModeration = ContentModerationService()
     
     var body: some View {
         HStack {
             NavigationLink(destination: ProfileView(userId: post.authorId)) {
                 if let profileURL = profileImageURL,
                    let url = URL(string: profileURL) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .empty:
-                            ProgressView()
-                                .frame(width: 40, height: 40)
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        case .failure(_):
-                            Image(systemName: "person.fill")
-                                .foregroundColor(.gray)
-                                .frame(width: 40, height: 40)
-                        @unknown default:
-                            Image(systemName: "person.fill")
-                                .foregroundColor(.gray)
-                                .frame(width: 40, height: 40)
-                        }
+                    AsyncImage(url: url) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 40, height: 40)
+                            .clipShape(Circle())
+                    } placeholder: {
+                        Circle()
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(width: 40, height: 40)
                     }
-                    .frame(width: 40, height: 40)
-                    .clipShape(Circle())
                 } else {
                     Circle()
-                        .fill(Color.gray.opacity(0.3))
+                        .fill(Color.gray.opacity(0.2))
                         .frame(width: 40, height: 40)
-                        .overlay(
-                            Image(systemName: "person.fill")
-                                .foregroundColor(.gray)
-                        )
                 }
             }
             
-            VStack(alignment: .leading, spacing: 2) {
-                NavigationLink(destination: ProfileView(userId: post.authorId)) {
-                    Text(post.authorName)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                }
-                
+            VStack(alignment: .leading) {
+                Text(post.authorName)
+                    .font(.headline)
                 Text(post.timestamp.timeAgoDisplay())
                     .font(.caption)
                     .foregroundColor(.gray)
@@ -351,16 +340,137 @@ struct PostUserInfoView: View {
             
             Spacer()
             
-            if isCurrentUser {
+            if !isCurrentUser {
                 Menu {
-                    Button(role: .destructive, action: onDelete) {
-                        Label("Delete Post", systemImage: "trash")
+                    Button(role: .destructive) {
+                        showReportSheet = true
+                    } label: {
+                        Label("Report", systemImage: "exclamationmark.triangle")
+                    }
+                    
+                    Button(role: .destructive) {
+                        showBlockAlert = true
+                    } label: {
+                        Label("Block User", systemImage: "person.fill.xmark")
                     }
                 } label: {
                     Image(systemName: "ellipsis")
                         .foregroundColor(.gray)
-                        .padding(8)
+                        .font(.system(size: 22, weight: .bold))
+                        .padding(12)
+                        .background(Color(.systemGray6).opacity(0.7))
+                        .clipShape(Circle())
+                        .contentShape(Rectangle())
                 }
+            } else {
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                }
+            }
+        }
+        .sheet(isPresented: $showReportSheet) {
+            ReportContentView(post: post)
+        }
+        .alert("Block User", isPresented: $showBlockAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Block", role: .destructive) {
+                blockUser()
+            }
+        } message: {
+            Text("Are you sure you want to block this user? You won't see their content anymore.")
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    private func blockUser() {
+        guard let currentUserId = authManager.currentUser?.id else { return }
+        
+        Task {
+            do {
+                // Block the user
+                try await contentModeration.blockUser(userId: currentUserId, blockedUserId: post.authorId)
+                
+                // Get updated blocked users list
+                let blockedUsers = try await contentModeration.getBlockedUsers(userId: currentUserId)
+                
+                // Update UI on main thread
+                await MainActor.run {
+                    // Update post repository with new blocked users list
+                    postRepository.updateBlockedUsers(blockedUsers)
+                }
+                
+                // Refresh the feed
+                try await postRepository.fetchPosts()
+                
+                // Dismiss the alert on main thread
+                await MainActor.run {
+                    showBlockAlert = false
+                }
+            } catch {
+                await MainActor.run {
+                    showError = true
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+}
+
+struct ReportContentView: View {
+    let post: Post
+    @Environment(\.dismiss) private var dismiss
+    @State private var reason = ""
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @EnvironmentObject private var authManager: AuthManager
+    @StateObject private var contentModeration = ContentModerationService()
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Report Content")) {
+                    TextEditor(text: $reason)
+                        .frame(height: 100)
+                }
+                
+                Section {
+                    Button("Submit Report") {
+                        submitReport()
+                    }
+                    .foregroundColor(.red)
+                }
+            }
+            .navigationTitle("Report Content")
+            .navigationBarItems(trailing: Button("Cancel") {
+                dismiss()
+            })
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private func submitReport() {
+        guard let currentUserId = authManager.currentUser?.id else { return }
+        
+        Task {
+            do {
+                try await contentModeration.reportContent(
+                    contentId: post.id ?? "",
+                    reportedBy: currentUserId,
+                    reason: reason
+                )
+                dismiss()
+            } catch {
+                showError = true
+                errorMessage = error.localizedDescription
             }
         }
     }
@@ -789,6 +899,7 @@ struct PostCard: View {
     let post: Post
     let postRepository: PostRepository
     @StateObject private var userRepository = UserRepository()
+    @StateObject private var contentModeration = ContentModerationService()
     @EnvironmentObject private var authManager: AuthManager
     @State private var showCommentSheet = false
     @State private var newComment = ""
@@ -841,7 +952,8 @@ struct PostCard: View {
                 post: currentPost,
                 profileImageURL: authorProfileImageURL,
                 isCurrentUser: isCurrentUser,
-                onDelete: { showDeleteAlert = true }
+                onDelete: { showDeleteAlert = true },
+                postRepository: postRepository
             )
             
             Text(createAttributedContent())

@@ -28,6 +28,9 @@ class UserSignupData: ObservableObject {
     @Published var status: String = ""
     @Published var graduationYear: String = ""
     
+    // Terms Agreement
+    @Published var hasAgreedToTerms: Bool = false
+    
     func createUser() -> User {
         return User(
             id: "",
@@ -60,7 +63,10 @@ class UserSignupData: ObservableObject {
             snapchatURL: nil,
             facebookURL: nil,
             isActive: true,
-            yearsOfExperience: yearsOfExperience.isEmpty ? nil : yearsOfExperience
+            yearsOfExperience: yearsOfExperience.isEmpty ? nil : yearsOfExperience,
+            hasAgreedToTerms: hasAgreedToTerms,
+            blockedUsers: [],
+            reportedContent: []
         )
     }
 } 
