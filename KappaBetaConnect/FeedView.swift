@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FeedView: View {
     @StateObject private var postRepository = PostRepository()
+    @StateObject private var contentModeration = ContentModerationService()
     @EnvironmentObject private var authManager: AuthManager
     @Environment(\.dismiss) private var dismiss
     @State private var showNewPostSheet = false
@@ -28,12 +29,7 @@ struct FeedView: View {
                     .padding()
                 }
                 .refreshable {
-                    do {
-                        try await postRepository.fetchPosts()
-                    } catch {
-                        showError = true
-                        errorMessage = error.localizedDescription
-                    }
+                    await refreshData()
                 }
             }
             .overlay(
@@ -98,13 +94,21 @@ struct FeedView: View {
             Text(errorMessage)
         }
         .task {
-            do {
-                try await postRepository.fetchPosts()
-            } catch {
-                await MainActor.run {
-                    showError = true
-                    errorMessage = error.localizedDescription
-                }
+            await refreshData()
+        }
+    }
+    
+    private func refreshData() async {
+        do {
+            if let currentUserId = authManager.currentUser?.id {
+                let blockedUsers = try await contentModeration.getBlockedUsers(userId: currentUserId)
+                postRepository.updateBlockedUsers(blockedUsers)
+            }
+            try await postRepository.fetchPosts()
+        } catch {
+            await MainActor.run {
+                showError = true
+                errorMessage = error.localizedDescription
             }
         }
     }

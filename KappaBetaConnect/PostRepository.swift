@@ -6,6 +6,7 @@ class PostRepository: ObservableObject {
     @Published var posts: [Post] = []
     private var postsListener: ListenerRegistration?
     private var postListeners: [String: ListenerRegistration] = [:]
+    private var blockedUsers: [String] = []
     
     init() {
         startPostsListener()
@@ -15,6 +16,14 @@ class PostRepository: ObservableObject {
         // Clean up listeners
         postsListener?.remove()
         postListeners.values.forEach { $0.remove() }
+    }
+    
+    func updateBlockedUsers(_ blockedUsers: [String]) {
+        Task { @MainActor in
+            self.blockedUsers = blockedUsers
+            // Refresh posts to apply new block list
+            try? await fetchPosts()
+        }
     }
     
     private func startPostsListener() {
@@ -41,8 +50,13 @@ class PostRepository: ObservableObject {
                     }
                 }
                 
-                DispatchQueue.main.async {
-                    self.posts = fetchedPosts
+                // Filter out posts from blocked users
+                let filteredPosts = fetchedPosts.filter { post in
+                    !self.blockedUsers.contains(post.authorId)
+                }
+                
+                Task { @MainActor in
+                    self.posts = filteredPosts
                 }
             }
     }
@@ -94,8 +108,13 @@ class PostRepository: ObservableObject {
             return post
         }
         
+        // Filter out posts from blocked users
+        let filteredPosts = fetchedPosts.filter { post in
+            !self.blockedUsers.contains(post.authorId)
+        }
+        
         await MainActor.run {
-            self.posts = fetchedPosts
+            self.posts = filteredPosts
         }
     }
     

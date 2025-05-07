@@ -49,6 +49,11 @@ struct User: Identifiable, Codable {
     // New field
     var yearsOfExperience: String?
     
+    // Terms and Safety
+    var hasAgreedToTerms: Bool
+    var blockedUsers: [String]
+    var reportedContent: [String]
+    
     enum CodingKeys: String, CodingKey {
         case id
         case prefix, firstName, lastName, suffix, email, phoneNumber, city, state, homeCity, homeState
@@ -58,6 +63,7 @@ struct User: Identifiable, Codable {
         case createdAt, updatedAt, isActive, isFirstSignIn
         case profileImageURL, linkedInURL, instagramURL, twitterURL, snapchatURL, facebookURL
         case yearsOfExperience
+        case hasAgreedToTerms, blockedUsers, reportedContent
     }
     
     init(id: String? = nil, 
@@ -91,7 +97,10 @@ struct User: Identifiable, Codable {
          facebookURL: String? = nil,
          isActive: Bool = true,
          yearsOfExperience: String? = nil,
-         isFirstSignIn: Bool = true) {
+         isFirstSignIn: Bool = true,
+         hasAgreedToTerms: Bool = false,
+         blockedUsers: [String] = [],
+         reportedContent: [String] = []) {
         
         self.id = id
         self.prefix = prefix
@@ -127,5 +136,8 @@ struct User: Identifiable, Codable {
         self.isActive = isActive
         self.isFirstSignIn = isFirstSignIn
         self.yearsOfExperience = yearsOfExperience
+        self.hasAgreedToTerms = hasAgreedToTerms
+        self.blockedUsers = blockedUsers
+        self.reportedContent = reportedContent
     }
 } 
