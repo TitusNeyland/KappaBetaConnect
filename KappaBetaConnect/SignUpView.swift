@@ -7,6 +7,7 @@ struct SignUpView: View {
     @State private var isLoading = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var showTerms = false
     
     let states = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", 
                  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", 
@@ -192,6 +193,51 @@ struct SignUpView: View {
                     .padding(.horizontal, 30)
                 }
                 
+                // Terms Agreement Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Terms and Conditions")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .padding(.horizontal, 30)
+                        .padding(.top, 30)
+                    
+                    HStack(alignment: .center, spacing: 12) {
+                        Button(action: {
+                            userData.hasAgreedToTerms.toggle()
+                        }) {
+                            Image(systemName: userData.hasAgreedToTerms ? "checkmark.square.fill" : "square")
+                                .resizable()
+                                .frame(width: 24, height: 24)
+                                .foregroundColor(userData.hasAgreedToTerms ? .blue : .gray)
+                        }
+                        .accessibilityLabel(userData.hasAgreedToTerms ? "Deselect agreement" : "Select agreement")
+                        
+                        // Make the whole text tappable for accessibility
+                        Button(action: {
+                            showTerms = true
+                        }) {
+                            (
+                                Text("I agree to the ")
+                                    .foregroundColor(.gray)
+                                +
+                                Text("Terms of Service and EULA")
+                                    .foregroundColor(.blue)
+                                    .underline()
+                            )
+                            .font(.subheadline)
+                            .multilineTextAlignment(.leading)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .accessibilityLabel("View Terms of Service and EULA")
+                        
+                        Spacer()
+                    }
+                    .padding(16)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    .padding(.horizontal, 30)
+                }
+                
                 // Continue Button
                 NavigationLink(destination: WelcomeView(userData: userData), isActive: $navigateToWelcome) {
                     Button(action: {
@@ -241,6 +287,9 @@ struct SignUpView: View {
             }
         }
         .toolbarColorScheme(.light, for: .navigationBar)
+        .sheet(isPresented: $showTerms) {
+            TermsAndEULAView(hasAgreedToTerms: $userData.hasAgreedToTerms)
+        }
     }
     
     private func validateAndProceed() {
@@ -287,6 +336,12 @@ struct SignUpView: View {
         let ageComponents = calendar.dateComponents([.year], from: userData.birthday, to: Date())
         if let age = ageComponents.year, age < 13 {
             showError(message: "You must be at least 13 years old to use this app")
+            return
+        }
+        
+        // Validate terms agreement
+        if !userData.hasAgreedToTerms {
+            showError(message: "Please agree to the Terms of Service and EULA")
             return
         }
         
