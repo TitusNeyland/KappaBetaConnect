@@ -115,21 +115,24 @@ struct SecretPasswordView: View {
                             await verifyPassword()
                         }
                     }) {
-                        if isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        } else {
-                            Text("Continue")
-                                .foregroundColor(.white)
-                                .font(.system(size: 17, weight: .semibold))
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 30)
+                                .fill(secretPassword.count == maxLength ? Color.black : Color.gray)
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text("Continue")
+                                    .foregroundColor(.white)
+                                    .font(.system(size: 17, weight: .semibold))
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 55)
-                    .background(secretPassword.count == maxLength ? Color.black : Color.gray)
-                    .cornerRadius(30)
                     .padding(.horizontal, 20)
                     .padding(.bottom, geometry.safeAreaInsets.bottom + 20)
+                    .contentShape(Rectangle())
                     .disabled(isLoading || secretPassword.count < maxLength)
                 }
                 .frame(minHeight: geometry.size.height)

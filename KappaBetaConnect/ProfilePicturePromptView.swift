@@ -66,20 +66,23 @@ struct ProfilePicturePromptView: View {
                         navigateToMain = true
                     }
                 }) {
-                    if isUploading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    } else {
-                        Text(selectedImage != nil ? "Continue" : "Skip for Now")
-                            .foregroundColor(.white)
-                            .font(.system(size: 17, weight: .semibold))
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 30)
+                            .fill(Color.black)
+                        if isUploading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        } else {
+                            Text(selectedImage != nil ? "Continue" : "Skip for Now")
+                                .foregroundColor(.white)
+                                .font(.system(size: 17, weight: .semibold))
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 55)
-                .background(Color.black)
-                .cornerRadius(30)
                 .padding(.horizontal, 20)
+                .contentShape(Rectangle())
                 .disabled(isUploading)
             }
             .padding(.bottom, 30)
