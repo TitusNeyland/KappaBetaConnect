@@ -99,16 +99,16 @@ struct FeedView: View {
     }
     
     private func refreshData() async {
-        do {
+            do {
             if let currentUserId = authManager.currentUser?.id {
                 let blockedUsers = try await contentModeration.getBlockedUsers(userId: currentUserId)
                 postRepository.updateBlockedUsers(blockedUsers)
             }
-            try await postRepository.fetchPosts()
-        } catch {
-            await MainActor.run {
-                showError = true
-                errorMessage = error.localizedDescription
+                try await postRepository.fetchPosts()
+            } catch {
+                await MainActor.run {
+                    showError = true
+                    errorMessage = error.localizedDescription
             }
         }
     }

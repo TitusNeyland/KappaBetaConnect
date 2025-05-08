@@ -152,18 +152,22 @@ struct PasswordSetupView: View {
                     Button(action: {
                         createAccount()
                     }) {
-                        if isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        } else {
-                            Text("Complete Setup")
-                                .foregroundColor(.white)
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(passwordStrength == 1.0 ? Color.black : Color.gray)
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text("Complete Setup")
+                                    .foregroundColor(.white)
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(passwordStrength == 1.0 ? Color.black : Color.gray)
-                    .cornerRadius(10)
+                    .frame(height: 55)
+                    .padding(.horizontal, 30)
+                    .contentShape(Rectangle())
                     .disabled(isLoading || passwordStrength < 1.0)
                 }
                 .padding(.horizontal, 30)

@@ -313,16 +313,16 @@ struct PostUserInfoView: View {
                 if let profileURL = profileImageURL,
                    let url = URL(string: profileURL) {
                     AsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 40, height: 40)
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 40, height: 40)
                             .clipShape(Circle())
                     } placeholder: {
                         Circle()
                             .fill(Color.gray.opacity(0.2))
-                            .frame(width: 40, height: 40)
-                    }
+                                .frame(width: 40, height: 40)
+                        }
                 } else {
                     Circle()
                         .fill(Color.gray.opacity(0.2))
@@ -331,8 +331,8 @@ struct PostUserInfoView: View {
             }
             
             VStack(alignment: .leading) {
-                Text(post.authorName)
-                    .font(.headline)
+                    Text(post.authorName)
+                        .font(.headline)
                 Text(post.timestamp.timeAgoDisplay())
                     .font(.caption)
                     .foregroundColor(.gray)
