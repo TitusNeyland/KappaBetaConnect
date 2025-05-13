@@ -37,6 +37,8 @@ struct CreatePostSheet: View {
     @Binding var showError: Bool
     @Binding var errorMessage: String
     @State private var newPostContent = ""
+    @State private var showProfanityAlert = false
+    @State private var lastCheckedContent = ""
     var didCreatePost: ((Bool) -> Void)?
     
     private let maxCharacterCount = 500
@@ -104,6 +106,13 @@ struct CreatePostSheet: View {
                     .foregroundColor(isPostButtonDisabled ? .gray : .primary)
                 }
             }
+            .alert("Inappropriate Content", isPresented: $showProfanityAlert) {
+                Button("OK", role: .cancel) {
+                    lastCheckedContent = newPostContent
+                }
+            } message: {
+                Text("Your post contains inappropriate language. Please revise your content to maintain a respectful community environment.")
+            }
         }
     }
     
@@ -121,6 +130,15 @@ struct CreatePostSheet: View {
         
         let content = newPostContent.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !content.isEmpty && content.count <= maxCharacterCount else { return }
+        
+        // Only check for profanity if the content has changed since last check
+        if content != lastCheckedContent {
+            if ContentFilteringService.shared.containsProfanity(content) {
+                showProfanityAlert = true
+                return
+            }
+            lastCheckedContent = content
+        }
         
         Task {
             do {
@@ -910,6 +928,8 @@ struct PostCard: View {
     @State private var showDeleteAlert = false
     @State private var selectedUser: User?
     @State private var currentPost: Post
+    @State private var showReportSheet = false
+    @State private var reportReason = ""
     
     init(post: Post, postRepository: PostRepository) {
         self.post = post
@@ -1019,10 +1039,44 @@ struct PostCard: View {
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(items: [currentPost.content])
         }
+        .sheet(isPresented: $showReportSheet) {
+            NavigationView {
+                Form {
+                    Section(header: Text("Report Reason")) {
+                        TextField("Enter reason for reporting", text: $reportReason)
+                    }
+                    
+                    Section {
+                        Button("Submit Report") {
+                            submitReport()
+                        }
+                        .foregroundColor(.red)
+                    }
+                }
+                .navigationTitle("Report Post")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") {
+                            showReportSheet = false
+                        }
+                    }
+                }
+            }
+        }
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage)
+        }
+        .contextMenu {
+            if !isCurrentUser {
+                Button(action: {
+                    showReportSheet = true
+                }) {
+                    Label("Report Post", systemImage: "exclamationmark.triangle")
+                }
+            }
         }
         .task {
             if authorProfileImageURL == nil {
@@ -1147,6 +1201,31 @@ struct PostCard: View {
                 await MainActor.run {
                     showError = true
                     errorMessage = "Failed to delete post: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+    
+    private func submitReport() {
+        guard let currentUserId = authManager.currentUser?.id,
+              let postId = currentPost.id else { return }
+        
+        Task {
+            do {
+                try await contentModeration.reportContent(
+                    contentId: postId,
+                    reportedBy: currentUserId,
+                    reason: reportReason
+                )
+                
+                await MainActor.run {
+                    showReportSheet = false
+                    reportReason = ""
+                }
+            } catch {
+                await MainActor.run {
+                    showError = true
+                    errorMessage = "Failed to submit report: \(error.localizedDescription)"
                 }
             }
         }
