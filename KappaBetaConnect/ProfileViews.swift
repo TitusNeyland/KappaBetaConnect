@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseStorage
 import PhotosUI
+import FirebaseAuth
 
 class ImageService {
     static let shared = ImageService()
@@ -60,6 +61,7 @@ struct EnlargedImageView: View {
 struct ManageProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var userRepository: UserRepository
+    @StateObject private var postRepository = PostRepository()
     @State private var prefix = ""
     @State private var firstName = ""
     @State private var lastName = ""
@@ -86,6 +88,9 @@ struct ManageProfileView: View {
     @EnvironmentObject private var authManager: AuthManager
     @State private var birthday = Date()
     @State private var jobTitle = ""
+    @State private var showDeleteAccountAlert = false
+    @State private var isDeletingAccount = false
+    @State private var navigateToLogin = false
     
     let prefixes = ["Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Rev.", "Hon."]
     let suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "M.D.", "Esq."]
@@ -257,6 +262,19 @@ struct ManageProfileView: View {
                         }
                     }
                 }
+
+                Section {
+                    Button(action: {
+                        showDeleteAccountAlert = true
+                    }) {
+                        HStack {
+                            Spacer()
+                            Text("Delete Account")
+                                .foregroundColor(.red)
+                            Spacer()
+                        }
+                    }
+                }
             }
             .navigationTitle("Manage Profile")
             .navigationBarTitleDisplayMode(.inline)
@@ -277,18 +295,25 @@ struct ManageProfileView: View {
             .onAppear {
                 loadCurrentUserData()
             }
+            .alert("Delete Account", isPresented: $showDeleteAccountAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Delete", role: .destructive) {
+                    deleteAccount()
+                }
+            } message: {
+                Text("Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.")
+            }
             .alert(dialogTitle, isPresented: $showError) {
                 Button("OK") {
                     if shouldSignOut {
-                        do {
-                            try authManager.signOut()
-                        } catch {
-                            print("Error signing out: \(error.localizedDescription)")
-                        }
+                        try? authManager.signOut()
                     }
                 }
             } message: {
                 Text(errorMessage)
+            }
+            .fullScreenCover(isPresented: $navigateToLogin) {
+                LoginView()
             }
         }
     }
@@ -451,6 +476,47 @@ struct ManageProfileView: View {
         let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
         return emailPred.evaluate(with: email)
+    }
+
+    private func deleteAccount() {
+        guard let userId = authManager.currentUser?.id else { return }
+        
+        isDeletingAccount = true
+        
+        Task {
+            do {
+                // First, fetch all posts by the user
+                let userPosts = try await postRepository.fetchPostsByAuthor(authorId: userId)
+                
+                // Delete all posts
+                for post in userPosts {
+                    if let postId = post.id {
+                        try await postRepository.deletePost(postId: postId)
+                    }
+                }
+                
+                // Delete user data from Firestore
+                try await userRepository.deleteUser(withId: userId)
+                
+                // Delete user's authentication account
+                try await Auth.auth().currentUser?.delete()
+                
+                // Sign out
+                try authManager.signOut()
+                
+                // Navigate to login screen
+                await MainActor.run {
+                    navigateToLogin = true
+                }
+            } catch {
+                await MainActor.run {
+                    dialogTitle = "Error"
+                    errorMessage = "Failed to delete account: \(error.localizedDescription)"
+                    showError = true
+                    isDeletingAccount = false
+                }
+            }
+        }
     }
 }
 
