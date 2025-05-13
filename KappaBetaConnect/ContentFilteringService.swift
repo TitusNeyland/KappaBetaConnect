@@ -3,16 +3,13 @@ import Foundation
 class ContentFilteringService {
     static let shared = ContentFilteringService()
     
-    // Common profanity words - you should expand this list
     private let profanityList: Set<String> = [
-        // Add your list of profanity words here
-        "fuck", "shit", "ass", "bitch", "damn", "hell", "dick", "fag", "faggot", "cunt"
+        "fuck", "shit", "bitch", "damn", "dick", "faggot", "cunt"
         // Add more words as needed
     ]
     
     // Common variations of profanity (e.g., using special characters)
     private let profanityPatterns: [String] = [
-        // Add patterns like:
         "f[^a-z]*u[^a-z]*c[^a-z]*k",
         "s[^a-z]*h[^a-z]*i[^a-z]*t",
         // Add more patterns as needed
