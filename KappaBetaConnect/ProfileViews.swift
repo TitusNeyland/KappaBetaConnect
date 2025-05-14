@@ -480,40 +480,38 @@ struct ManageProfileView: View {
 
     private func deleteAccount() {
         guard let userId = authManager.currentUser?.id else { return }
-        
         isDeletingAccount = true
-        
+
         Task {
             do {
-                // First, fetch all posts by the user
+                // Delete all posts by the user
                 let userPosts = try await postRepository.fetchPostsByAuthor(authorId: userId)
-                
-                // Delete all posts
                 for post in userPosts {
                     if let postId = post.id {
                         try await postRepository.deletePost(postId: postId)
                     }
                 }
-                
                 // Delete user data from Firestore
                 try await userRepository.deleteUser(withId: userId)
-                
                 // Delete user's authentication account
                 try await Auth.auth().currentUser?.delete()
-                
-                // Sign out
-                try authManager.signOut()
-                
-                // Navigate to login screen
+
+                // Now sign out and navigate to login
                 await MainActor.run {
+                    do {
+                        try authManager.signOut()
+                    } catch {
+                        // Optionally handle sign out error
+                    }
                     navigateToLogin = true
                 }
             } catch {
+                // Optionally show error to user, but still try to sign out and navigate away
                 await MainActor.run {
-                    dialogTitle = "Error"
-                    errorMessage = "Failed to delete account: \(error.localizedDescription)"
-                    showError = true
-                    isDeletingAccount = false
+                    do {
+                        try authManager.signOut()
+                    } catch {}
+                    navigateToLogin = true
                 }
             }
         }
