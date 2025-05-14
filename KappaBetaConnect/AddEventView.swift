@@ -4,6 +4,7 @@ struct AddEventView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var eventRepository: EventRepository
     @ObservedObject var userRepository: UserRepository
+    @EnvironmentObject private var authManager: AuthManager
     
     @State private var eventName = ""
     @State private var eventDate = Date()
@@ -105,7 +106,7 @@ struct AddEventView: View {
     }
     
     private func createEvent() async {
-        guard let userId = userRepository.currentUser?.id else {
+        guard let userId = authManager.currentUser?.id else {
             showError = true
             errorMessage = "User not logged in"
             return

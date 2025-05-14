@@ -592,6 +592,8 @@ struct CommentsSheetView: View {
     @State private var authorProfileImageURL: String?
     @State private var currentPost: Post
     let postRepository: PostRepository
+    @State private var showProfanityAlert = false
+    @State private var lastCheckedComment = ""
     
     init(post: Post, showSheet: Binding<Bool>, newComment: Binding<String>, onComment: @escaping () -> Void, postRepository: PostRepository) {
         self.post = post
@@ -663,6 +665,64 @@ struct CommentsSheetView: View {
         selectedUser = user
         showUserSearch = false
         mentionStartIndex = nil
+    }
+    
+    private func handleComment() {
+        guard let currentUser = authManager.currentUser else {
+            Task { @MainActor in
+                showError = true
+                errorMessage = "You must be logged in to comment"
+            }
+            return
+        }
+        let commentContent = newComment.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !commentContent.isEmpty else { return }
+        // Content filtering for comments
+        if commentContent != lastCheckedComment {
+            if ContentFilteringService.shared.containsProfanity(commentContent) {
+                showProfanityAlert = true
+                return
+            }
+            lastCheckedComment = commentContent
+        }
+        var mentions: [Mention] = []
+        let words = commentContent.components(separatedBy: .whitespacesAndNewlines)
+        var currentIndex = 0
+        for word in words {
+            if word.hasPrefix("@") {
+                let userName = String(word.dropFirst())
+                if let user = selectedUser {
+                    let mention = Mention(
+                        id: UUID().uuidString,
+                        userId: user.id ?? "",
+                        userName: userName,
+                        range: currentIndex..<(currentIndex + word.count)
+                    )
+                    mentions.append(mention)
+                }
+            }
+            currentIndex += word.count + 1 // +1 for the space
+        }
+        Task {
+            do {
+                try await postRepository.addComment(
+                    postId: post.id ?? "",
+                    content: commentContent,
+                    authorId: currentUser.id ?? "",
+                    authorName: "\(currentUser.firstName) \(currentUser.lastName)",
+                    mentions: mentions
+                )
+                await MainActor.run {
+                    newComment = ""
+                    showSheet = false
+                }
+            } catch {
+                await MainActor.run {
+                    showError = true
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
     }
     
     var body: some View {
@@ -770,7 +830,7 @@ struct CommentsSheetView: View {
                                 .customTextField()
                                 .onChange(of: newComment) { handleTextChange($0) }
                             
-                            Button(action: onComment) {
+                            Button(action: handleComment) {
                                 Text("Post")
                                     .fontWeight(.medium)
                             }
@@ -860,6 +920,13 @@ struct CommentsSheetView: View {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(errorMessage)
+            }
+            .alert("Inappropriate Content", isPresented: $showProfanityAlert) {
+                Button("OK", role: .cancel) {
+                    lastCheckedComment = newComment
+                }
+            } message: {
+                Text("Your comment contains inappropriate language. Please revise your content to maintain a respectful community environment.")
             }
             .task {
                 do {

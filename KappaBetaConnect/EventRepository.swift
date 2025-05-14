@@ -76,7 +76,8 @@ class EventRepository: ObservableObject {
                     event.attendees.append(userId)
                 }
                 
-                try transaction.setData(from: event, forDocument: eventRef)
+                // Update only the attendees array
+                try transaction.updateData(["attendees": event.attendees], forDocument: eventRef)
                 
                 // Update local events array on main thread
                 Task { @MainActor in

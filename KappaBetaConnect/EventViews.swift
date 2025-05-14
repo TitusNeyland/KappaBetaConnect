@@ -3,6 +3,7 @@ import SwiftUI
 struct EventsView: View {
     @StateObject private var eventRepository = EventRepository()
     @StateObject private var userRepository = UserRepository()
+    @EnvironmentObject private var authManager: AuthManager
     @State private var showAddEventSheet = false
     @State private var showError = false
     @State private var errorMessage = ""
@@ -85,8 +86,8 @@ struct EventsView: View {
             .overlay(
                 Button(action: {
                     print("Add event button tapped")
-                    print("Current user: \(userRepository.currentUser?.id ?? "nil")")
-                    if let currentUser = userRepository.currentUser {
+                    print("Current user: \(authManager.currentUser?.id ?? "nil")")
+                    if let currentUser = authManager.currentUser {
                         print("User is logged in: \(currentUser.firstName) \(currentUser.lastName)")
                         showAddEventSheet = true
                     } else {
@@ -169,6 +170,7 @@ struct EventListItem: View {
 struct EventDetailView: View {
     @ObservedObject var userRepository: UserRepository
     @ObservedObject var eventRepository: EventRepository
+    @EnvironmentObject private var authManager: AuthManager
     let eventId: String
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
@@ -183,7 +185,7 @@ struct EventDetailView: View {
     }
     
     private var isEventCreator: Bool {
-        guard let event = event, let currentUserId = userRepository.currentUser?.id else { return false }
+        guard let event = event, let currentUserId = authManager.currentUser?.id else { return false }
         return event.createdBy == currentUserId
     }
     
@@ -315,7 +317,7 @@ struct EventDetailView: View {
                         }
                         
                         // RSVP Button
-                        if let userId = userRepository.currentUser?.id {
+                        if let userId = authManager.currentUser?.id {
                             Button(action: {
                                 Task {
                                     do {
