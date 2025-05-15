@@ -57,13 +57,23 @@ struct SignUpView: View {
                                     .stroke(Color(.systemGray4), lineWidth: 1)
                             )
                             
-                            CustomTextField(text: $userData.firstName, placeholder: "First Name", keyboardType: .default, textContentType: .givenName, allowWhitespace: false, autoCapitalizeFirstLetter: true)
-                                .customTextField()
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("First Name *")
+                                    .foregroundColor(.red)
+                                    .font(.caption)
+                                CustomTextField(text: $userData.firstName, placeholder: "First Name", keyboardType: .default, textContentType: .givenName, allowWhitespace: false, autoCapitalizeFirstLetter: true)
+                                    .customTextField()
+                            }
                         }
                         
                         HStack(spacing: 10) {
-                            CustomTextField(text: $userData.lastName, placeholder: "Last Name", keyboardType: .default, textContentType: .familyName, allowWhitespace: false, autoCapitalizeFirstLetter: true)
-                                .customTextField()
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Last Name *")
+                                    .foregroundColor(.red)
+                                    .font(.caption)
+                                CustomTextField(text: $userData.lastName, placeholder: "Last Name", keyboardType: .default, textContentType: .familyName, allowWhitespace: false, autoCapitalizeFirstLetter: true)
+                                    .customTextField()
+                            }
                             
                             // Suffix Picker
                             Picker("", selection: $userData.suffix) {
@@ -95,12 +105,12 @@ struct SignUpView: View {
                         .padding(.top, 30)
                     
                     VStack(spacing: 15) {
-                        CustomTextField(text: $userData.city, placeholder: "City", keyboardType: .default, textContentType: .addressCity, autoCapitalizeFirstLetter: true, autoCapitalizeWords: true)
+                        CustomTextField(text: $userData.city, placeholder: "City (Optional)", keyboardType: .default, textContentType: .addressCity, autoCapitalizeFirstLetter: true, autoCapitalizeWords: true)
                             .customTextField()
                         
                         // State Picker
                         HStack {
-                            Text("State")
+                            Text("State (Optional)")
                                 .foregroundColor(.gray)
                             Spacer()
                             Picker("State", selection: $userData.state) {
@@ -132,12 +142,12 @@ struct SignUpView: View {
                         .padding(.top, 30)
                     
                     VStack(spacing: 15) {
-                        CustomTextField(text: $userData.homeCity, placeholder: "Hometown City", keyboardType: .default, textContentType: .addressCity, autoCapitalizeFirstLetter: true, autoCapitalizeWords: true)
+                        CustomTextField(text: $userData.homeCity, placeholder: "Hometown City (Optional)", keyboardType: .default, textContentType: .addressCity, autoCapitalizeFirstLetter: true, autoCapitalizeWords: true)
                             .customTextField()
                         
                         // State Picker
                         HStack {
-                            Text("State")
+                            Text("State (Optional)")
                                 .foregroundColor(.gray)
                             Spacer()
                             Picker("State", selection: $userData.homeState) {
@@ -169,15 +179,20 @@ struct SignUpView: View {
                         .padding(.top, 30)
                     
                     VStack(spacing: 15) {
-                        CustomTextField(text: $userData.email, placeholder: "Email", keyboardType: .emailAddress, textContentType: .emailAddress)
-                            .customTextField()
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Email *")
+                                .foregroundColor(.red)
+                                .font(.caption)
+                            CustomTextField(text: $userData.email, placeholder: "Email", keyboardType: .emailAddress, textContentType: .emailAddress)
+                                .customTextField()
+                        }
                         
-                        CustomTextField(text: $userData.phoneNumber, placeholder: "Phone Number", keyboardType: .phonePad, textContentType: .telephoneNumber)
+                        CustomTextField(text: $userData.phoneNumber, placeholder: "Phone Number (Optional)", keyboardType: .phonePad, textContentType: .telephoneNumber)
                             .customTextField()
                             
                         // Birthday Picker
                         DatePicker(
-                            "Birthday",
+                            "Birthday (Optional)",
                             selection: $userData.birthday,
                             displayedComponents: [.date]
                         )
@@ -295,7 +310,7 @@ struct SignUpView: View {
     private func validateAndProceed() {
         isLoading = true
         
-        // Basic validation
+        // Basic validation - only required fields
         if userData.firstName.isEmpty {
             showError(message: "Please enter your first name")
             return
@@ -306,16 +321,6 @@ struct SignUpView: View {
             return
         }
         
-        if userData.city.isEmpty {
-            showError(message: "Please enter your city")
-            return
-        }
-        
-        if userData.state.isEmpty {
-            showError(message: "Please select your state")
-            return
-        }
-        
         if userData.email.isEmpty {
             showError(message: "Please enter your email address")
             return
@@ -323,19 +328,6 @@ struct SignUpView: View {
         
         if !isValidEmail(userData.email) {
             showError(message: "Please enter a valid email address")
-            return
-        }
-        
-        if userData.phoneNumber.isEmpty {
-            showError(message: "Please enter your phone number")
-            return
-        }
-        
-        // Validate birthday
-        let calendar = Calendar.current
-        let ageComponents = calendar.dateComponents([.year], from: userData.birthday, to: Date())
-        if let age = ageComponents.year, age < 13 {
-            showError(message: "You must be at least 13 years old to use this app")
             return
         }
         
