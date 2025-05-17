@@ -10,6 +10,7 @@ struct Post: Identifiable, Codable {
     var likes: [String] // Array of user IDs who liked the post
     var comments: [Comment]
     var shareCount: Int
+    var imageURL: String? // Optional image URL
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -20,6 +21,7 @@ struct Post: Identifiable, Codable {
         case likes
         case comments
         case shareCount
+        case imageURL
     }
 }
 
