@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // USERS: All authenticated users can read all user profiles (for directory).
+    // Only the user can write to their own profile.
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // POSTS: All authenticated users can read posts.
+    // Only the post author can create/delete their post.
+    // Any authenticated user can update the comments array or likes array.
+    match /posts/{postId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.authorId;
+      allow update: if request.auth != null && (
+        // Allow full update if user is the post author
+        request.auth.uid == resource.data.authorId ||
+        // Allow update if only modifying the comments array or likes array
+        (request.resource.data.diff(resource.data).affectedKeys().hasAny(['comments', 'likes']) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['comments', 'likes']))
+      );
+      allow delete: if request.auth != null && request.auth.uid == resource.data.authorId;
+    }
+
+    // EVENTS: All authenticated users can read events.
+    // Users can create events where they are the owner.
+    // Users can update/delete their own events.
+    // Any authenticated user can update the attendees list.
+    match /events/{eventId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null 
+                    && request.resource.data.createdBy == request.auth.uid;
+      allow update: if request.auth != null && (
+        // Allow full update if user is creator or admin
+        (resource.data.createdBy == request.auth.uid || request.auth.token.admin == true) ||
+        // Allow update if only modifying attendees array
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']))
+      );
+      allow delete: if request.auth != null 
+                    && (resource.data.createdBy == request.auth.uid || request.auth.token.admin == true);
+    }
+
+    // REPORTS: Only authenticated users can create reports.
+    // Only admins can read/update/delete reports.
+    match /reports/{reportId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if request.auth != null && request.auth.token.admin == true;
+    }
+
+    // LINES: All authenticated users can read lines.
+    match /lines/{lineId} {
+      allow read: if true;
+    }
+
+  }
+} 
