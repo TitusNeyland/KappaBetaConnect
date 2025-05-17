@@ -748,10 +748,15 @@ struct ProfileView: View {
                             if let user = displayedUser ?? userRepository.currentUser {
                                 VStack(alignment: .leading, spacing: 12) {
                                     // Bio
-                                    if let bio = user.bio {
+                                    if let bio = user.bio, !bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                                         Text(bio)
                                             .font(.subheadline)
                                             .foregroundColor(.gray)
+                                    } else {
+                                        Text(isCurrentUserProfile ? "Add a short bio to let others know more about you!" : "This user hasn't added a bio yet.")
+                                            .font(.subheadline)
+                                            .foregroundColor(.gray)
+                                            .italic()
                                     }
                                     
                                     // Contact Information
