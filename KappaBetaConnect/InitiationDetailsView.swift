@@ -51,6 +51,14 @@ struct InitiationDetailsView: View {
                         }
                         .pickerStyle(.menu)
                         .tint(.primary)
+                        .onChange(of: selectedStatus) { newValue in
+                            userData.status = newValue
+                            if newValue == "Collegiate" {
+                                userData.graduationYear = selectedGraduationYear
+                            } else {
+                                userData.graduationYear = ""
+                            }
+                        }
                     }
                     .padding()
                     .background(Color(.systemBackground))
@@ -73,6 +81,11 @@ struct InitiationDetailsView: View {
                             }
                             .pickerStyle(.menu)
                             .tint(.primary)
+                            .onChange(of: selectedGraduationYear) { newValue in
+                                if selectedStatus == "Collegiate" {
+                                    userData.graduationYear = newValue
+                                }
+                            }
                         }
                         .padding()
                         .background(Color(.systemBackground))
@@ -95,6 +108,9 @@ struct InitiationDetailsView: View {
                         }
                         .pickerStyle(.menu)
                         .tint(.primary)
+                        .onChange(of: selectedLineNumber) { newValue in
+                            userData.lineNumber = newValue
+                        }
                     }
                     .padding()
                     .background(Color(.systemBackground))
@@ -116,6 +132,9 @@ struct InitiationDetailsView: View {
                         }
                         .pickerStyle(.menu)
                         .tint(.primary)
+                        .onChange(of: selectedSemester) { newValue in
+                            userData.semester = newValue
+                        }
                     }
                     .padding()
                     .background(Color(.systemBackground))
@@ -137,6 +156,9 @@ struct InitiationDetailsView: View {
                         }
                         .pickerStyle(.menu)
                         .tint(.primary)
+                        .onChange(of: selectedYear) { newValue in
+                            userData.year = newValue
+                        }
                     }
                     .padding()
                     .background(Color(.systemBackground))
