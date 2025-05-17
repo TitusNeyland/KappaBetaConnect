@@ -1,8 +1,10 @@
 import Foundation
 import FirebaseFirestore
+import FirebaseStorage
 
 class PostRepository: ObservableObject {
     private let db = Firestore.firestore()
+    private let storage = Storage.storage()
     @Published var posts: [Post] = []
     private var postsListener: ListenerRegistration?
     private var postListeners: [String: ListenerRegistration] = [:]
@@ -144,7 +146,11 @@ class PostRepository: ObservableObject {
         }
     }
     
-    func createPost(content: String, authorId: String, authorName: String) async throws {
+    func createPost(content: String, authorId: String, authorName: String, image: UIImage? = nil) async throws {
+        var imageURL: String? = nil
+        if let image = image {
+            imageURL = try await uploadImage(image, authorId: authorId)
+        }
         let post = Post(
             content: content,
             authorId: authorId,
@@ -152,11 +158,23 @@ class PostRepository: ObservableObject {
             timestamp: Date(),
             likes: [],
             comments: [],
-            shareCount: 0
+            shareCount: 0,
+            imageURL: imageURL
         )
-        
         _ = try await db.collection("posts").addDocument(from: post)
-        // No need to fetch posts again as the listener will handle updates
+    }
+    
+    private func uploadImage(_ image: UIImage, authorId: String) async throws -> String {
+        let resizedImage = image.resizedTo(maxDimension: 1080)
+        guard let imageData = resizedImage.jpegData(compressionQuality: 0.7) else {
+            throw NSError(domain: "ImageError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to data"])
+        }
+        let imageID = UUID().uuidString
+        let ref = storage.reference().child("post_images/")
+            .child("\(authorId)_\(imageID).jpg")
+        let _ = try await ref.putDataAsync(imageData)
+        let url = try await ref.downloadURL()
+        return url.absoluteString
     }
     
     func toggleLike(postId: String, userId: String) async throws {
@@ -229,5 +247,25 @@ class PostRepository: ObservableObject {
     func deletePost(postId: String) async throws {
         try await db.collection("posts").document(postId).delete()
         // The listener will handle updating the posts array
+    }
+}
+
+// Helper to resize UIImage
+extension UIImage {
+    func resizedTo(maxDimension: CGFloat) -> UIImage {
+        let aspectRatio = size.width / size.height
+        var newSize: CGSize
+        if size.width > size.height {
+            newSize = CGSize(width: maxDimension, height: maxDimension / aspectRatio)
+        } else {
+            newSize = CGSize(width: maxDimension * aspectRatio, height: maxDimension)
+        }
+        if size.width <= maxDimension && size.height <= maxDimension {
+            return self // No resizing needed
+        }
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 0.7)
+        defer { UIGraphicsEndImageContext() }
+        draw(in: CGRect(origin: .zero, size: newSize))
+        return UIGraphicsGetImageFromCurrentImageContext() ?? self
     }
 } 

@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import PhotosUI
 
 // Toast View
 struct Toast: View {
@@ -37,8 +39,11 @@ struct CreatePostSheet: View {
     @Binding var showError: Bool
     @Binding var errorMessage: String
     @State private var newPostContent = ""
+    @State private var pastedImage: UIImage? = nil
     @State private var showProfanityAlert = false
     @State private var lastCheckedContent = ""
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var isLoading = false
     var didCreatePost: ((Bool) -> Void)?
     
     private let maxCharacterCount = 500
@@ -49,75 +54,147 @@ struct CreatePostSheet: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 16) {
-                // User info header
-                if let currentUser = authManager.currentUser {
-                    UserHeaderView(user: currentUser)
-                }
-                
-                // Post content editor
-                PostEditorView(content: $newPostContent)
-                
-                // Link previews
-                if !detectedLinks.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Links detected:")
-                            .font(.caption)
-                            .foregroundColor(.gray)
+            ZStack {
+                VStack(spacing: 16) {
+                    // User info header
+                    if let currentUser = authManager.currentUser {
+                        UserHeaderView(user: currentUser)
+                    }
+                    
+                    // Post content editor with image preview inside the same background
+                    VStack(spacing: 0) {
+                        PasteablePostEditor(text: $newPostContent, pastedImage: $pastedImage, placeholder: "What's on your mind?")
+                            .frame(minHeight: 100, maxHeight: 180)
+                            .padding(.horizontal, 8)
+                            .padding(.top, 8)
                         
-                        ForEach(detectedLinks, id: \.absoluteString) { url in
-                            HStack {
-                                Image(systemName: "link")
-                                    .foregroundColor(.blue)
-                                Text(url.absoluteString)
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
+                        if let image = pastedImage {
+                            ZStack(alignment: .topTrailing) {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxHeight: 120)
+                                    .cornerRadius(10)
+                                    .padding([.horizontal, .bottom], 8)
+                                Button(action: {
+                                    pastedImage = nil
+                                    selectedItem = nil
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.white)
+                                        .background(Color.black.opacity(0.6))
+                                        .clipShape(Circle())
+                                }
+                                .offset(x: -4, y: 4)
                             }
-                            .padding(8)
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(8)
                         }
                     }
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color(.systemGray4))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                    )
                     .padding(.horizontal)
-                }
-                
-                // Character count and guidelines
-                PostGuidelinesView(contentCount: newPostContent.count, maxCount: maxCharacterCount)
-                
-                Spacer()
-            }
-            .navigationTitle("Create Post")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                        newPostContent = ""
+                    
+                    // Image picker button
+                    HStack {
+                        PhotosPicker(selection: $selectedItem, matching: .images) {
+                            Image(systemName: "photo")
+                                .font(.system(size: 24))
+                                .foregroundColor(Color(red: 0.831, green: 0.686, blue: 0.216))
+                                .padding(8)
+                                .background(Color(red: 0.831, green: 0.686, blue: 0.216).opacity(0.1))
+                                .clipShape(Circle())
+                        }
+                        .onChange(of: selectedItem) { newItem in
+                            Task {
+                                if let data = try? await newItem?.loadTransferable(type: Data.self),
+                                   let image = UIImage(data: data) {
+                                    pastedImage = image
+                                }
+                            }
+                        }
+                        
+                        Spacer()
                     }
-                    .foregroundColor(.gray)
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Post") {
-                        createPost()
+                    .padding(.horizontal)
+                    
+                    // Link previews
+                    if !detectedLinks.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Links detected:")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            ForEach(detectedLinks, id: \.absoluteString) { url in
+                                HStack {
+                                    Image(systemName: "link")
+                                        .foregroundColor(.blue)
+                                    Text(url.absoluteString)
+                                        .font(.caption)
+                                        .foregroundColor(.blue)
+                                }
+                                .padding(8)
+                                .background(Color.blue.opacity(0.1))
+                                .cornerRadius(8)
+                            }
+                        }
+                        .padding(.horizontal)
                     }
-                    .disabled(isPostButtonDisabled)
-                    .font(.headline)
-                    .foregroundColor(isPostButtonDisabled ? .gray : .primary)
+                    
+                    // Character count and guidelines
+                    PostGuidelinesView(contentCount: newPostContent.count, maxCount: maxCharacterCount)
+                    
+                    Spacer()
                 }
-            }
-            .alert("Inappropriate Content", isPresented: $showProfanityAlert) {
-                Button("OK", role: .cancel) {
-                    lastCheckedContent = newPostContent
+                .navigationTitle("Create Post")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") {
+                            if !isLoading {
+                                dismiss()
+                                newPostContent = ""
+                                pastedImage = nil
+                            }
+                        }
+                        .foregroundColor(.gray)
+                        .disabled(isLoading)
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Post") {
+                            createPost()
+                        }
+                        .disabled(isPostButtonDisabled || isLoading)
+                        .font(.headline)
+                        .foregroundColor((isPostButtonDisabled || isLoading) ? .gray : .primary)
+                    }
                 }
-            } message: {
-                Text("Your post contains inappropriate language. Please revise your content to maintain a respectful community environment.")
+                .alert("Inappropriate Content", isPresented: $showProfanityAlert) {
+                    Button("OK", role: .cancel) {
+                        lastCheckedContent = newPostContent
+                    }
+                } message: {
+                    Text("Your post contains inappropriate language. Please revise your content to maintain a respectful community environment.")
+                }
+                if isLoading {
+                    Color.black.opacity(0.2)
+                        .ignoresSafeArea()
+                    ProgressView("Uploading...")
+                        .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+                        .padding()
+                        .background(Color(.systemBackground))
+                        .cornerRadius(12)
+                        .shadow(radius: 10)
+                }
             }
         }
     }
     
     private var isPostButtonDisabled: Bool {
-        newPostContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        newPostContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && pastedImage == nil ||
         newPostContent.count > maxCharacterCount
     }
     
@@ -127,11 +204,9 @@ struct CreatePostSheet: View {
             errorMessage = "You must be logged in to create a post"
             return
         }
-        
         let content = newPostContent.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !content.isEmpty && content.count <= maxCharacterCount else { return }
-        
-        // Only check for profanity if the content has changed since last check
+        if content.isEmpty && pastedImage == nil { return }
+        if content.count > maxCharacterCount { return }
         if content != lastCheckedContent {
             if ContentFilteringService.shared.containsProfanity(content) {
                 showProfanityAlert = true
@@ -139,17 +214,20 @@ struct CreatePostSheet: View {
             }
             lastCheckedContent = content
         }
-        
+        isLoading = true
         Task {
             do {
                 try await postRepository.createPost(
                     content: content,
                     authorId: currentUser.id ?? "",
-                    authorName: "\(currentUser.firstName) \(currentUser.lastName)"
+                    authorName: "\(currentUser.firstName) \(currentUser.lastName)",
+                    image: pastedImage
                 )
+                isLoading = false
                 didCreatePost?(true)
                 dismiss()
             } catch {
+                isLoading = false
                 showError = true
                 errorMessage = error.localizedDescription
                 didCreatePost?(false)
@@ -198,8 +276,10 @@ struct UserHeaderView: View {
     }
 }
 
-struct FocusedTextEditor: UIViewRepresentable {
+// MARK: - PasteablePostEditor
+struct PasteablePostEditor: UIViewRepresentable {
     @Binding var text: String
+    @Binding var pastedImage: UIImage?
     let placeholder: String
     
     func makeCoordinator() -> Coordinator {
@@ -213,12 +293,11 @@ struct FocusedTextEditor: UIViewRepresentable {
         textView.backgroundColor = .clear
         textView.text = text.isEmpty ? placeholder : text
         textView.textColor = text.isEmpty ? .placeholderText : .label
-        textView.becomeFirstResponder() // Automatically show keyboard
-        
-        // Prevent keyboard from being dismissed
-        textView.alwaysBounceVertical = true
-        textView.keyboardDismissMode = .none
-        
+        textView.autocorrectionType = .no
+        textView.autocapitalizationType = .sentences
+        textView.isScrollEnabled = true
+        textView.keyboardDismissMode = .interactive
+        textView.pasteDelegate = context.coordinator
         return textView
     }
     
@@ -232,11 +311,15 @@ struct FocusedTextEditor: UIViewRepresentable {
         }
     }
     
-    class Coordinator: NSObject, UITextViewDelegate {
-        var parent: FocusedTextEditor
+    class Coordinator: NSObject, UITextViewDelegate, UITextPasteDelegate {
+        var parent: PasteablePostEditor
         
-        init(_ parent: FocusedTextEditor) {
+        init(_ parent: PasteablePostEditor) {
             self.parent = parent
+        }
+        
+        func textViewDidChange(_ textView: UITextView) {
+            parent.text = textView.text
         }
         
         func textViewDidBeginEditing(_ textView: UITextView) {
@@ -246,35 +329,23 @@ struct FocusedTextEditor: UIViewRepresentable {
             }
         }
         
-        func textViewDidChange(_ textView: UITextView) {
-            parent.text = textView.text
-        }
-        
         func textViewDidEndEditing(_ textView: UITextView) {
             if parent.text.isEmpty {
                 textView.text = parent.placeholder
                 textView.textColor = .placeholderText
             }
         }
-    }
-}
-
-struct PostEditorView: View {
-    @Binding var content: String
-    
-    var body: some View {
-        FocusedTextEditor(text: $content, placeholder: "What's on your mind?")
-            .frame(minHeight: 150)
-            .padding(4)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color(.systemGray4))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.black.opacity(0.1), lineWidth: 1)
-            )
-            .padding(.horizontal)
+        
+        // MARK: - Image Paste
+        func textPasteConfigurationSupporting(_ textPasteConfigurationSupporting: UITextPasteConfigurationSupporting, transform item: UITextPasteItem) {
+            item.itemProvider.loadObject(ofClass: UIImage.self) { (object, error) in
+                if let image = object as? UIImage {
+                    DispatchQueue.main.async {
+                        self.parent.pastedImage = image
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -596,6 +667,7 @@ struct CommentsSheetView: View {
     @State private var currentPost: Post
     @State private var showProfanityAlert = false
     @State private var lastCheckedComment = ""
+    @State private var animatePop = false
     
     init(post: Post, showSheet: Binding<Bool>, newComment: Binding<String>, onComment: @escaping () -> Void, postRepository: PostRepository, onCommentAdded: ((Comment) -> Void)? = nil, onCommentDeleted: ((String) -> Void)? = nil) {
         self.post = post
@@ -1007,6 +1079,8 @@ struct PostCard: View {
     @State private var currentPost: Post
     @State private var showReportSheet = false
     @State private var reportReason = ""
+    @State private var showFullImage = false
+    @State private var animatePop = false
     
     init(post: Post, postRepository: PostRepository, onCommentAdded: ((Comment) -> Void)? = nil, onCommentDeleted: ((String) -> Void)? = nil) {
         self.post = post
@@ -1046,147 +1120,209 @@ struct PostCard: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            PostUserInfoView(
-                post: currentPost,
-                profileImageURL: authorProfileImageURL,
-                isCurrentUser: isCurrentUser,
-                onDelete: { showDeleteAlert = true },
-                postRepository: postRepository
-            )
-            
-            Text(createAttributedContent())
-                .font(.body)
-                .environment(\.openURL, OpenURLAction { url in
-                    print("Opening URL: \(url)")
-                    return .systemAction
-                })
-            
-            HStack(spacing: 20) {
-                Text("\(currentPost.likes.count) likes")
-                    .font(.caption)
-                    .foregroundColor(.gray)
+        ZStack {
+            VStack(alignment: .leading, spacing: 12) {
+                PostUserInfoView(
+                    post: currentPost,
+                    profileImageURL: authorProfileImageURL,
+                    isCurrentUser: isCurrentUser,
+                    onDelete: { showDeleteAlert = true },
+                    postRepository: postRepository
+                )
                 
-                Text("\(currentPost.comments.count) comments")
-                    .font(.caption)
-                    .foregroundColor(.gray)
+                Text(createAttributedContent())
+                    .font(.body)
+                    .environment(\.openURL, OpenURLAction { url in
+                        print("Opening URL: \(url)")
+                        return .systemAction
+                    })
                 
-                Text("\(currentPost.shareCount) shares")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
-            
-            PostInteractionButtonsView(
-                post: currentPost,
-                isLiked: isLiked,
-                onLike: handleLike,
-                onComment: { showCommentSheet = true },
-                onShare: { showShareSheet = true }
-            )
-            
-            PostCommentsView(
-                post: currentPost,
-                onViewAllComments: { showCommentSheet = true }
-            )
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 12)
-        .background(Color(.tertiarySystemGroupedBackground))
-        .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 1.3)
-        )
-        .padding(.horizontal, 2)
-        .alert("Delete Post", isPresented: $showDeleteAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
-                deletePost()
-            }
-        } message: {
-            Text("Are you sure you want to delete this post? This action cannot be undone.")
-        }
-        .sheet(isPresented: $showCommentSheet) {
-            CommentsSheetView(
-                post: currentPost,
-                showSheet: $showCommentSheet,
-                newComment: $newComment,
-                onComment: handleComment,
-                postRepository: postRepository,
-                onCommentAdded: { comment in
-                    currentPost.comments.append(comment)
-                    onCommentAdded?(comment)
-                },
-                onCommentDeleted: { commentId in
-                    currentPost.comments.removeAll { $0.id == commentId }
-                    onCommentDeleted?(commentId)
-                }
-            )
-        }
-        .sheet(isPresented: $showShareSheet) {
-            ShareSheet(items: [currentPost.content])
-        }
-        .sheet(isPresented: $showReportSheet) {
-            NavigationView {
-                Form {
-                    Section(header: Text("Report Reason")) {
-                        TextField("Enter reason for reporting", text: $reportReason)
+                if let imageURL = currentPost.imageURL, let url = URL(string: imageURL) {
+                    AsyncImage(url: url) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxHeight: 250)
+                            .clipped()
+                            .cornerRadius(10)
+                    } placeholder: {
+                        ZStack {
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.15))
+                                .frame(maxHeight: 250)
+                                .cornerRadius(10)
+                            ProgressView()
+                        }
                     }
+                    .padding(.bottom, 4)
+                    .allowsHitTesting(false)
+                    .overlay(
+                        Button(action: { withAnimation(.spring()) { showFullImage = true; animatePop = true } }) {
+                            Color.clear
+                        }
+                    )
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.spring()) {
+                            showFullImage = true
+                            animatePop = true
+                        }
+                    }
+                }
+                
+                HStack(spacing: 20) {
+                    Text("\(currentPost.likes.count) likes")
+                        .font(.caption)
+                        .foregroundColor(.gray)
                     
-                    Section {
-                        Button("Submit Report") {
-                            submitReport()
+                    Text("\(currentPost.comments.count) comments")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    
+                    Text("\(currentPost.shareCount) shares")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
+                PostInteractionButtonsView(
+                    post: currentPost,
+                    isLiked: isLiked,
+                    onLike: handleLike,
+                    onComment: { showCommentSheet = true },
+                    onShare: { showShareSheet = true }
+                )
+                
+                PostCommentsView(
+                    post: currentPost,
+                    onViewAllComments: { showCommentSheet = true }
+                )
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
+            .background(Color(.tertiarySystemGroupedBackground))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 1.3)
+            )
+            .padding(.horizontal, 2)
+            .alert("Delete Post", isPresented: $showDeleteAlert) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) {
+                    deletePost()
+                }
+            } message: {
+                Text("Are you sure you want to delete this post? This action cannot be undone.")
+            }
+            .sheet(isPresented: $showCommentSheet) {
+                CommentsSheetView(
+                    post: currentPost,
+                    showSheet: $showCommentSheet,
+                    newComment: $newComment,
+                    onComment: handleComment,
+                    postRepository: postRepository,
+                    onCommentAdded: { comment in
+                        currentPost.comments.append(comment)
+                        onCommentAdded?(comment)
+                    },
+                    onCommentDeleted: { commentId in
+                        currentPost.comments.removeAll { $0.id == commentId }
+                        onCommentDeleted?(commentId)
+                    }
+                )
+            }
+            .sheet(isPresented: $showShareSheet) {
+                ShareSheet(items: [currentPost.content])
+            }
+            .sheet(isPresented: $showReportSheet) {
+                NavigationView {
+                    Form {
+                        Section(header: Text("Report Reason")) {
+                            TextField("Enter reason for reporting", text: $reportReason)
                         }
-                        .foregroundColor(.red)
+                        
+                        Section {
+                            Button("Submit Report") {
+                                submitReport()
+                            }
+                            .foregroundColor(.red)
+                        }
                     }
-                }
-                .navigationTitle("Report Post")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button("Cancel") {
-                            showReportSheet = false
+                    .navigationTitle("Report Post")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("Cancel") {
+                                showReportSheet = false
+                            }
                         }
                     }
                 }
             }
-        }
-        .alert("Error", isPresented: $showError) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text(errorMessage)
-        }
-        .contextMenu {
-            if !isCurrentUser {
-                Button(action: {
-                    showReportSheet = true
-                }) {
-                    Label("Report Post", systemImage: "exclamationmark.triangle")
-                }
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
             }
-        }
-        .task {
-            if authorProfileImageURL == nil {
-                do {
-                    let user = try await userRepository.getUser(withId: currentPost.authorId)
-                    if let profileURL = user?.profileImageURL {
-                        authorProfileImageURL = profileURL
-                        ProfileImageCache.shared.setProfileImage(for: currentPost.authorId, url: profileURL)
+            .contextMenu {
+                if !isCurrentUser {
+                    Button(action: {
+                        showReportSheet = true
+                    }) {
+                        Label("Report Post", systemImage: "exclamationmark.triangle")
                     }
-                } catch {
-                    print("Error fetching user profile image: \(error.localizedDescription)")
                 }
             }
-        }
-        .onAppear {
-            postRepository.startSinglePostListener(postId: post.id ?? "") { updatedPost in
-                if let post = updatedPost {
-                    currentPost = post
+            .task {
+                if authorProfileImageURL == nil {
+                    do {
+                        let user = try await userRepository.getUser(withId: currentPost.authorId)
+                        if let profileURL = user?.profileImageURL {
+                            authorProfileImageURL = profileURL
+                            ProfileImageCache.shared.setProfileImage(for: currentPost.authorId, url: profileURL)
+                        }
+                    } catch {
+                        print("Error fetching user profile image: \(error.localizedDescription)")
+                    }
                 }
             }
-        }
-        .onDisappear {
-            postRepository.stopSinglePostListener(postId: post.id ?? "")
+            .onAppear {
+                postRepository.startSinglePostListener(postId: post.id ?? "") { updatedPost in
+                    if let post = updatedPost {
+                        currentPost = post
+                    }
+                }
+            }
+            .onDisappear {
+                postRepository.stopSinglePostListener(postId: post.id ?? "")
+            }
+            if showFullImage, let imageURL = currentPost.imageURL, let url = URL(string: imageURL) {
+                Color.black.opacity(0.7)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring()) { showFullImage = false; animatePop = false }
+                    }
+                ZStack(alignment: .topTrailing) {
+                    AsyncImage(url: url) { image in
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .scaleEffect(animatePop ? 1.0 : 0.7)
+                            .opacity(animatePop ? 1.0 : 0.0)
+                            .animation(.spring(), value: animatePop)
+                    } placeholder: {
+                        ProgressView()
+                    }
+                    Button(action: { withAnimation(.spring()) { showFullImage = false; animatePop = false } }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(.white)
+                            .padding()
+                    }
+                }
+                .transition(.scale)
+            }
         }
     }
     
