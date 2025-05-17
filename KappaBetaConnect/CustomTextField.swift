@@ -26,7 +26,7 @@ struct CustomTextField: UIViewRepresentable {
         textField.backgroundColor = .clear
         textField.borderStyle = .none
         textField.autocorrectionType = .no
-        textField.autocapitalizationType = .none
+        textField.autocapitalizationType = autoCapitalizeWords ? .words : .none
         
         // Configure the input accessory view to be empty
         textField.inputAssistantItem.leadingBarButtonGroups = []
@@ -54,7 +54,7 @@ struct CustomTextField: UIViewRepresentable {
                         let words = currentText.components(separatedBy: " ")
                         let capitalizedWords = words.map { word in
                             guard !word.isEmpty else { return word }
-                            return word.prefix(1).uppercased() + word.dropFirst().lowercased()
+                            return word.prefix(1).uppercased() + word.dropFirst()
                         }
                         textField.text = capitalizedWords.joined(separator: " ")
                     } else {
