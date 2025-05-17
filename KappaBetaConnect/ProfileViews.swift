@@ -673,6 +673,10 @@ struct ProfileView: View {
                                     Text("\(jobTitle) at \(company)")
                                         .font(.subheadline)
                                         .foregroundColor(.gray)
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(3)
+                                        .minimumScaleFactor(0.8)
+                                        .padding(.horizontal, 16)
                                 } else {
                                     Text("No job information available")
                                         .font(.subheadline)
