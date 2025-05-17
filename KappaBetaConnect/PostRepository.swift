@@ -161,24 +161,17 @@ class PostRepository: ObservableObject {
     
     func toggleLike(postId: String, userId: String) async throws {
         let postRef = db.collection("posts").document(postId)
+        let postDoc = try await postRef.getDocument()
+        guard var post = try? postDoc.data(as: Post.self) else { return }
         
-        try await db.runTransaction { transaction, errorPointer in
-            do {
-                let postDoc = try transaction.getDocument(postRef)
-                guard var post = try? postDoc.data(as: Post.self) else { return nil }
-                
-                if post.likes.contains(userId) {
-                    post.likes.removeAll { $0 == userId }
-                } else {
-                    post.likes.append(userId)
-                }
-                
-                try transaction.setData(from: post, forDocument: postRef)
-                return nil
-            } catch {
-                errorPointer?.pointee = error as NSError
-                return nil
-            }
+        if post.likes.contains(userId) {
+            try await postRef.updateData([
+                "likes": FieldValue.arrayRemove([userId])
+            ])
+        } else {
+            try await postRef.updateData([
+                "likes": FieldValue.arrayUnion([userId])
+            ])
         }
     }
     
@@ -194,40 +187,25 @@ class PostRepository: ObservableObject {
         )
         
         let postRef = db.collection("posts").document(postId)
-        
-        try await db.runTransaction { transaction, errorPointer in
-            do {
-                let postDoc = try transaction.getDocument(postRef)
-                guard var post = try? postDoc.data(as: Post.self) else { return nil }
-                
-                post.comments.append(comment)
-                try transaction.setData(from: post, forDocument: postRef)
-                return nil
-            } catch {
-                errorPointer?.pointee = error as NSError
-                return nil
-            }
-        }
+        try await postRef.updateData([
+            "comments": FieldValue.arrayUnion([try Firestore.Encoder().encode(comment)])
+        ])
         
         return comment
     }
     
     func deleteComment(postId: String, commentId: String) async throws {
         let postRef = db.collection("posts").document(postId)
+        let postDoc = try await postRef.getDocument()
+        guard var post = try? postDoc.data(as: Post.self) else { return }
         
-        try await db.runTransaction { transaction, errorPointer in
-            do {
-                let postDoc = try transaction.getDocument(postRef)
-                guard var post = try? postDoc.data(as: Post.self) else { return nil }
-                
-                post.comments.removeAll { $0.id == commentId }
-                try transaction.setData(from: post, forDocument: postRef)
-                return nil
-            } catch {
-                errorPointer?.pointee = error as NSError
-                return nil
-            }
-        }
+        // Remove the comment from the array
+        post.comments.removeAll { $0.id == commentId }
+        
+        // Update the entire comments array
+        try await postRef.updateData([
+            "comments": post.comments.map { try Firestore.Encoder().encode($0) }
+        ])
     }
     
     func incrementShareCount(postId: String) async throws {

@@ -61,8 +61,8 @@ struct SignUpView: View {
                                 Text("First Name *")
                                     .foregroundColor(.red)
                                     .font(.caption)
-                                CustomTextField(text: $userData.firstName, placeholder: "First Name", keyboardType: .default, textContentType: .givenName, allowWhitespace: false, autoCapitalizeFirstLetter: true)
-                                    .customTextField()
+                            CustomTextField(text: $userData.firstName, placeholder: "First Name", keyboardType: .default, textContentType: .givenName, allowWhitespace: false, autoCapitalizeFirstLetter: true)
+                                .customTextField()
                             }
                         }
                         
@@ -71,8 +71,8 @@ struct SignUpView: View {
                                 Text("Last Name *")
                                     .foregroundColor(.red)
                                     .font(.caption)
-                                CustomTextField(text: $userData.lastName, placeholder: "Last Name", keyboardType: .default, textContentType: .familyName, allowWhitespace: false, autoCapitalizeFirstLetter: true)
-                                    .customTextField()
+                            CustomTextField(text: $userData.lastName, placeholder: "Last Name", keyboardType: .default, textContentType: .familyName, allowWhitespace: false, autoCapitalizeFirstLetter: true)
+                                .customTextField()
                             }
                             
                             // Suffix Picker
@@ -183,8 +183,8 @@ struct SignUpView: View {
                             Text("Email *")
                                 .foregroundColor(.red)
                                 .font(.caption)
-                            CustomTextField(text: $userData.email, placeholder: "Email", keyboardType: .emailAddress, textContentType: .emailAddress)
-                                .customTextField()
+                        CustomTextField(text: $userData.email, placeholder: "Email", keyboardType: .emailAddress, textContentType: .emailAddress)
+                            .customTextField()
                         }
                         
                         CustomTextField(text: $userData.phoneNumber, placeholder: "Phone Number (Optional)", keyboardType: .phonePad, textContentType: .telephoneNumber)
