@@ -578,6 +578,9 @@ struct CommentsSheetView: View {
     @Binding var showSheet: Bool
     @Binding var newComment: String
     let onComment: () -> Void
+    let postRepository: PostRepository
+    var onCommentAdded: ((Comment) -> Void)? = nil
+    var onCommentDeleted: ((String) -> Void)? = nil // commentId
     @EnvironmentObject private var authManager: AuthManager
     @StateObject private var userRepository = UserRepository()
     @State private var showDeleteAlert = false
@@ -591,16 +594,17 @@ struct CommentsSheetView: View {
     @State private var mentionStartIndex: Int?
     @State private var authorProfileImageURL: String?
     @State private var currentPost: Post
-    let postRepository: PostRepository
     @State private var showProfanityAlert = false
     @State private var lastCheckedComment = ""
     
-    init(post: Post, showSheet: Binding<Bool>, newComment: Binding<String>, onComment: @escaping () -> Void, postRepository: PostRepository) {
+    init(post: Post, showSheet: Binding<Bool>, newComment: Binding<String>, onComment: @escaping () -> Void, postRepository: PostRepository, onCommentAdded: ((Comment) -> Void)? = nil, onCommentDeleted: ((String) -> Void)? = nil) {
         self.post = post
         self._showSheet = showSheet
         self._newComment = newComment
         self.onComment = onComment
         self.postRepository = postRepository
+        self.onCommentAdded = onCommentAdded
+        self.onCommentDeleted = onCommentDeleted
         _currentPost = State(initialValue: post)
     }
     
@@ -705,7 +709,7 @@ struct CommentsSheetView: View {
         }
         Task {
             do {
-                try await postRepository.addComment(
+                let comment = try await postRepository.addComment(
                     postId: post.id ?? "",
                     content: commentContent,
                     authorId: currentUser.id ?? "",
@@ -713,6 +717,7 @@ struct CommentsSheetView: View {
                     mentions: mentions
                 )
                 await MainActor.run {
+                    onCommentAdded?(comment)
                     newComment = ""
                     showSheet = false
                 }
@@ -800,7 +805,7 @@ struct CommentsSheetView: View {
                                     Text(comment.authorName)
                                         .font(.headline)
                                     Spacer()
-                                    Text(comment.timestamp.formatted(date: .abbreviated, time: .shortened))
+                                    Text(comment.timestamp.timeAgoDisplay())
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                 }
@@ -971,6 +976,9 @@ struct CommentsSheetView: View {
         Task {
             do {
                 try await postRepository.deleteComment(postId: post.id ?? "", commentId: comment.id ?? "")
+                await MainActor.run {
+                    onCommentDeleted?(comment.id ?? "")
+                }
             } catch {
                 showError = true
                 errorMessage = "Failed to delete comment: \(error.localizedDescription)"
@@ -983,6 +991,8 @@ struct CommentsSheetView: View {
 struct PostCard: View {
     let post: Post
     let postRepository: PostRepository
+    var onCommentAdded: ((Comment) -> Void)? = nil
+    var onCommentDeleted: ((String) -> Void)? = nil // commentId
     @StateObject private var userRepository = UserRepository()
     @StateObject private var contentModeration = ContentModerationService()
     @EnvironmentObject private var authManager: AuthManager
@@ -998,9 +1008,11 @@ struct PostCard: View {
     @State private var showReportSheet = false
     @State private var reportReason = ""
     
-    init(post: Post, postRepository: PostRepository) {
+    init(post: Post, postRepository: PostRepository, onCommentAdded: ((Comment) -> Void)? = nil, onCommentDeleted: ((String) -> Void)? = nil) {
         self.post = post
         self.postRepository = postRepository
+        self.onCommentAdded = onCommentAdded
+        self.onCommentDeleted = onCommentDeleted
         _currentPost = State(initialValue: post)
         
         // Initialize with cached profile image URL if available
@@ -1100,7 +1112,15 @@ struct PostCard: View {
                 showSheet: $showCommentSheet,
                 newComment: $newComment,
                 onComment: handleComment,
-                postRepository: postRepository
+                postRepository: postRepository,
+                onCommentAdded: { comment in
+                    currentPost.comments.append(comment)
+                    onCommentAdded?(comment)
+                },
+                onCommentDeleted: { commentId in
+                    currentPost.comments.removeAll { $0.id == commentId }
+                    onCommentDeleted?(commentId)
+                }
             )
         }
         .sheet(isPresented: $showShareSheet) {
@@ -1226,7 +1246,7 @@ struct PostCard: View {
         
         Task {
             do {
-                try await postRepository.addComment(
+                let comment = try await postRepository.addComment(
                     postId: post.id ?? "",
                     content: commentContent,
                     authorId: currentUser.id ?? "",
@@ -1235,6 +1255,7 @@ struct PostCard: View {
                 )
                 
                 await MainActor.run {
+                    onCommentAdded?(comment)
                     newComment = ""
                     showCommentSheet = false
                 }
