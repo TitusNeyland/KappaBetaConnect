@@ -38,8 +38,12 @@ exports.sendNewUserNotification = functions.firestore
                             },
                             sound: 'default',
                             badge: 1,
+                            'mutable-content': 1,
                             'content-available': 1
                         }
+                    },
+                    headers: {
+                        'apns-priority': '10'
                     }
                 }
             };

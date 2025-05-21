@@ -98,6 +98,8 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        print("📱 Will present notification: \(notification.request.content.title)")
+        print("📱 Notification payload: \(notification.request.content.userInfo)")
         completionHandler([.banner, .sound, .badge])
     }
     
@@ -106,6 +108,8 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        print("📱 Did receive notification response: \(response.notification.request.content.title)")
+        print("📱 Notification payload: \(response.notification.request.content.userInfo)")
         let userInfo = response.notification.request.content.userInfo
         if let userId = userInfo["userId"] as? String {
             DispatchQueue.main.async {
