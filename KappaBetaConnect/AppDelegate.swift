@@ -1,6 +1,7 @@
 import UIKit
 import Firebase
 import FirebaseMessaging
+import FirebaseAuth
 
 class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
     func application(_ application: UIApplication,
@@ -13,20 +14,34 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
         // Register for remote notifications
         UNUserNotificationCenter.current().delegate = NotificationService.shared
         
-        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-        UNUserNotificationCenter.current().requestAuthorization(
-            options: authOptions,
-            completionHandler: { _, _ in }
-        )
-        
-        application.registerForRemoteNotifications()
+        // Only register for remote notifications if already authorized
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            if settings.authorizationStatus == .authorized {
+                DispatchQueue.main.async {
+                    application.registerForRemoteNotifications()
+                }
+            }
+        }
         
         return true
     }
     
     func application(_ application: UIApplication,
                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        print("📱 Did register for remote notifications with token: \(deviceToken.map { String(format: "%02.2hhx", $0) }.joined())")
         Messaging.messaging().apnsToken = deviceToken
+    }
+    
+    func application(_ application: UIApplication,
+                    didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("📱 Failed to register for remote notifications: \(error.localizedDescription)")
+    }
+    
+    func application(_ application: UIApplication,
+                    didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+                    fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        print("📱 Did receive remote notification: \(userInfo)")
+        completionHandler(.newData)
     }
     
     // MARK: - MessagingDelegate
@@ -48,6 +63,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
             } else {
                 print("Subscribed to 'allUsers' topic")
             }
+        }
+        
+        // Save FCM token to Firestore user document
+        if let userId = Auth.auth().currentUser?.uid, let token = fcmToken {
+            let db = Firestore.firestore()
+            db.collection("users").document(userId).setData(["fcmToken": token], merge: true)
         }
     }
 } 
