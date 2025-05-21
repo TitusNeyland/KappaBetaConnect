@@ -13,13 +13,14 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
         // Register for remote notifications
         UNUserNotificationCenter.current().delegate = NotificationService.shared
         
-        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-        UNUserNotificationCenter.current().requestAuthorization(
-            options: authOptions,
-            completionHandler: { _, _ in }
-        )
-        
-        application.registerForRemoteNotifications()
+        // Only register for remote notifications if already authorized
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            if settings.authorizationStatus == .authorized {
+                DispatchQueue.main.async {
+                    application.registerForRemoteNotifications()
+                }
+            }
+        }
         
         return true
     }

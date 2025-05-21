@@ -13,13 +13,48 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
     }
     
     func requestPermission() async throws {
-        let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])
-        if granted {
+        print("Checking notification settings...")
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        print("Current authorization status: \(settings.authorizationStatus.rawValue)")
+        
+        switch settings.authorizationStatus {
+        case .notDetermined:
+            print("Requesting notification permission...")
+            let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])
+            print("Permission request result: \(granted)")
+            
+            if granted {
+                print("Permission granted, registering for remote notifications...")
+                await MainActor.run {
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+                print("Successfully registered for remote notifications")
+            } else {
+                print("Permission denied by user")
+                throw NSError(domain: "NotificationService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Notification permission denied by user"])
+            }
+        case .authorized:
+            print("Notifications already authorized, registering for remote notifications...")
             await MainActor.run {
                 UIApplication.shared.registerForRemoteNotifications()
             }
-        } else {
-            throw NSError(domain: "NotificationService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Notification permission denied"])
+            print("Successfully registered for remote notifications")
+        case .denied:
+            print("Notifications previously denied")
+            throw NSError(domain: "NotificationService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Notification permission previously denied"])
+        case .provisional:
+            print("Provisional authorization granted")
+            await MainActor.run {
+                UIApplication.shared.registerForRemoteNotifications()
+            }
+        case .ephemeral:
+            print("Ephemeral authorization granted")
+            await MainActor.run {
+                UIApplication.shared.registerForRemoteNotifications()
+            }
+        @unknown default:
+            print("Unknown authorization status")
+            throw NSError(domain: "NotificationService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unknown notification authorization status"])
         }
     }
     
