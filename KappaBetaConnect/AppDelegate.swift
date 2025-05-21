@@ -1,6 +1,7 @@
 import UIKit
 import Firebase
 import FirebaseMessaging
+import FirebaseAuth
 
 class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
     func application(_ application: UIApplication,
@@ -62,6 +63,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
             } else {
                 print("Subscribed to 'allUsers' topic")
             }
+        }
+        
+        // Save FCM token to Firestore user document
+        if let userId = Auth.auth().currentUser?.uid, let token = fcmToken {
+            let db = Firestore.firestore()
+            db.collection("users").document(userId).setData(["fcmToken": token], merge: true)
         }
     }
 } 
