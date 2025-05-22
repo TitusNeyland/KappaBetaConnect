@@ -168,23 +168,29 @@ struct InitiationDetailsView: View {
                             .stroke(Color(.systemGray4), lineWidth: 1)
                     )
                     
-                    NavigationLink(destination: SecretPasswordView(userData: userData), isActive: $navigateToSecretPassword) {
-                        Button(action: {
-                            Task {
-                                await checkLineMember()
-                            }
-                        }) {
-                            Text("Continue")
-                                .foregroundColor(.white)
-                                .font(.headline)
+                    // Continue Button
+                    Button(action: {
+                        Task {
+                            await checkLineMember()
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 55)
-                        .background(Color.black)
-                        .cornerRadius(10)
-                        .disabled(isLoading)
+                    }) {
+                        Text("Continue")
+                            .foregroundColor(.white)
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 55)
+                            .background(Color.black)
+                            .cornerRadius(10)
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .contentShape(Rectangle())
+                    .disabled(isLoading)
+                    .padding(.horizontal, 0)
+                    .padding(.top, 10)
+
+                    NavigationLink(destination: SecretPasswordView(userData: userData), isActive: $navigateToSecretPassword) {
+                        EmptyView()
+                    }
+                    .hidden()
                 }
                 .padding(.horizontal, 30)
             }

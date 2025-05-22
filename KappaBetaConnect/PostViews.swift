@@ -1214,7 +1214,10 @@ struct PostCard: View {
             } message: {
                 Text("Are you sure you want to delete this post? This action cannot be undone.")
             }
-            .sheet(isPresented: $showCommentSheet) {
+            .sheet(isPresented: $showCommentSheet, onDismiss: {
+                // Reset comment state when sheet is dismissed
+                newComment = ""
+            }) {
                 CommentsSheetView(
                     post: currentPost,
                     showSheet: $showCommentSheet,
@@ -1466,4 +1469,65 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
     
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+struct PostDetailSheet: View {
+    let postId: String
+    @StateObject private var postRepository = PostRepository()
+    @State private var post: Post? = nil
+    @State private var isLoading = true
+    @State private var errorMessage: String? = nil
+
+    var body: some View {
+        Group {
+            if isLoading {
+                ProgressView("Loading post...")
+                    .padding()
+            } else if let post = post {
+                ScrollView {
+                    PostCard(post: post, postRepository: postRepository)
+                }
+                .padding()
+            } else if let errorMessage = errorMessage {
+                Text(errorMessage)
+                    .foregroundColor(.red)
+                    .padding()
+            } else {
+                Text("Post not found.")
+                    .foregroundColor(.gray)
+                    .padding()
+            }
+        }
+        .onAppear {
+            fetchPost()
+        }
+    }
+
+    private func fetchPost() {
+        isLoading = true
+        errorMessage = nil
+        Task {
+            do {
+                let document = try await postRepository.db.collection("posts").document(postId).getDocument()
+                if let fetchedPost = try? document.data(as: Post.self) {
+                    var postWithId = fetchedPost
+                    postWithId.id = document.documentID
+                    await MainActor.run {
+                        self.post = postWithId
+                        self.isLoading = false
+                    }
+                } else {
+                    await MainActor.run {
+                        self.errorMessage = "Failed to decode post."
+                        self.isLoading = false
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = error.localizedDescription
+                    self.isLoading = false
+                }
+            }
+        }
+    }
 } 
