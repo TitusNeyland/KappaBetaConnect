@@ -142,7 +142,7 @@ export const sendCommentNotification = onDocumentUpdated("posts/{postId}", async
     // Get the commenter's name
     const commenterName = newComment.authorName || 'Someone';
 
-    // Send notification
+    // Send notification to post author
     const message = {
         notification: {
             title: '💬 New Comment!',
@@ -171,6 +171,48 @@ export const sendCommentNotification = onDocumentUpdated("posts/{postId}", async
     const { getMessaging } = await import("firebase-admin/messaging");
     const messaging = getMessaging();
     await messaging.send(message);
+
+    // --- Mention Notification Logic ---
+    if (Array.isArray(newComment.mentions)) {
+        for (const mention of newComment.mentions) {
+            const mentionedUserId = mention.userId;
+            // Don't notify the commenter or the post author again
+            if (mentionedUserId === newComment.authorId || mentionedUserId === after.authorId) continue;
+            const mentionedUserSnap = await db.collection('users').doc(mentionedUserId).get();
+            const mentionedUser = mentionedUserSnap.data();
+            if (!mentionedUser || !mentionedUser.fcmToken) continue;
+
+            const mentionMessage = {
+                notification: {
+                    title: '🔔 You were mentioned!',
+                    body: `${commenterName} mentioned you in a comment: "${newComment.content}"`,
+                },
+                data: {
+                    type: 'mention',
+                    postId: event.params.postId,
+                },
+                token: mentionedUser.fcmToken,
+                apns: {
+                    payload: {
+                        aps: {
+                            alert: {
+                                title: '🔔 You were mentioned!',
+                                body: `${commenterName} mentioned you in a comment: "${newComment.content}"`
+                            },
+                            sound: 'default',
+                            badge: 1,
+                            'mutable-content': 1,
+                            'content-available': 1
+                        }
+                    },
+                    headers: {
+                        'apns-priority': '10'
+                    }
+                }
+            };
+            await messaging.send(mentionMessage);
+        }
+    }
 });
 
 export const sendNewPostNotification = onDocumentCreated("posts/{postId}", async (event) => {
@@ -184,9 +226,8 @@ export const sendNewPostNotification = onDocumentCreated("posts/{postId}", async
     // Get all users except the author
     const usersSnap = await db.collection('users').get();
     const tokens = usersSnap.docs
-        .map(doc => doc.data())
-        .filter(user => user.fcmToken && user.id !== authorId)
-        .map(user => user.fcmToken);
+        .filter(doc => doc.id !== authorId && doc.data().fcmToken)
+        .map(doc => doc.data().fcmToken);
 
     if (tokens.length === 0) return;
 
@@ -219,4 +260,82 @@ export const sendNewPostNotification = onDocumentCreated("posts/{postId}", async
     const { getMessaging } = await import("firebase-admin/messaging");
     const messaging = getMessaging();
     await messaging.sendEachForMulticast(message);
+});
+
+export const sendNewEventNotification = onDocumentCreated("events/{eventId}", async (event) => {
+    const newEvent = event.data.data();
+    const eventId = event.params.eventId;
+
+    console.log('=== New Event Document Created ===');
+    console.log('Event ID:', eventId);
+    console.log('Event Data:', newEvent);
+
+    if (!newEvent.title) {
+        console.log('❌ Missing title field. Skipping notification.');
+        return;
+    }
+
+    try {
+        // Get the creator's name
+        const creatorDoc = await db.collection('users').doc(newEvent.createdBy).get();
+        const creator = creatorDoc.data();
+        const creatorName = creator ? `${creator.firstName} ${creator.lastName}` : 'Someone';
+
+        // Format the date
+        const eventDate = newEvent.date.toDate(); // Convert Firestore Timestamp to Date
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric'
+        });
+        const formattedDate = formatter.format(eventDate);
+
+        // Get all users except the creator
+        const usersSnap = await db.collection('users').get();
+        const tokens = usersSnap.docs
+            .filter(doc => doc.id !== newEvent.createdBy && doc.data().fcmToken)
+            .map(doc => doc.data().fcmToken);
+
+        if (tokens.length === 0) return;
+
+        const message = {
+            notification: {
+                title: '📅 New Event: ' + newEvent.title,
+                body: `${creatorName} created a new event for ${formattedDate} at ${newEvent.location}`,
+            },
+            data: {
+                type: 'newEvent',
+                eventId: eventId,
+            },
+            tokens: tokens,
+            apns: {
+                payload: {
+                    aps: {
+                        alert: {
+                            title: '📅 New Event: ' + newEvent.title,
+                            body: `${creatorName} created a new event for ${formattedDate} at ${newEvent.location}`
+                        },
+                        sound: 'default',
+                        badge: 1,
+                        'mutable-content': 1,
+                        'content-available': 1
+                    }
+                },
+                headers: {
+                    'apns-priority': '10'
+                }
+            }
+        };
+
+        console.log('Message payload:', JSON.stringify(message, null, 2));
+        const { getMessaging } = await import("firebase-admin/messaging");
+        const messaging = getMessaging();
+        const response = await messaging.sendEachForMulticast(message);
+        console.log('✅ Event notification sent successfully:', response);
+    } catch (error) {
+        console.error('❌ Error sending event notification:', error);
+        console.error('Error stack:', error.stack);
+    }
 }); 

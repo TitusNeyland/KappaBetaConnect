@@ -7,6 +7,8 @@ struct MainTabView: View {
     @EnvironmentObject private var userRepository: UserRepository
     @StateObject private var notificationService = NotificationService.shared
     @State private var showUserProfile = false
+    @State private var showEventDetails = false
+    @State private var showPostDetails = false
     
     let tabs = ["Home", "Feed", "Directory", "Events", "Profile"]
     
@@ -98,12 +100,41 @@ struct MainTabView: View {
                     showUserProfile = true
                 }
             }
+            .onChange(of: notificationService.selectedEventId) { eventId in
+                if let eventId = eventId {
+                    selectedTab = 3 // Switch to Events tab
+                    showEventDetails = true
+                }
+            }
+            .onChange(of: notificationService.selectedPostId) { postId in
+                if let postId = postId {
+                    selectedTab = 1 // Switch to Feed tab
+                    showPostDetails = true
+                }
+            }
             .sheet(isPresented: $showUserProfile) {
                 if let userId = notificationService.selectedUserId {
                     ProfileView(userId: userId)
                         .environmentObject(authManager)
                         .onDisappear {
                             notificationService.selectedUserId = nil
+                        }
+                }
+            }
+            .sheet(isPresented: $showEventDetails) {
+                if let eventId = notificationService.selectedEventId {
+                    EventDetailView(userRepository: userRepository, eventRepository: EventRepository(), eventId: eventId)
+                        .onDisappear {
+                            notificationService.selectedEventId = nil
+                        }
+                }
+            }
+            .sheet(isPresented: $showPostDetails) {
+                if let postId = notificationService.selectedPostId {
+                    PostDetailSheet(postId: postId)
+                        .environmentObject(authManager)
+                        .onDisappear {
+                            notificationService.selectedPostId = nil
                         }
                 }
             }

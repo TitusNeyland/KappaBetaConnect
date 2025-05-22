@@ -6,6 +6,8 @@ import SwiftUI
 class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationService()
     @Published var selectedUserId: String?
+    @Published var selectedEventId: String?
+    @Published var selectedPostId: String?
     
     override private init() {
         super.init()
@@ -111,11 +113,38 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
         print("📱 Did receive notification response: \(response.notification.request.content.title)")
         print("📱 Notification payload: \(response.notification.request.content.userInfo)")
         let userInfo = response.notification.request.content.userInfo
-        if let userId = userInfo["userId"] as? String {
+        
+        // Handle different notification types
+        if let type = userInfo["type"] as? String {
+            switch type {
+            case "newEvent":
+                if let eventId = userInfo["eventId"] as? String {
+                    DispatchQueue.main.async {
+                        self.selectedEventId = eventId
+                    }
+                }
+            case "newMember":
+                if let userId = userInfo["userId"] as? String {
+                    DispatchQueue.main.async {
+                        self.selectedUserId = userId
+                    }
+                }
+            case "newPost", "newLike", "newComment", "mention":
+                if let postId = userInfo["postId"] as? String {
+                    DispatchQueue.main.async {
+                        self.selectedPostId = postId
+                    }
+                }
+            default:
+                break
+            }
+        } else if let userId = userInfo["userId"] as? String {
+            // Handle legacy notifications (birthday notifications)
             DispatchQueue.main.async {
                 self.selectedUserId = userId
             }
         }
+        
         completionHandler()
     }
 } 

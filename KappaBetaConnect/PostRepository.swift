@@ -3,7 +3,7 @@ import FirebaseFirestore
 import FirebaseStorage
 
 class PostRepository: ObservableObject {
-    private let db = Firestore.firestore()
+    let db = Firestore.firestore()
     private let storage = Storage.storage()
     @Published var posts: [Post] = []
     private var postsListener: ListenerRegistration?
