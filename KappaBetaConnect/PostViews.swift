@@ -338,10 +338,27 @@ struct PasteablePostEditor: UIViewRepresentable {
         
         // MARK: - Image Paste
         func textPasteConfigurationSupporting(_ textPasteConfigurationSupporting: UITextPasteConfigurationSupporting, transform item: UITextPasteItem) {
-            item.itemProvider.loadObject(ofClass: UIImage.self) { (object, error) in
+            // First try to load as image
+            item.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] (object, error) in
                 if let image = object as? UIImage {
                     DispatchQueue.main.async {
-                        self.parent.pastedImage = image
+                        self?.parent.pastedImage = image
+                    }
+                } else {
+                    // If not an image, try to load as text
+                    item.itemProvider.loadObject(ofClass: String.self) { [weak self] (object, error) in
+                        if let text = object as? String {
+                            DispatchQueue.main.async {
+                                if let textView = textPasteConfigurationSupporting as? UITextView {
+                                    let currentText = textView.text ?? ""
+                                    let selectedRange = textView.selectedRange
+                                    let nsText = currentText as NSString
+                                    let newText = nsText.replacingCharacters(in: selectedRange, with: text)
+                                    textView.text = newText
+                                    self?.parent.text = newText
+                                }
+                            }
+                        }
                     }
                 }
             }

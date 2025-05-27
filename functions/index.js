@@ -172,6 +172,50 @@ export const sendCommentNotification = onDocumentUpdated("posts/{postId}", async
     const messaging = getMessaging();
     await messaging.send(message);
 
+    // Send notifications to users who previously commented on this post
+    const previousCommenters = new Set(before.comments.map(c => c.authorId));
+    // Remove the post author and the new commenter from the set
+    previousCommenters.delete(after.authorId);
+    previousCommenters.delete(newComment.authorId);
+
+    // Get FCM tokens for all previous commenters
+    const commenterSnaps = await Promise.all(
+        Array.from(previousCommenters).map(id => db.collection('users').doc(id).get())
+    );
+
+    const commenterTokens = commenterSnaps
+        .map(snap => snap.data())
+        .filter(user => user && user.fcmToken)
+        .map(user => user.fcmToken);
+
+    if (commenterTokens.length > 0) {
+        const commenterMessage = {
+            notification: {
+                title: '💬 New Comment!',
+                body: `${commenterName} commented on the same post.`,
+            },
+            tokens: commenterTokens,
+            apns: {
+                payload: {
+                    aps: {
+                        alert: {
+                            title: '💬 New Comment!',
+                            body: `${commenterName} commented on the same post.`
+                        },
+                        sound: 'default',
+                        badge: 1,
+                        'mutable-content': 1,
+                        'content-available': 1
+                    }
+                },
+                headers: {
+                    'apns-priority': '10'
+                }
+            }
+        };
+        await messaging.sendEachForMulticast(commenterMessage);
+    }
+
     // --- Mention Notification Logic ---
     if (Array.isArray(newComment.mentions)) {
         for (const mention of newComment.mentions) {
