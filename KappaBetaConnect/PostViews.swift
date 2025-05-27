@@ -919,10 +919,17 @@ struct CommentsSheetView: View {
                     
                     // Comment input field with user search overlay
                     ZStack(alignment: .top) {
-                        HStack {
-                            TextField("Add a comment...", text: $newComment)
-                                .customTextField()
-                                .onChange(of: newComment) { handleTextChange($0) }
+                        HStack(alignment: .center, spacing: 8) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1.2)
+                                    .background(RoundedRectangle(cornerRadius: 8).fill(Color(.systemGray6)))
+                                CustomTextEditor(text: $newComment, placeholder: "Add a comment...")
+                                    .padding(8)
+                                    .frame(minHeight: 40, maxHeight: 100, alignment: .center)
+                                    .onChange(of: newComment) { handleTextChange($0) }
+                            }
+                            .frame(minHeight: 40, maxHeight: 100)
                             
                             Button(action: handleComment) {
                                 Text("Post")
@@ -930,6 +937,8 @@ struct CommentsSheetView: View {
                             }
                             .disabled(newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                             .foregroundColor(newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray : .primary)
+                            .padding(.leading, 4)
+                            .frame(minHeight: 40)
                         }
                         .padding()
                         .background(Color(.systemBackground))
@@ -1079,9 +1088,16 @@ struct CommentsSheetView: View {
 // Add this before the PostCard struct
 class UserCacheWrapper {
     let user: User
+    let timestamp: Date
     
     init(user: User) {
         self.user = user
+        self.timestamp = Date()
+    }
+    
+    var isExpired: Bool {
+        // Cache expires after 5 minutes
+        return Date().timeIntervalSince(timestamp) > 300
     }
 }
 
@@ -1555,7 +1571,11 @@ struct PostCard: View {
         
         for userId in currentPost.likes {
             if let cachedWrapper = userCache.object(forKey: userId as NSString) {
-                cachedUsers.append(cachedWrapper.user)
+                if !cachedWrapper.isExpired {
+                    cachedUsers.append(cachedWrapper.user)
+                } else {
+                    userIdsToFetch.append(userId)
+                }
             } else {
                 userIdsToFetch.append(userId)
             }
