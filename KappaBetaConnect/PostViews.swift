@@ -1076,7 +1076,15 @@ struct CommentsSheetView: View {
     }
 }
 
-// PostCard View
+// Add this before the PostCard struct
+class UserCacheWrapper {
+    let user: User
+    
+    init(user: User) {
+        self.user = user
+    }
+}
+
 struct PostCard: View {
     let post: Post
     let postRepository: PostRepository
@@ -1098,6 +1106,10 @@ struct PostCard: View {
     @State private var reportReason = ""
     @State private var showFullImage = false
     @State private var animatePop = false
+    @State private var showLikesSheet = false
+    @State private var likedUsers: [User] = []
+    @State private var isLoadingLikes = false
+    private let userCache = NSCache<NSString, UserCacheWrapper>()
     
     init(post: Post, postRepository: PostRepository, onCommentAdded: ((Comment) -> Void)? = nil, onCommentDeleted: ((String) -> Void)? = nil) {
         self.post = post
@@ -1188,9 +1200,16 @@ struct PostCard: View {
                 }
                 
                 HStack(spacing: 20) {
-                    Text("\(currentPost.likes.count) likes")
-                        .font(.caption)
-                        .foregroundColor(.gray)
+                    Button(action: {
+                        Task {
+                            await loadLikedUsers()
+                            showLikesSheet = true
+                        }
+                    }) {
+                        Text("\(currentPost.likes.count) likes")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
                     
                     Text("\(currentPost.comments.count) comments")
                         .font(.caption)
@@ -1274,6 +1293,57 @@ struct PostCard: View {
                         ToolbarItem(placement: .navigationBarLeading) {
                             Button("Cancel") {
                                 showReportSheet = false
+                            }
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $showLikesSheet) {
+                NavigationView {
+                    ZStack {
+                        if isLoadingLikes {
+                            ProgressView("Loading likes...")
+                        } else if likedUsers.isEmpty {
+                            Text("No likes yet")
+                                .foregroundColor(.gray)
+                        } else {
+                            List(likedUsers) { user in
+                                HStack {
+                                    if let profileImageURL = user.profileImageURL,
+                                       let url = URL(string: profileImageURL) {
+                                        AsyncImage(url: url) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                        } placeholder: {
+                                            ProgressView()
+                                        }
+                                        .frame(width: 40, height: 40)
+                                        .clipShape(Circle())
+                                    } else {
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(width: 40, height: 40)
+                                            .overlay(
+                                                Image(systemName: "person.fill")
+                                                    .foregroundColor(.gray)
+                                            )
+                                    }
+                                    
+                                    VStack(alignment: .leading) {
+                                        Text("\(user.firstName) \(user.lastName)")
+                                            .font(.headline)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .navigationTitle("Likes")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") {
+                                showLikesSheet = false
                             }
                         }
                     }
@@ -1472,6 +1542,79 @@ struct PostCard: View {
                     errorMessage = "Failed to submit report: \(error.localizedDescription)"
                 }
             }
+        }
+    }
+    
+    private func loadLikedUsers() async {
+        isLoadingLikes = true
+        likedUsers = []
+        
+        // First check cache for any users
+        var cachedUsers: [User] = []
+        var userIdsToFetch: [String] = []
+        
+        for userId in currentPost.likes {
+            if let cachedWrapper = userCache.object(forKey: userId as NSString) {
+                cachedUsers.append(cachedWrapper.user)
+            } else {
+                userIdsToFetch.append(userId)
+            }
+        }
+        
+        // Update UI with cached users immediately
+        if !cachedUsers.isEmpty {
+            await MainActor.run {
+                likedUsers = cachedUsers
+            }
+        }
+        
+        // If we have users to fetch, do it in batches
+        if !userIdsToFetch.isEmpty {
+            do {
+                // Fetch users in batches of 10
+                let batchSize = 10
+                for i in stride(from: 0, to: userIdsToFetch.count, by: batchSize) {
+                    let endIndex = min(i + batchSize, userIdsToFetch.count)
+                    let batchUserIds = Array(userIdsToFetch[i..<endIndex])
+                    
+                    // Fetch batch of users
+                    let batchUsers = try await withThrowingTaskGroup(of: User?.self) { group in
+                        for userId in batchUserIds {
+                            group.addTask {
+                                try? await userRepository.getUser(withId: userId)
+                            }
+                        }
+                        
+                        var users: [User] = []
+                        for try await user in group {
+                            if let user = user {
+                                users.append(user)
+                            }
+                        }
+                        return users
+                    }
+                    
+                    // Cache and update UI with batch results
+                    for user in batchUsers {
+                        if let userId = user.id {
+                            userCache.setObject(UserCacheWrapper(user: user), forKey: userId as NSString)
+                        }
+                    }
+                    
+                    await MainActor.run {
+                        likedUsers.append(contentsOf: batchUsers)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    showError = true
+                    errorMessage = "Failed to load likes: \(error.localizedDescription)"
+                }
+            }
+        }
+        
+        await MainActor.run {
+            isLoadingLikes = false
         }
     }
 }
