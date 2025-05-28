@@ -248,6 +248,12 @@ class PostRepository: ObservableObject {
         try await db.collection("posts").document(postId).delete()
         // The listener will handle updating the posts array
     }
+    
+    // Update post content
+    func updatePostContent(postId: String, newContent: String) async throws {
+        let postRef = db.collection("posts").document(postId)
+        try await postRef.updateData(["content": newContent])
+    }
 }
 
 // Helper to resize UIImage
