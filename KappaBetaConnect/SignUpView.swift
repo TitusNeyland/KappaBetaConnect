@@ -16,7 +16,7 @@ struct SignUpView: View {
                  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
     
     let prefixes = ["Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Rev.", "Hon."]
-    let suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "M.D.", "Esq."]
+    let suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "M.D.", "Esq.", "Ed.D.", "D.O.", "D.D.S.", "D.M.D.", "J.D.", "LL.M.", "M.B.A.", "M.P.A.", "M.P.H.", "M.S.", "M.Sc.", "M.A."]
     
     var body: some View {
         ScrollView {
