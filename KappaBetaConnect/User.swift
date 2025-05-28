@@ -37,6 +37,7 @@ struct User: Identifiable, Codable {
     var updatedAt: Date
     var isActive: Bool
     var isFirstSignIn: Bool
+    var isAdmin: Bool
     
     // Optional social info
     var profileImageURL: String?
@@ -60,7 +61,7 @@ struct User: Identifiable, Codable {
         case birthday
         case careerField, major, jobTitle, company, bio, interests
         case lineNumber, semester, year, status, graduationYear
-        case createdAt, updatedAt, isActive, isFirstSignIn
+        case createdAt, updatedAt, isActive, isFirstSignIn, isAdmin
         case profileImageURL, linkedInURL, instagramURL, twitterURL, snapchatURL, facebookURL
         case yearsOfExperience
         case hasAgreedToTerms, blockedUsers, reportedContent
@@ -98,6 +99,7 @@ struct User: Identifiable, Codable {
          isActive: Bool = true,
          yearsOfExperience: String? = nil,
          isFirstSignIn: Bool = true,
+         isAdmin: Bool = false,
          hasAgreedToTerms: Bool = false,
          blockedUsers: [String] = [],
          reportedContent: [String] = []) {
@@ -135,6 +137,7 @@ struct User: Identifiable, Codable {
         self.updatedAt = Date()
         self.isActive = isActive
         self.isFirstSignIn = isFirstSignIn
+        self.isAdmin = isAdmin
         self.yearsOfExperience = yearsOfExperience
         self.hasAgreedToTerms = hasAgreedToTerms
         self.blockedUsers = blockedUsers
