@@ -665,9 +665,17 @@ struct ProfileView: View {
                         // Name and Title
                         VStack(spacing: 4) {
                             if let user = displayedUser ?? userRepository.currentUser {
-                                Text("\(user.firstName) \(user.lastName)\(user.suffix != nil ? ", \(user.suffix!)" : "")")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
+                                HStack(spacing: 4) {
+                                    Text("\(user.firstName) \(user.lastName)\(user.suffix != nil ? ", \(user.suffix!)" : "")")
+                                        .font(.title2)
+                                        .fontWeight(.bold)
+                                    
+                                    if user.isAdmin {
+                                        Image(systemName: "checkmark.seal.fill")
+                                            .foregroundColor(.black)
+                                            .font(.system(size: 16))
+                                    }
+                                }
                                 
                                 if let jobTitle = user.jobTitle, let company = user.company {
                                     Text("\(jobTitle) at \(company)")

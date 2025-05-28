@@ -170,9 +170,17 @@ struct UserCard: View {
                 
                 // User Info
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("\(user.firstName) \(user.lastName)")
-                        .font(.headline)
-                        .foregroundColor(.primary)
+                    HStack(spacing: 4) {
+                        Text("\(user.firstName) \(user.lastName)")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        if user.isAdmin {
+                            Image(systemName: "checkmark.seal.fill")
+                                .foregroundColor(.black)
+                                .font(.system(size: 14))
+                        }
+                    }
                     
                     if let city = user.city, let state = user.state {
                         Text("\(city), \(state)")

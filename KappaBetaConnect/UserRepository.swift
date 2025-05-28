@@ -212,7 +212,8 @@ class UserRepository: ObservableObject {
             "createdAt": Timestamp(date: user.createdAt),
             "updatedAt": Timestamp(date: user.updatedAt),
             "isActive": user.isActive,
-            "isFirstSignIn": user.isFirstSignIn
+            "isFirstSignIn": user.isFirstSignIn,
+            "isAdmin": user.isAdmin
         ]
         
         // Add optional fields if they have values
@@ -260,6 +261,7 @@ class UserRepository: ObservableObject {
         let updatedAt = (dict["updatedAt"] as? Timestamp)?.dateValue() ?? Date()
         
         let isFirstSignIn = dict["isFirstSignIn"] as? Bool ?? false
+        let isAdmin = dict["isAdmin"] as? Bool ?? false
         
         let prefix = dict["prefix"] as? String
         let suffix = dict["suffix"] as? String
@@ -316,7 +318,8 @@ class UserRepository: ObservableObject {
             facebookURL: facebookURL,
             isActive: isActive,
             yearsOfExperience: dict["yearsOfExperience"] as? String ?? "",
-            isFirstSignIn: isFirstSignIn
+            isFirstSignIn: isFirstSignIn,
+            isAdmin: isAdmin
         )
         
         user.createdAt = createdAt

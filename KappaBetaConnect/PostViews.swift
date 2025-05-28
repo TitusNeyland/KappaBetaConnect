@@ -45,6 +45,8 @@ struct PostUserInfoView: View {
     @State private var errorMessage = ""
     @EnvironmentObject private var authManager: AuthManager
     @StateObject private var contentModeration = ContentModerationService()
+    @StateObject private var userRepository = UserRepository()
+    @State private var authorUser: User? = nil
     
     var body: some View {
         HStack {
@@ -70,8 +72,15 @@ struct PostUserInfoView: View {
             }
             
             VStack(alignment: .leading) {
+                HStack(spacing: 4) {
                     Text(post.authorName)
                         .font(.headline)
+                    if let user = authorUser, user.isAdmin {
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundColor(.black)
+                            .font(.system(size: 14))
+                    }
+                }
                 Text(post.timestamp.timeAgoDisplay())
                     .font(.caption)
                     .foregroundColor(.gray)
@@ -129,6 +138,13 @@ struct PostUserInfoView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage)
+        }
+        .onAppear {
+            Task {
+                if authorUser == nil {
+                    authorUser = try? await userRepository.getUser(withId: post.authorId)
+                }
+            }
         }
     }
     
@@ -325,6 +341,8 @@ struct CommentsSheetView: View {
     @State private var lastCheckedComment = ""
     @State private var animatePop = false
     @State private var showEditSheet = false
+    @State private var commentAuthors: [String: User] = [:]
+    @State private var postAuthorUser: User? = nil
     
     init(post: Post, showSheet: Binding<Bool>, newComment: Binding<String>, onComment: @escaping () -> Void, postRepository: PostRepository, onCommentAdded: ((Comment) -> Void)? = nil, onCommentDeleted: ((String) -> Void)? = nil) {
         self.post = post
@@ -489,9 +507,16 @@ struct CommentsSheetView: View {
                             }
                             
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(currentPost.authorName)
-                                    .font(.title3)
-                                    .fontWeight(.semibold)
+                                HStack(spacing: 4) {
+                                    Text(currentPost.authorName)
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                    if let user = postAuthorUser, user.isAdmin {
+                                        Image(systemName: "checkmark.seal.fill")
+                                            .foregroundColor(.black)
+                                            .font(.system(size: 16))
+                                    }
+                                }
                                 Text(currentPost.timestamp.formatted(date: .abbreviated, time: .shortened))
                                     .font(.subheadline)
                                     .foregroundColor(.gray)
@@ -531,14 +556,20 @@ struct CommentsSheetView: View {
                         ForEach(currentPost.comments.reversed()) { comment in
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack {
-                                    Text(comment.authorName)
-                                        .font(.headline)
+                                    HStack(spacing: 4) {
+                                        Text(comment.authorName)
+                                            .font(.headline)
+                                        if let user = commentAuthors[comment.authorId], user.isAdmin {
+                                            Image(systemName: "checkmark.seal.fill")
+                                                .foregroundColor(.black)
+                                                .font(.system(size: 14))
+                                        }
+                                    }
                                     Spacer()
                                     Text(comment.timestamp.timeAgoDisplay())
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                 }
-                                
                                 Text(createAttributedString(from: comment))
                                     .font(.body)
                             }
@@ -550,6 +581,17 @@ struct CommentsSheetView: View {
                                         showDeleteAlert = true
                                     } label: {
                                         Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            }
+                            .onAppear {
+                                if commentAuthors[comment.authorId] == nil {
+                                    Task {
+                                        if let user = try? await userRepository.getUser(withId: comment.authorId) {
+                                            await MainActor.run {
+                                                commentAuthors[comment.authorId] = user
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -677,6 +719,9 @@ struct CommentsSheetView: View {
                     authorProfileImageURL = user?.profileImageURL
                 } catch {
                     print("Error fetching user profile image: \(error.localizedDescription)")
+                }
+                if postAuthorUser == nil {
+                    postAuthorUser = try? await userRepository.getUser(withId: currentPost.authorId)
                 }
             }
             .onAppear {
