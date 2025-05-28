@@ -194,14 +194,20 @@ class PostRepository: ObservableObject {
     }
     
     @discardableResult
-    func addComment(postId: String, content: String, authorId: String, authorName: String, mentions: [Mention] = []) async throws -> Comment {
+    func addComment(postId: String, content: String, authorId: String, authorName: String, mentions: [Mention] = [], image: UIImage? = nil) async throws -> Comment {
+        var imageURL: String? = nil
+        if let image = image {
+            imageURL = try await uploadCommentImage(image, authorId: authorId)
+        }
+        
         let comment = Comment(
             id: UUID().uuidString,
             content: content,
             authorId: authorId,
             authorName: authorName,
             timestamp: Date(),
-            mentions: mentions
+            mentions: mentions,
+            imageURL: imageURL
         )
         
         let postRef = db.collection("posts").document(postId)
@@ -210,6 +216,19 @@ class PostRepository: ObservableObject {
         ])
         
         return comment
+    }
+    
+    private func uploadCommentImage(_ image: UIImage, authorId: String) async throws -> String {
+        let resizedImage = image.resizedTo(maxDimension: 1080)
+        guard let imageData = resizedImage.jpegData(compressionQuality: 0.7) else {
+            throw NSError(domain: "ImageError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to data"])
+        }
+        let imageID = UUID().uuidString
+        let ref = storage.reference().child("comment_images/")
+            .child("\(authorId)_\(imageID).jpg")
+        let _ = try await ref.putDataAsync(imageData)
+        let url = try await ref.downloadURL()
+        return url.absoluteString
     }
     
     func deleteComment(postId: String, commentId: String) async throws {
