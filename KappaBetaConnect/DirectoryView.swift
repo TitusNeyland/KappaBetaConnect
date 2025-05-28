@@ -222,6 +222,12 @@ struct FilterSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var filters: Filters
     
+    let states = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", 
+                 "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", 
+                 "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", 
+                 "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", 
+                 "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
+    
     var body: some View {
         NavigationView {
             Form {
@@ -252,11 +258,23 @@ struct FilterSheet: View {
                         set: { filters.city = $0.isEmpty ? nil : $0 }
                     ))
                     .customTextField()
-                    TextField("State", text: Binding(
-                        get: { filters.state ?? "" },
-                        set: { filters.state = $0.isEmpty ? nil : $0 }
-                    ))
-                    .customTextField()
+                    HStack {
+                        Text("State")
+                            .foregroundColor(.gray)
+                            .padding(.leading, 10)
+                        Spacer()
+                        Picker("", selection: Binding(
+                            get: { filters.state ?? "" },
+                            set: { filters.state = $0.isEmpty ? nil : $0 }
+                        )) {
+                            Text("Select").tag("")
+                            ForEach(states, id: \.self) { state in
+                                Text(state).tag(state)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.black)
+                    }
                 }
                 
                 Section(header: Text("Hometown")) {
@@ -265,11 +283,23 @@ struct FilterSheet: View {
                         set: { filters.homeCity = $0.isEmpty ? nil : $0 }
                     ))
                     .customTextField()
-                    TextField("Hometown State", text: Binding(
-                        get: { filters.homeState ?? "" },
-                        set: { filters.homeState = $0.isEmpty ? nil : $0 }
-                    ))
-                    .customTextField()
+                    HStack {
+                        Text("State")
+                            .foregroundColor(.gray)
+                            .padding(.leading, 10)
+                        Spacer()
+                        Picker("", selection: Binding(
+                            get: { filters.homeState ?? "" },
+                            set: { filters.homeState = $0.isEmpty ? nil : $0 }
+                        )) {
+                            Text("Select").tag("")
+                            ForEach(states, id: \.self) { state in
+                                Text(state).tag(state)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.black)
+                    }
                 }
             }
             .navigationTitle("Filters")
