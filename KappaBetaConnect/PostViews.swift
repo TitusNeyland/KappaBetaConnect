@@ -353,6 +353,8 @@ struct CommentsSheetView: View {
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var isLoading = false
+    @State private var replyingToComment: Comment?
+    @State private var expandedReplies: [String: Bool] = [:] // commentId: isExpanded
     
     init(post: Post, showSheet: Binding<Bool>, newComment: Binding<String>, onComment: @escaping () -> Void, postRepository: PostRepository, onCommentAdded: ((Comment) -> Void)? = nil, onCommentDeleted: ((String) -> Void)? = nil) {
         self.post = post
@@ -469,18 +471,39 @@ struct CommentsSheetView: View {
         isLoading = true
         Task {
             do {
-                let comment = try await postRepository.addComment(
-                    postId: post.id ?? "",
-                    content: commentContent,
-                    authorId: currentUser.id ?? "",
-                    authorName: "\(currentUser.firstName) \(currentUser.lastName)",
-                    mentions: mentions,
-                    image: selectedImage
-                )
-                await MainActor.run {
-                    onCommentAdded?(comment)
-                    newComment = ""
-                    showSheet = false
+                if let replyingToComment = replyingToComment {
+                    let comment = try await postRepository.addReplyToComment(
+                        postId: post.id ?? "",
+                        parentCommentId: replyingToComment.id ?? "",
+                        content: commentContent,
+                        authorId: currentUser.id ?? "",
+                        authorName: "\(currentUser.firstName) \(currentUser.lastName)",
+                        mentions: mentions,
+                        image: selectedImage
+                    )
+                    await MainActor.run {
+                        if let comment = comment {
+                            onCommentAdded?(comment)
+                        }
+                        newComment = ""
+                        showSheet = false
+                        self.replyingToComment = nil
+                    }
+                } else {
+                    let comment = try await postRepository.addComment(
+                        postId: post.id ?? "",
+                        content: commentContent,
+                        authorId: currentUser.id ?? "",
+                        authorName: "\(currentUser.firstName) \(currentUser.lastName)",
+                        mentions: mentions,
+                        image: selectedImage
+                    )
+                    await MainActor.run {
+                        onCommentAdded?(comment)
+                        newComment = ""
+                        showSheet = false
+                        self.replyingToComment = nil
+                    }
                 }
             } catch {
                 await MainActor.run {
@@ -575,7 +598,9 @@ struct CommentsSheetView: View {
                                 onDelete: {
                                     commentToDelete = comment
                                     showDeleteAlert = true
-                                }
+                                },
+                                onReply: { replyingToComment = $0 },
+                                isReply: false
                             )
                             .onAppear {
                                 if commentAuthors[comment.authorId] == nil {
@@ -598,6 +623,49 @@ struct CommentsSheetView: View {
                                     }
                                 }
                             }
+                            // Show replies (indented, recursive)
+                            if comment.replies.count > 0 {
+                                ForEach(comment.replies.prefix(expandedReplies[comment.id ?? ""] == true ? comment.replies.count : 1)) { reply in
+                                    CommentView(
+                                        comment: reply,
+                                        isCurrentUser: isCurrentUserComment(reply),
+                                        onDelete: {
+                                            Task {
+                                                do {
+                                                    try await postRepository.deleteReply(
+                                                        postId: post.id ?? "",
+                                                        parentCommentId: comment.id ?? "",
+                                                        replyId: reply.id ?? ""
+                                                    )
+                                                    // Optionally update UI after deletion
+                                                } catch {
+                                                    // Handle error (show alert, etc)
+                                                }
+                                            }
+                                        },
+                                        onReply: { replyingToComment = $0 },
+                                        isReply: true
+                                    )
+                                    .padding(.leading, 24)
+                                }
+                                if comment.replies.count > 1 {
+                                    if expandedReplies[comment.id ?? ""] == true {
+                                        Button(action: { expandedReplies[comment.id ?? ""] = false }) {
+                                            Text("Hide replies")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                        .padding(.leading, 24)
+                                    } else {
+                                        Button(action: { expandedReplies[comment.id ?? ""] = true }) {
+                                            Text("View \(comment.replies.count - 1) more repl\(comment.replies.count - 1 == 1 ? "y" : "ies")")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                        .padding(.leading, 24)
+                                    }
+                                }
+                            }
                         }
                     }
                     .listStyle(.plain)
@@ -605,12 +673,22 @@ struct CommentsSheetView: View {
                     // Comment input field with user search overlay
                     ZStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 4) {
+                            if let replying = replyingToComment {
+                                HStack {
+                                    Text("Replying to \(replying.authorName)")
+                                        .font(.caption)
+                                        .foregroundColor(Color(.darkGray))
+                                    Spacer()
+                                    Button("Cancel") { replyingToComment = nil }
+                                        .foregroundColor(Color(.darkGray))
+                                }
+                            }
                             HStack(alignment: .center, spacing: 8) {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 8)
                                         .stroke(Color.gray.opacity(0.5), lineWidth: 1.2)
                                         .background(RoundedRectangle(cornerRadius: 8).fill(Color(.systemGray6)))
-                                    CustomTextEditor(text: $newComment, placeholder: "Add a comment...")
+                                    CustomTextEditor(text: $newComment, placeholder: replyingToComment == nil ? "Add a comment..." : "Write a reply...")
                                         .padding(8)
                                         .frame(minHeight: 40, maxHeight: 100, alignment: .center)
                                         .onChange(of: newComment) { handleTextChange($0) }
@@ -1634,6 +1712,8 @@ struct CommentView: View {
     let comment: Comment
     let isCurrentUser: Bool
     let onDelete: () -> Void
+    var onReply: ((Comment) -> Void)? = nil
+    var isReply: Bool = false
     @State private var showFullImage = false
     @State private var animatePop = false
     
@@ -1644,9 +1724,15 @@ struct CommentView: View {
                     Text(comment.authorName)
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                    Text(comment.content)
-                        .font(.body)
-                    
+                    if !comment.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text(comment.content)
+                            .font(.body)
+                    } else if comment.imageURL != nil {
+                        Text("Posted an Image")
+                            .font(.body)
+                            .italic()
+                            .foregroundColor(.gray)
+                    }
                     if let imageURL = comment.imageURL, let url = URL(string: imageURL) {
                         AsyncImage(url: url) { image in
                             image
@@ -1673,14 +1759,11 @@ struct CommentView: View {
                         )
                         .contentShape(Rectangle())
                     }
-                    
                     Text(comment.timestamp.timeAgoDisplay())
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
-                
                 Spacer()
-                
                 if isCurrentUser {
                     Menu {
                         Button(role: .destructive, action: onDelete) {
@@ -1689,8 +1772,22 @@ struct CommentView: View {
                     } label: {
                         Image(systemName: "ellipsis")
                             .foregroundColor(.gray)
+                            .font(.system(size: 22, weight: .bold))
+                            .padding(12)
+                            .background(Color(.systemGray6).opacity(0.7))
+                            .clipShape(Circle())
+                            .contentShape(Rectangle())
                     }
                 }
+            }
+            // Only show Reply button if not a reply
+            if !isReply {
+                Button(action: { onReply?(comment) }) {
+                    Text("Reply")
+                        .font(.caption)
+                        .foregroundColor(Color(.darkGray))
+                }
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(.vertical, 4)

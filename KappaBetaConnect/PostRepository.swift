@@ -48,6 +48,7 @@ class PostRepository: ObservableObject {
                         return post
                     } catch {
                         print("Error decoding post: \(error.localizedDescription)")
+                        print("Raw data for post \(document.documentID): \(document.data())")
                         return nil
                     }
                 }
@@ -87,6 +88,7 @@ class PostRepository: ObservableObject {
                     completion(post)
                 } catch {
                     print("Error decoding post: \(error.localizedDescription)")
+                    print("Raw data for post \(document.documentID): \(document.data())")
                     completion(nil)
                 }
             }
@@ -272,6 +274,54 @@ class PostRepository: ObservableObject {
     func updatePostContent(postId: String, newContent: String) async throws {
         let postRef = db.collection("posts").document(postId)
         try await postRef.updateData(["content": newContent])
+    }
+    
+    // Add a reply to a comment
+    @discardableResult
+    func addReplyToComment(postId: String, parentCommentId: String, content: String, authorId: String, authorName: String, mentions: [Mention] = [], image: UIImage? = nil) async throws -> Comment? {
+        var imageURL: String? = nil
+        if let image = image {
+            imageURL = try await uploadCommentImage(image, authorId: authorId)
+        }
+        let reply = Comment(
+            id: UUID().uuidString,
+            content: content,
+            authorId: authorId,
+            authorName: authorName,
+            timestamp: Date(),
+            mentions: mentions,
+            imageURL: imageURL,
+            replies: []
+        )
+        let postRef = db.collection("posts").document(postId)
+        let postDoc = try await postRef.getDocument()
+        guard var post = try? postDoc.data(as: Post.self) else { return nil }
+        // Find the parent comment and append the reply
+        if let idx = post.comments.firstIndex(where: { $0.id == parentCommentId }) {
+            post.comments[idx].replies.append(reply)
+            // Update the entire comments array
+            try await postRef.updateData([
+                "comments": post.comments.map { try Firestore.Encoder().encode($0) }
+            ])
+            return reply
+        }
+        return nil
+    }
+    
+    // Delete a reply from a comment
+    func deleteReply(postId: String, parentCommentId: String, replyId: String) async throws {
+        let postRef = db.collection("posts").document(postId)
+        let postDoc = try await postRef.getDocument()
+        guard var post = try? postDoc.data(as: Post.self) else { return }
+        // Find the parent comment
+        if let idx = post.comments.firstIndex(where: { $0.id == parentCommentId }) {
+            // Remove the reply from the replies array
+            post.comments[idx].replies.removeAll { $0.id == replyId }
+            // Update the entire comments array
+            try await postRef.updateData([
+                "comments": post.comments.map { try Firestore.Encoder().encode($0) }
+            ])
+        }
     }
 }
 
