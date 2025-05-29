@@ -1,0 +1,5 @@
+firestore-migration/
+.DS_Store
+*.xcuserdatad/
+*.xcuserdata/
+KappaBetaConnect.xcodeproj/project.xcworkspace/xcuserdata/

@@ -93,7 +93,7 @@ struct ManageProfileView: View {
     @State private var navigateToLogin = false
     
     let prefixes = ["Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Rev.", "Hon."]
-    let suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "M.D.", "Esq.", "Ed.D.", "D.O.", "D.D.S.", "D.M.D.", "J.D.", "LL.M.", "M.B.A.", "M.P.A.", "M.P.H.", "M.S.", "M.Sc.", "M.A."]
+    let suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "M.D.", "Esq.", "Ed.D.", "D.O.", "D.D.S.", "D.M.D.", "DPT", "J.D.", "LL.M.", "M.B.A.", "M.P.A.", "M.P.H.", "M.S.", "M.Sc.", "M.A.", "M.Ag"]
     let careerFields = [
         "Business & Finance",
         "Technology & Engineering",
