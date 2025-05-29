@@ -33,6 +33,7 @@ struct Comment: Identifiable, Codable {
     var timestamp: Date
     var mentions: [Mention] = []
     var imageURL: String? // Optional image URL for comments
+    var replies: [Comment] = [] // Nested replies
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -42,6 +43,7 @@ struct Comment: Identifiable, Codable {
         case timestamp
         case mentions
         case imageURL
+        case replies
     }
 }
 
