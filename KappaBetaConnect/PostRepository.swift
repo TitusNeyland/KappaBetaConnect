@@ -307,6 +307,22 @@ class PostRepository: ObservableObject {
         }
         return nil
     }
+    
+    // Delete a reply from a comment
+    func deleteReply(postId: String, parentCommentId: String, replyId: String) async throws {
+        let postRef = db.collection("posts").document(postId)
+        let postDoc = try await postRef.getDocument()
+        guard var post = try? postDoc.data(as: Post.self) else { return }
+        // Find the parent comment
+        if let idx = post.comments.firstIndex(where: { $0.id == parentCommentId }) {
+            // Remove the reply from the replies array
+            post.comments[idx].replies.removeAll { $0.id == replyId }
+            // Update the entire comments array
+            try await postRef.updateData([
+                "comments": post.comments.map { try Firestore.Encoder().encode($0) }
+            ])
+        }
+    }
 }
 
 // Helper to resize UIImage
