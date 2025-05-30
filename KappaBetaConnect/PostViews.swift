@@ -655,17 +655,25 @@ struct CommentsSheetView: View {
                                     }
                                     if comment.replies.count > 1 {
                                         if expandedReplies[comment.id ?? ""] == true {
-                                            Button(action: { expandedReplies[comment.id ?? ""] = false }) {
-                                                Text("Hide replies")
-                                                    .font(.caption)
-                                                    .foregroundColor(.gray)
+                                            HStack {
+                                                Spacer()
+                                                Button(action: { expandedReplies[comment.id ?? ""] = false }) {
+                                                    Text("Hide replies")
+                                                        .font(.caption)
+                                                        .foregroundColor(.gray)
+                                                        .padding(.bottom, 5)
+                                                }
                                             }
                                             .padding(.leading, 24)
                                         } else {
-                                            Button(action: { expandedReplies[comment.id ?? ""] = true }) {
-                                                Text("View \(comment.replies.count - 1) more repl\(comment.replies.count - 1 == 1 ? "y" : "ies")")
-                                                    .font(.caption)
-                                                    .foregroundColor(.gray)
+                                            HStack {
+                                                Spacer()
+                                                Button(action: { expandedReplies[comment.id ?? ""] = true }) {
+                                                    Text("View \(comment.replies.count - 1) more repl\(comment.replies.count - 1 == 1 ? "y" : "ies")")
+                                                        .font(.caption)
+                                                        .foregroundColor(.gray)
+                                                        .padding(.bottom, 5)
+                                                }
                                             }
                                             .padding(.leading, 24)
                                         }
