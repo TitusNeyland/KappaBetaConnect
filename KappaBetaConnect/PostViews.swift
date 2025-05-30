@@ -517,287 +517,296 @@ struct CommentsSheetView: View {
     
     var body: some View {
         NavigationView {
-            ZStack(alignment: .bottom) {
-                VStack(spacing: 0) {
-                    // Post content at the top
-                    VStack(alignment: .leading, spacing: 12) {
-                        // Author info
-                        HStack {
-                            if let profileImageURL = authorProfileImageURL,
-                               let url = URL(string: profileImageURL) {
-                                AsyncImage(url: url) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                } placeholder: {
-                                    ProgressView()
-                                }
-                                .frame(width: 48, height: 48)
-                                .clipShape(Circle())
-                            } else {
-                                Circle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .frame(width: 48, height: 48)
-                                    .overlay(
-                                        Image(systemName: "person.fill")
-                                            .foregroundColor(.gray)
-                                    )
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 4) {
-                                    Text(currentPost.authorName)
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
-                                    if let user = postAuthorUser, user.isAdmin {
-                                        Image(systemName: "checkmark.seal.fill")
-                                            .foregroundColor(.black)
-                                            .font(.system(size: 16))
-                                    }
-                                }
-                                Text(currentPost.timestamp.formatted(date: .abbreviated, time: .shortened))
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                            }
-                            
-                            Spacer()
-                        }
-                        
-                        // Post content
-                        Text(currentPost.content)
-                            .font(.system(size: 17))
-                            .fontWeight(.regular)
-                            .padding(.vertical, 4)
-                        
-                        // Post stats
-                        HStack(spacing: 20) {
-                            Text("\(currentPost.likes.count) likes")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                            
-                            Text("\(currentPost.comments.count) comments")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                            
-                            Text("\(currentPost.shareCount) shares")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .padding()
-                    .background(Color(.secondarySystemGroupedBackground))
-                    
-                    Divider()
-                    
-                    // Comments list
-                    List {
-                        ForEach(currentPost.comments.reversed()) { comment in
-                            CommentView(
-                                comment: comment,
-                                isCurrentUser: isCurrentUserComment(comment),
-                                onDelete: {
-                                    commentToDelete = comment
-                                    showDeleteAlert = true
-                                },
-                                onReply: { replyingToComment = $0 },
-                                isReply: false
-                            )
-                            .onAppear {
-                                if commentAuthors[comment.authorId] == nil {
-                                    Task {
-                                        if let user = try? await userRepository.getUser(withId: comment.authorId) {
-                                            await MainActor.run {
-                                                commentAuthors[comment.authorId] = user
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                if isCurrentUserComment(comment) {
-                                    Button(role: .destructive) {
-                                        commentToDelete = comment
-                                        showDeleteAlert = true
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                }
-                            }
-                            // Show replies (indented, recursive)
-                            if comment.replies.count > 0 {
-                                ForEach(comment.replies.prefix(expandedReplies[comment.id ?? ""] == true ? comment.replies.count : 1)) { reply in
-                                    CommentView(
-                                        comment: reply,
-                                        isCurrentUser: isCurrentUserComment(reply),
-                                        onDelete: {
-                                            Task {
-                                                do {
-                                                    try await postRepository.deleteReply(
-                                                        postId: post.id ?? "",
-                                                        parentCommentId: comment.id ?? "",
-                                                        replyId: reply.id ?? ""
-                                                    )
-                                                    // Optionally update UI after deletion
-                                                } catch {
-                                                    // Handle error (show alert, etc)
-                                                }
-                                            }
-                                        },
-                                        onReply: { replyingToComment = $0 },
-                                        isReply: true
-                                    )
-                                    .padding(.leading, 24)
-                                }
-                                if comment.replies.count > 1 {
-                                    if expandedReplies[comment.id ?? ""] == true {
-                                        Button(action: { expandedReplies[comment.id ?? ""] = false }) {
-                                            Text("Hide replies")
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
-                                        }
-                                        .padding(.leading, 24)
-                                    } else {
-                                        Button(action: { expandedReplies[comment.id ?? ""] = true }) {
-                                            Text("View \(comment.replies.count - 1) more repl\(comment.replies.count - 1 == 1 ? "y" : "ies")")
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
-                                        }
-                                        .padding(.leading, 24)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .listStyle(.plain)
-                    
-                    // Comment input field with user search overlay
-                    ZStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            if let replying = replyingToComment {
-                                HStack {
-                                    Text("Replying to \(replying.authorName)")
-                                        .font(.caption)
-                                        .foregroundColor(Color(.darkGray))
-                                    Spacer()
-                                    Button("Cancel") { replyingToComment = nil }
-                                        .foregroundColor(Color(.darkGray))
-                                }
-                            }
-                            HStack(alignment: .center, spacing: 8) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.gray.opacity(0.5), lineWidth: 1.2)
-                                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.systemGray6)))
-                                    CustomTextEditor(text: $newComment, placeholder: replyingToComment == nil ? "Add a comment..." : "Write a reply...")
-                                        .padding(8)
-                                        .frame(minHeight: 40, maxHeight: 100, alignment: .center)
-                                        .onChange(of: newComment) { handleTextChange($0) }
-                                }
-                                .frame(minHeight: 40, maxHeight: 100)
-                                
-                                Button(action: handleComment) {
-                                    Text("Post")
-                                        .fontWeight(.medium)
-                                }
-                                .disabled((newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedImage == nil) || isLoading)
-                                .foregroundColor(((newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedImage == nil) || isLoading) ? .gray : .primary)
-                                .padding(.trailing, 2)
-                            }
-                            // Image picker and preview row
-                            HStack(alignment: .center, spacing: 8) {
-                                PhotosPicker(selection: $selectedItem, matching: .images) {
-                                    Image(systemName: "photo")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(Color(red: 0.831, green: 0.686, blue: 0.216))
-                                        .padding(4)
-                                        .background(Color(red: 0.831, green: 0.686, blue: 0.216).opacity(0.12))
-                                        .clipShape(Circle())
-                                }
-                                .onChange(of: selectedItem) { newItem in
-                                    Task {
-                                        if let data = try? await newItem?.loadTransferable(type: Data.self),
-                                           let image = UIImage(data: data) {
-                                            selectedImage = image
-                                        }
-                                    }
-                                }
-                                if let image = selectedImage {
-                                    ZStack(alignment: .topTrailing) {
-                                        Image(uiImage: image)
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Post header
+                        VStack(alignment: .leading, spacing: 12) {
+                            // Author info
+                            HStack {
+                                if let profileImageURL = authorProfileImageURL,
+                                   let url = URL(string: profileImageURL) {
+                                    AsyncImage(url: url) { image in
+                                        image
                                             .resizable()
-                                            .scaledToFit()
-                                            .frame(maxWidth: 48, maxHeight: 48)
-                                            .cornerRadius(8)
-                                        Button(action: { selectedImage = nil; selectedItem = nil }) {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .foregroundColor(.white)
-                                                .background(Color.black.opacity(0.6))
-                                                .clipShape(Circle())
-                                        }
-                                        .offset(x: 6, y: -6)
+                                            .scaledToFill()
+                                    } placeholder: {
+                                        ProgressView()
                                     }
+                                    .frame(width: 48, height: 48)
+                                    .clipShape(Circle())
+                                } else {
+                                    Circle()
+                                        .fill(Color.gray.opacity(0.3))
+                                        .frame(width: 48, height: 48)
+                                        .overlay(
+                                            Image(systemName: "person.fill")
+                                                .foregroundColor(.gray)
+                                        )
+                                }
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack(spacing: 4) {
+                                        Text(currentPost.authorName)
+                                            .font(.title3)
+                                            .fontWeight(.semibold)
+                                        if let user = postAuthorUser, user.isAdmin {
+                                            Image(systemName: "checkmark.seal.fill")
+                                                .foregroundColor(.black)
+                                                .font(.system(size: 16))
+                                        }
+                                    }
+                                    Text(currentPost.timestamp.formatted(date: .abbreviated, time: .shortened))
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
                                 }
                                 Spacer()
                             }
-                            .padding(.leading, 2)
-                        }
-                    }
-                    .padding()
-                    .background(Color(.systemBackground))
-                    
-                    // User search overlay
-                    if showUserSearch && !searchResults.isEmpty {
-                        VStack(spacing: 0) {
-                            ForEach(searchResults) { user in
-                                Button(action: { selectUser(user) }) {
-                                    HStack {
-                                        if let profileImageURL = user.profileImageURL,
-                                           let url = URL(string: profileImageURL) {
-                                            AsyncImage(url: url) { image in
-                                                image
-                                                    .resizable()
-                                                    .scaledToFill()
-                                            } placeholder: {
-                                                ProgressView()
-                                            }
-                                            .frame(width: 40, height: 40)
-                                            .clipShape(Circle())
-                                        } else {
-                                            Circle()
-                                                .fill(Color.gray.opacity(0.3))
-                                                .frame(width: 40, height: 40)
-                                                .overlay(
-                                                    Image(systemName: "person.fill")
-                                                        .foregroundColor(.gray)
-                                                )
-                                        }
-                                        
-                                        VStack(alignment: .leading) {
-                                            Text("\(user.firstName) \(user.lastName)")
-                                                .font(.headline)
-                                            Text(user.email ?? "")
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
-                                        }
-                                        
-                                        Spacer()
+                            // Post content
+                            Text(currentPost.content)
+                                .font(.system(size: 17))
+                                .fontWeight(.regular)
+                                .padding(.vertical, 4)
+                            // Post image
+                            if let imageURL = currentPost.imageURL, let url = URL(string: imageURL) {
+                                AsyncImage(url: url) { image in
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 380)
+                                        .clipped()
+                                        .cornerRadius(18)
+                                        .padding(.horizontal, 0)
+                                } placeholder: {
+                                    ZStack {
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.15))
+                                            .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 380)
+                                            .cornerRadius(18)
+                                        ProgressView()
                                     }
-                                    .padding()
+                                    .padding(.horizontal, 0)
                                 }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                if user.id != searchResults.last?.id {
-                                    Divider()
-                                }
+                                .padding(.vertical, 4)
+                            }
+                            // Post stats
+                            HStack(spacing: 20) {
+                                Text("\(currentPost.likes.count) likes")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                Text("\(currentPost.comments.count) comments")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                Text("\(currentPost.shareCount) shares")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
                             }
                         }
-                        .background(Color(.systemBackground))
-                        .cornerRadius(10)
-                        .shadow(radius: 5)
+                        .padding()
+                        .background(Color(.secondarySystemGroupedBackground))
+                        Divider()
+                        // Comments
+                        VStack(spacing: 0) {
+                            ForEach(currentPost.comments.reversed()) { comment in
+                                CommentView(
+                                    comment: comment,
+                                    isCurrentUser: isCurrentUserComment(comment),
+                                    onDelete: {
+                                        commentToDelete = comment
+                                        showDeleteAlert = true
+                                    },
+                                    onReply: { replyingToComment = $0 },
+                                    isReply: false
+                                )
+                                .onAppear {
+                                    if commentAuthors[comment.authorId] == nil {
+                                        Task {
+                                            if let user = try? await userRepository.getUser(withId: comment.authorId) {
+                                                await MainActor.run {
+                                                    commentAuthors[comment.authorId] = user
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                // Replies
+                                if comment.replies.count > 0 {
+                                    ForEach(comment.replies.prefix(expandedReplies[comment.id ?? ""] == true ? comment.replies.count : 1)) { reply in
+                                        CommentView(
+                                            comment: reply,
+                                            isCurrentUser: isCurrentUserComment(reply),
+                                            onDelete: {
+                                                Task {
+                                                    do {
+                                                        try await postRepository.deleteReply(
+                                                            postId: post.id ?? "",
+                                                            parentCommentId: comment.id ?? "",
+                                                            replyId: reply.id ?? ""
+                                                        )
+                                                        // Optionally update UI after deletion
+                                                    } catch {
+                                                        // Handle error (show alert, etc)
+                                                    }
+                                                }
+                                            },
+                                            onReply: { replyingToComment = $0 },
+                                            isReply: true
+                                        )
+                                        .padding(.leading, 24)
+                                    }
+                                    if comment.replies.count > 1 {
+                                        if expandedReplies[comment.id ?? ""] == true {
+                                            HStack {
+                                                Spacer()
+                                                Button(action: { expandedReplies[comment.id ?? ""] = false }) {
+                                                    Text("Hide replies")
+                                                        .font(.caption)
+                                                        .foregroundColor(.gray)
+                                                        .padding(.bottom, 5)
+                                                }
+                                            }
+                                            .padding(.leading, 24)
+                                        } else {
+                                            HStack {
+                                                Spacer()
+                                                Button(action: { expandedReplies[comment.id ?? ""] = true }) {
+                                                    Text("View \(comment.replies.count - 1) more repl\(comment.replies.count - 1 == 1 ? "y" : "ies")")
+                                                        .font(.caption)
+                                                        .foregroundColor(.gray)
+                                                        .padding(.bottom, 5)
+                                                }
+                                            }
+                                            .padding(.leading, 24)
+                                        }
+                                    }
+                                }
+                                Divider()
+                            }
+                        }
                         .padding(.horizontal)
-                        .frame(maxHeight: 250)
-                        .offset(y: -10)
                     }
+                }
+                // Comment input field pinned to bottom
+                ZStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        if let replying = replyingToComment {
+                            HStack {
+                                Text("Replying to \(replying.authorName)")
+                                    .font(.caption)
+                                    .foregroundColor(Color(.darkGray))
+                                Spacer()
+                                Button("Cancel") { replyingToComment = nil }
+                                    .foregroundColor(Color(.darkGray))
+                            }
+                        }
+                        HStack(alignment: .center, spacing: 8) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1.2)
+                                    .background(RoundedRectangle(cornerRadius: 8).fill(Color(.systemGray6)))
+                                CustomTextEditor(text: $newComment, placeholder: replyingToComment == nil ? "Add a comment..." : "Write a reply...")
+                                    .padding(8)
+                                    .frame(minHeight: 40, maxHeight: 100, alignment: .center)
+                                    .onChange(of: newComment) { handleTextChange($0) }
+                            }
+                            .frame(minHeight: 40, maxHeight: 100)
+                            Button(action: handleComment) {
+                                Text("Post")
+                                    .fontWeight(.medium)
+                            }
+                            .disabled((newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedImage == nil) || isLoading)
+                            .foregroundColor(((newComment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedImage == nil) || isLoading) ? .gray : .primary)
+                            .padding(.trailing, 2)
+                        }
+                        // Image picker and preview row
+                        HStack(alignment: .center, spacing: 8) {
+                            PhotosPicker(selection: $selectedItem, matching: .images) {
+                                Image(systemName: "photo")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(Color(red: 0.831, green: 0.686, blue: 0.216))
+                                    .padding(4)
+                                    .background(Color(red: 0.831, green: 0.686, blue: 0.216).opacity(0.12))
+                                    .clipShape(Circle())
+                            }
+                            .onChange(of: selectedItem) { newItem in
+                                Task {
+                                    if let data = try? await newItem?.loadTransferable(type: Data.self),
+                                       let image = UIImage(data: data) {
+                                        selectedImage = image
+                                    }
+                                }
+                            }
+                            if let image = selectedImage {
+                                ZStack(alignment: .topTrailing) {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(maxWidth: 48, maxHeight: 48)
+                                        .cornerRadius(8)
+                                    Button(action: { selectedImage = nil; selectedItem = nil }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.white)
+                                            .background(Color.black.opacity(0.6))
+                                            .clipShape(Circle())
+                                    }
+                                    .offset(x: 6, y: -6)
+                                }
+                            }
+                            Spacer()
+                        }
+                        .padding(.leading, 2)
+                    }
+                }
+                .padding()
+                .background(Color(.systemBackground))
+                // User search overlay
+                if showUserSearch && !searchResults.isEmpty {
+                    VStack(spacing: 0) {
+                        ForEach(searchResults) { user in
+                            Button(action: { selectUser(user) }) {
+                                HStack {
+                                    if let profileImageURL = user.profileImageURL,
+                                       let url = URL(string: profileImageURL) {
+                                        AsyncImage(url: url) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                        } placeholder: {
+                                            ProgressView()
+                                        }
+                                        .frame(width: 40, height: 40)
+                                        .clipShape(Circle())
+                                    } else {
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(width: 40, height: 40)
+                                            .overlay(
+                                                Image(systemName: "person.fill")
+                                                    .foregroundColor(.gray)
+                                            )
+                                    }
+                                    VStack(alignment: .leading) {
+                                        Text("\(user.firstName) \(user.lastName)")
+                                            .font(.headline)
+                                        Text(user.email ?? "")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+                                    Spacer()
+                                }
+                                .padding()
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            if user.id != searchResults.last?.id {
+                                Divider()
+                            }
+                        }
+                    }
+                    .background(Color(.systemBackground))
+                    .cornerRadius(10)
+                    .shadow(radius: 5)
+                    .padding(.horizontal)
+                    .frame(maxHeight: 250)
+                    .offset(y: -10)
                 }
             }
             .navigationTitle("Comments")
@@ -1716,23 +1725,47 @@ struct CommentView: View {
     var isReply: Bool = false
     @State private var showFullImage = false
     @State private var animatePop = false
+    @State private var authorProfileImageURL: String?
+    @StateObject private var userRepository = UserRepository()
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top) {
+            HStack(alignment: .top, spacing: 12) {
+                // Profile Image
+                if let profileImageURL = authorProfileImageURL {
+                    AsyncImage(url: URL(string: profileImageURL)) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 40, height: 40)
+                            .clipShape(Circle())
+                    } placeholder: {
+                        Circle()
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(width: 40, height: 40)
+                    }
+                    .padding(.top, 15)
+                } else {
+                    Circle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(width: 40, height: 40)
+                        .padding(.top, 15)
+                }
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text(comment.authorName)
-                        .font(.subheadline)
+                        .font(.caption)
                         .fontWeight(.semibold)
                     if !comment.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         Text(comment.content)
-                            .font(.body)
+                            .font(.subheadline)
                     } else if comment.imageURL != nil {
                         Text("Posted an Image")
-                            .font(.body)
+                            .font(.subheadline)
                             .italic()
                             .foregroundColor(.gray)
                     }
+                    
                     if let imageURL = comment.imageURL, let url = URL(string: imageURL) {
                         AsyncImage(url: url) { image in
                             image
@@ -1760,10 +1793,12 @@ struct CommentView: View {
                         .contentShape(Rectangle())
                     }
                     Text(comment.timestamp.timeAgoDisplay())
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundColor(.gray)
                 }
+                .padding(.top, 15)
                 Spacer()
+                
                 if isCurrentUser {
                     Menu {
                         Button(role: .destructive, action: onDelete) {
@@ -1780,6 +1815,7 @@ struct CommentView: View {
                     }
                 }
             }
+            
             // Only show Reply button if not a reply
             if !isReply {
                 Button(action: { onReply?(comment) }) {
@@ -1818,6 +1854,13 @@ struct CommentView: View {
                     }
                 }
                 .transition(.scale)
+            }
+        }
+        .onAppear {
+            Task {
+                if let user = try? await userRepository.getUser(withId: comment.authorId) {
+                    authorProfileImageURL = user.profileImageURL
+                }
             }
         }
     }
