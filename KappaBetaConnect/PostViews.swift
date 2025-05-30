@@ -1716,23 +1716,45 @@ struct CommentView: View {
     var isReply: Bool = false
     @State private var showFullImage = false
     @State private var animatePop = false
+    @State private var authorProfileImageURL: String?
+    @StateObject private var userRepository = UserRepository()
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top) {
+            HStack(alignment: .top, spacing: 12) {
+                // Profile Image
+                if let profileImageURL = authorProfileImageURL {
+                    AsyncImage(url: URL(string: profileImageURL)) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 40, height: 40)
+                            .clipShape(Circle())
+                    } placeholder: {
+                        Circle()
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(width: 40, height: 40)
+                    }
+                } else {
+                    Circle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(width: 40, height: 40)
+                }
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text(comment.authorName)
-                        .font(.subheadline)
+                        .font(.caption)
                         .fontWeight(.semibold)
                     if !comment.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         Text(comment.content)
-                            .font(.body)
+                            .font(.subheadline)
                     } else if comment.imageURL != nil {
                         Text("Posted an Image")
-                            .font(.body)
+                            .font(.subheadline)
                             .italic()
                             .foregroundColor(.gray)
                     }
+                    
                     if let imageURL = comment.imageURL, let url = URL(string: imageURL) {
                         AsyncImage(url: url) { image in
                             image
@@ -1760,10 +1782,11 @@ struct CommentView: View {
                         .contentShape(Rectangle())
                     }
                     Text(comment.timestamp.timeAgoDisplay())
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundColor(.gray)
                 }
                 Spacer()
+                
                 if isCurrentUser {
                     Menu {
                         Button(role: .destructive, action: onDelete) {
@@ -1780,6 +1803,7 @@ struct CommentView: View {
                     }
                 }
             }
+            
             // Only show Reply button if not a reply
             if !isReply {
                 Button(action: { onReply?(comment) }) {
@@ -1818,6 +1842,13 @@ struct CommentView: View {
                     }
                 }
                 .transition(.scale)
+            }
+        }
+        .onAppear {
+            Task {
+                if let user = try? await userRepository.getUser(withId: comment.authorId) {
+                    authorProfileImageURL = user.profileImageURL
+                }
             }
         }
     }
