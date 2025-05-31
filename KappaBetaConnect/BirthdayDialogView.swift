@@ -56,20 +56,27 @@ struct BirthdayDialogView: View {
                                 HStack(spacing: 16) {
                                     if let profileImageURL = user.profileImageURL,
                                        let url = URL(string: profileImageURL) {
-                                        AsyncImage(url: url) { image in
-                                            image
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 48, height: 48)
-                                                .clipShape(Circle())
-                                        } placeholder: {
-                                            Circle()
-                                                .fill(Color.gray.opacity(0.3))
-                                                .frame(width: 48, height: 48)
-                                                .overlay(
-                                                    Image(systemName: "person.fill")
-                                                        .foregroundColor(.gray)
-                                                )
+                                        AsyncImage(url: url) { phase in
+                                            switch phase {
+                                            case .empty:
+                                                ProgressView()
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(width: 48, height: 48)
+                                                    .clipShape(Circle())
+                                            case .failure(_):
+                                                Circle()
+                                                    .fill(Color.gray.opacity(0.3))
+                                                    .frame(width: 48, height: 48)
+                                                    .overlay(
+                                                        Image(systemName: "person.fill")
+                                                            .foregroundColor(.gray)
+                                                    )
+                                            @unknown default:
+                                                ProgressView()
+                                            }
                                         }
                                     } else {
                                         Circle()

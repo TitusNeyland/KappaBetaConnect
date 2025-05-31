@@ -236,12 +236,26 @@ struct HomeView: View {
                                 HStack {
                                     if let profileImageURL = user.profileImageURL,
                                        let url = URL(string: profileImageURL) {
-                                        AsyncImage(url: url) { image in
-                                            image
-                                                .resizable()
-                                                .scaledToFill()
-                                        } placeholder: {
-                                            ProgressView()
+                                        AsyncImage(url: url) { phase in
+                                            switch phase {
+                                            case .empty:
+                                                ProgressView()
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .scaledToFill()
+                                            case .failure(_):
+                                                Circle()
+                                                    .fill(Color.gray.opacity(0.3))
+                                                    .frame(width: 50, height: 50)
+                                                    .overlay(
+                                                        Image(systemName: "person.fill")
+                                                            .foregroundColor(.gray)
+                                                            .font(.system(size: 24))
+                                                    )
+                                            @unknown default:
+                                                ProgressView()
+                                            }
                                         }
                                         .frame(width: 50, height: 50)
                                         .clipShape(Circle())

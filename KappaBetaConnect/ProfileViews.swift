@@ -619,20 +619,34 @@ struct ProfileView: View {
                             } else if let user = displayedUser ?? userRepository.currentUser,
                                       let profileImageURL = user.profileImageURL,
                                       let url = URL(string: profileImageURL) {
-                                AsyncImage(url: url) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 120, height: 120)
-                                        .clipShape(Circle())
-                                        .onTapGesture {
-                                            enlargedImage = image
-                                            withAnimation(.easeIn) {
-                                                showEnlargedImage = true
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        ProgressView()
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 120, height: 120)
+                                            .clipShape(Circle())
+                                            .onTapGesture {
+                                                enlargedImage = image
+                                                withAnimation(.easeIn) {
+                                                    showEnlargedImage = true
+                                                }
                                             }
-                                        }
-                                } placeholder: {
-                                    ProgressView()
+                                    case .failure(_):
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(width: 120, height: 120)
+                                            .overlay(
+                                                Image(systemName: "person.fill")
+                                                    .foregroundColor(.gray)
+                                                    .font(.system(size: 50))
+                                            )
+                                    @unknown default:
+                                        ProgressView()
+                                    }
                                 }
                             } else {
                                 Circle()
