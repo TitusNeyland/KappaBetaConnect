@@ -53,17 +53,24 @@ struct PostUserInfoView: View {
             NavigationLink(destination: ProfileView(userId: post.authorId)) {
                 if let profileURL = profileImageURL,
                    let url = URL(string: profileURL) {
-                    AsyncImage(url: url) { image in
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                        case .success(let image):
                             image
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: 40, height: 40)
-                            .clipShape(Circle())
-                    } placeholder: {
-                        Circle()
-                            .fill(Color.gray.opacity(0.2))
+                                .clipShape(Circle())
+                        case .failure(_):
+                            Circle()
+                                .fill(Color.gray.opacity(0.2))
                                 .frame(width: 40, height: 40)
+                        @unknown default:
+                            ProgressView()
                         }
+                    }
                 } else {
                     Circle()
                         .fill(Color.gray.opacity(0.2))
@@ -526,15 +533,22 @@ struct CommentsSheetView: View {
                         HStack {
                             if let profileImageURL = authorProfileImageURL,
                                let url = URL(string: profileImageURL) {
-                                AsyncImage(url: url) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                } placeholder: {
-                                    ProgressView()
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        ProgressView()
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    case .failure(_):
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.2))
+                                            .frame(width: 40, height: 40)
+                                    @unknown default:
+                                        ProgressView()
+                                    }
                                 }
-                                .frame(width: 48, height: 48)
-                                .clipShape(Circle())
                             } else {
                                 Circle()
                                     .fill(Color.gray.opacity(0.3))
@@ -568,23 +582,41 @@ struct CommentsSheetView: View {
                             .padding(.vertical, 4)
                             // Post image
                             if let imageURL = currentPost.imageURL, let url = URL(string: imageURL) {
-                                AsyncImage(url: url) { image in
-                                    image
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 380)
-                                        .clipped()
-                                        .cornerRadius(18)
-                                        .padding(.horizontal, 0)
-                                } placeholder: {
-                                    ZStack {
-                                        Rectangle()
-                                            .fill(Color.gray.opacity(0.15))
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        ZStack {
+                                            Rectangle()
+                                                .fill(Color.gray.opacity(0.15))
+                                                .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 380)
+                                                .cornerRadius(18)
+                                            ProgressView()
+                                        }
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
                                             .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 380)
+                                            .clipped()
                                             .cornerRadius(18)
-                                        ProgressView()
+                                            .padding(.horizontal, 0)
+                                    case .failure(_):
+                                        ZStack {
+                                            Rectangle()
+                                                .fill(Color.gray.opacity(0.15))
+                                                .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 380)
+                                                .cornerRadius(18)
+                                            Text("Failed to load image")
+                                        }
+                                    @unknown default:
+                                        ZStack {
+                                            Rectangle()
+                                                .fill(Color.gray.opacity(0.15))
+                                                .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 380)
+                                                .cornerRadius(18)
+                                            ProgressView()
+                                        }
                                     }
-                                    .padding(.horizontal, 0)
                                 }
                                 .padding(.vertical, 4)
                             }
@@ -766,15 +798,26 @@ struct CommentsSheetView: View {
                                     HStack {
                                         if let profileImageURL = user.profileImageURL,
                                            let url = URL(string: profileImageURL) {
-                                            AsyncImage(url: url) { image in
-                                                image
-                                                    .resizable()
-                                                    .scaledToFill()
-                                            } placeholder: {
-                                                ProgressView()
+                                            AsyncImage(url: url) { phase in
+                                                switch phase {
+                                                case .empty:
+                                                    ProgressView()
+                                                case .success(let image):
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                case .failure(_):
+                                                    Circle()
+                                                        .fill(Color.gray.opacity(0.3))
+                                                        .frame(width: 40, height: 40)
+                                                        .overlay(
+                                                            Image(systemName: "person.fill")
+                                                                .foregroundColor(.gray)
+                                                        )
+                                                @unknown default:
+                                                    ProgressView()
+                                                }
                                             }
-                                            .frame(width: 40, height: 40)
-                                            .clipShape(Circle())
                                         } else {
                                             Circle()
                                                 .fill(Color.gray.opacity(0.3))
@@ -1000,20 +1043,39 @@ struct PostCard: View {
                     })
                 
                 if let imageURL = currentPost.imageURL, let url = URL(string: imageURL) {
-                    AsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .frame(maxHeight: 250)
-                            .clipped()
-                            .cornerRadius(10)
-                    } placeholder: {
-                        ZStack {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.15))
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ZStack {
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.15))
+                                    .frame(maxHeight: 250)
+                                    .cornerRadius(10)
+                                ProgressView()
+                            }
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
                                 .frame(maxHeight: 250)
+                                .clipped()
                                 .cornerRadius(10)
-                            ProgressView()
+                        case .failure(_):
+                            ZStack {
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.15))
+                                    .frame(maxHeight: 250)
+                                    .cornerRadius(10)
+                                Text("Failed to load image")
+                            }
+                        @unknown default:
+                            ZStack {
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.15))
+                                    .frame(maxHeight: 250)
+                                    .cornerRadius(10)
+                                ProgressView()
+                            }
                         }
                     }
                     .padding(.bottom, 4)
@@ -1144,15 +1206,26 @@ struct PostCard: View {
                                 HStack {
                                     if let profileImageURL = user.profileImageURL,
                                        let url = URL(string: profileImageURL) {
-                                        AsyncImage(url: url) { image in
-                                            image
-                                                .resizable()
-                                                .scaledToFill()
-                                        } placeholder: {
-                                            ProgressView()
+                                        AsyncImage(url: url) { phase in
+                                            switch phase {
+                                            case .empty:
+                                                ProgressView()
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .scaledToFill()
+                                            case .failure(_):
+                                                Circle()
+                                                    .fill(Color.gray.opacity(0.3))
+                                                    .frame(width: 40, height: 40)
+                                                    .overlay(
+                                                        Image(systemName: "person.fill")
+                                                            .foregroundColor(.gray)
+                                                    )
+                                            @unknown default:
+                                                ProgressView()
+                                            }
                                         }
-                                        .frame(width: 40, height: 40)
-                                        .clipShape(Circle())
                                     } else {
                                         Circle()
                                             .fill(Color.gray.opacity(0.3))
@@ -1244,16 +1317,23 @@ struct PostCard: View {
                         withAnimation(.spring()) { showFullImage = false; animatePop = false }
                     }
                 ZStack(alignment: .topTrailing) {
-                    AsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .scaleEffect(animatePop ? 1.0 : 0.7)
-                            .opacity(animatePop ? 1.0 : 0.0)
-                            .animation(.spring(), value: animatePop)
-                    } placeholder: {
-                        ProgressView()
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .scaleEffect(animatePop ? 1.0 : 0.7)
+                                .opacity(animatePop ? 1.0 : 0.0)
+                                .animation(.spring(), value: animatePop)
+                        case .failure(_):
+                            Text("Failed to load image")
+                        @unknown default:
+                            ProgressView()
+                        }
                     }
                     Button(action: { withAnimation(.spring()) { showFullImage = false; animatePop = false } }) {
                         Image(systemName: "xmark.circle.fill")
@@ -1733,18 +1813,24 @@ struct CommentView: View {
             HStack(alignment: .top, spacing: 12) {
                 // Profile Image
                 if let profileImageURL = authorProfileImageURL {
-                    AsyncImage(url: URL(string: profileImageURL)) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 40, height: 40)
-                            .clipShape(Circle())
-                    } placeholder: {
-                        Circle()
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(width: 40, height: 40)
+                    AsyncImage(url: URL(string: profileImageURL)) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 40, height: 40)
+                                .clipShape(Circle())
+                        case .failure(_):
+                            Circle()
+                                .fill(Color.gray.opacity(0.2))
+                                .frame(width: 40, height: 40)
+                        @unknown default:
+                            ProgressView()
+                        }
                     }
-                    .padding(.top, 15)
                 } else {
                     Circle()
                         .fill(Color.gray.opacity(0.2))
@@ -1767,20 +1853,39 @@ struct CommentView: View {
                     }
                     
                     if let imageURL = comment.imageURL, let url = URL(string: imageURL) {
-                        AsyncImage(url: url) { image in
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(maxHeight: 200)
-                                .clipped()
-                                .cornerRadius(10)
-                        } placeholder: {
-                            ZStack {
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.15))
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .empty:
+                                ZStack {
+                                    Rectangle()
+                                        .fill(Color.gray.opacity(0.15))
+                                        .frame(maxHeight: 200)
+                                        .cornerRadius(10)
+                                    ProgressView()
+                                }
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
                                     .frame(maxHeight: 200)
+                                    .clipped()
                                     .cornerRadius(10)
-                                ProgressView()
+                            case .failure(_):
+                                ZStack {
+                                    Rectangle()
+                                        .fill(Color.gray.opacity(0.15))
+                                        .frame(maxHeight: 200)
+                                        .cornerRadius(10)
+                                    Text("Failed to load image")
+                                }
+                            @unknown default:
+                                ZStack {
+                                    Rectangle()
+                                        .fill(Color.gray.opacity(0.15))
+                                        .frame(maxHeight: 200)
+                                        .cornerRadius(10)
+                                    ProgressView()
+                                }
                             }
                         }
                         .padding(.vertical, 4)
@@ -1835,16 +1940,23 @@ struct CommentView: View {
                         withAnimation(.spring()) { showFullImage = false; animatePop = false }
                     }
                 ZStack(alignment: .topTrailing) {
-                    AsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .scaleEffect(animatePop ? 1.0 : 0.7)
-                            .opacity(animatePop ? 1.0 : 0.0)
-                            .animation(.spring(), value: animatePop)
-                    } placeholder: {
-                        ProgressView()
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .scaleEffect(animatePop ? 1.0 : 0.7)
+                                .opacity(animatePop ? 1.0 : 0.0)
+                                .animation(.spring(), value: animatePop)
+                        case .failure(_):
+                            Text("Failed to load image")
+                        @unknown default:
+                            ProgressView()
+                        }
                     }
                     Button(action: { withAnimation(.spring()) { showFullImage = false; animatePop = false } }) {
                         Image(systemName: "xmark.circle.fill")

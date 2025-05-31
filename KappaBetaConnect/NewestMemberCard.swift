@@ -59,7 +59,7 @@ struct NewestMemberCard: View {
                                     .scaledToFill()
                                     .frame(width: 70, height: 70)
                                     .clipShape(Circle())
-                            case .failure:
+                            case .failure(_):
                                 Circle()
                                     .fill(Color.gray.opacity(0.3))
                                     .frame(width: 70, height: 70)

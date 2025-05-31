@@ -215,12 +215,25 @@ struct UserHeaderView: View {
         HStack {
             if let profileImageURL = user.profileImageURL,
                let url = URL(string: profileImageURL) {
-                AsyncImage(url: url) { image in
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } placeholder: {
-                    ProgressView()
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .failure(_):
+                        Circle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 40, height: 40)
+                            .overlay(
+                                Image(systemName: "person.fill")
+                                    .foregroundColor(.gray)
+                            )
+                    @unknown default:
+                        ProgressView()
+                    }
                 }
                 .frame(width: 40, height: 40)
                 .clipShape(Circle())
