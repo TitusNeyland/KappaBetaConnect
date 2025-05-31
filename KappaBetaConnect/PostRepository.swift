@@ -43,12 +43,28 @@ class PostRepository: ObservableObject {
                 
                 let fetchedPosts = snapshot.documents.compactMap { document -> Post? in
                     do {
+                        print("Attempting to decode post with ID: \(document.documentID)")
+                        print("Raw post data: \(document.data())")
                         var post = try document.data(as: Post.self)
                         post.id = document.documentID
                         return post
                     } catch {
                         print("Error decoding post: \(error.localizedDescription)")
                         print("Raw data for post \(document.documentID): \(document.data())")
+                        if let decodingError = error as? DecodingError {
+                            switch decodingError {
+                            case .keyNotFound(let key, let context):
+                                print("Missing key: \(key.stringValue), context: \(context.debugDescription)")
+                            case .typeMismatch(let type, let context):
+                                print("Type mismatch: expected \(type), context: \(context.debugDescription)")
+                            case .valueNotFound(let type, let context):
+                                print("Value not found: expected \(type), context: \(context.debugDescription)")
+                            case .dataCorrupted(let context):
+                                print("Data corrupted: \(context.debugDescription)")
+                            @unknown default:
+                                print("Unknown decoding error")
+                            }
+                        }
                         return nil
                     }
                 }
@@ -107,9 +123,31 @@ class PostRepository: ObservableObject {
             .getDocuments()
         
         let fetchedPosts = try snapshot.documents.compactMap { document in
-            var post = try document.data(as: Post.self)
-            post.id = document.documentID
-            return post
+            print("Attempting to decode post with ID: \(document.documentID)")
+            print("Raw post data: \(document.data())")
+            do {
+                var post = try document.data(as: Post.self)
+                post.id = document.documentID
+                return post
+            } catch {
+                print("Error decoding post: \(error.localizedDescription)")
+                print("Raw data for post \(document.documentID): \(document.data())")
+                if let decodingError = error as? DecodingError {
+                    switch decodingError {
+                    case .keyNotFound(let key, let context):
+                        print("Missing key: \(key.stringValue), context: \(context.debugDescription)")
+                    case .typeMismatch(let type, let context):
+                        print("Type mismatch: expected \(type), context: \(context.debugDescription)")
+                    case .valueNotFound(let type, let context):
+                        print("Value not found: expected \(type), context: \(context.debugDescription)")
+                    case .dataCorrupted(let context):
+                        print("Data corrupted: \(context.debugDescription)")
+                    @unknown default:
+                        print("Unknown decoding error")
+                    }
+                }
+                return nil
+            }
         }
         
         // Filter out posts from blocked users
@@ -153,6 +191,7 @@ class PostRepository: ObservableObject {
         if let image = image {
             imageURL = try await uploadImage(image, authorId: authorId)
         }
+        
         let post = Post(
             content: content,
             authorId: authorId,
@@ -163,6 +202,7 @@ class PostRepository: ObservableObject {
             shareCount: 0,
             imageURL: imageURL
         )
+        
         _ = try await db.collection("posts").addDocument(from: post)
     }
     
@@ -209,7 +249,9 @@ class PostRepository: ObservableObject {
             authorName: authorName,
             timestamp: Date(),
             mentions: mentions,
-            imageURL: imageURL
+            imageURL: imageURL,
+            replies: [],
+            likes: []
         )
         
         let postRef = db.collection("posts").document(postId)
@@ -283,6 +325,7 @@ class PostRepository: ObservableObject {
         if let image = image {
             imageURL = try await uploadCommentImage(image, authorId: authorId)
         }
+        
         let reply = Comment(
             id: UUID().uuidString,
             content: content,
@@ -291,11 +334,14 @@ class PostRepository: ObservableObject {
             timestamp: Date(),
             mentions: mentions,
             imageURL: imageURL,
-            replies: []
+            replies: [],
+            likes: []
         )
+        
         let postRef = db.collection("posts").document(postId)
         let postDoc = try await postRef.getDocument()
         guard var post = try? postDoc.data(as: Post.self) else { return nil }
+        
         // Find the parent comment and append the reply
         if let idx = post.comments.firstIndex(where: { $0.id == parentCommentId }) {
             post.comments[idx].replies.append(reply)
