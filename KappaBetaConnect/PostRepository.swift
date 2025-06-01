@@ -369,6 +369,29 @@ class PostRepository: ObservableObject {
             ])
         }
     }
+    
+    // Toggle like on a comment
+    func toggleCommentLike(postId: String, commentId: String, userId: String) async throws {
+        let postRef = db.collection("posts").document(postId)
+        let postDoc = try await postRef.getDocument()
+        guard var post = try? postDoc.data(as: Post.self) else { return }
+        
+        // Find the comment and toggle the like
+        if let commentIndex = post.comments.firstIndex(where: { $0.id == commentId }) {
+            var comment = post.comments[commentIndex]
+            if comment.likes.contains(userId) {
+                comment.likes.removeAll { $0 == userId }
+            } else {
+                comment.likes.append(userId)
+            }
+            post.comments[commentIndex] = comment
+            
+            // Update the entire comments array
+            try await postRef.updateData([
+                "comments": post.comments.map { try Firestore.Encoder().encode($0) }
+            ])
+        }
+    }
 }
 
 // Helper to resize UIImage

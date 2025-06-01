@@ -615,7 +615,9 @@ struct CommentsSheetView: View {
                                     showDeleteAlert = true
                                 },
                                 onReply: { replyingToComment = $0 },
-                                isReply: false
+                                isReply: false,
+                                postId: post.id ?? "",
+                                postRepository: postRepository
                             )
                             .onAppear {
                                 if commentAuthors[comment.authorId] == nil {
@@ -649,7 +651,9 @@ struct CommentsSheetView: View {
                                             }
                                         },
                                         onReply: { replyingToComment = $0 },
-                                        isReply: true
+                                        isReply: true,
+                                        postId: post.id ?? "",
+                                        postRepository: postRepository
                                     )
                                     .padding(.leading, 24)
                                 }
@@ -1727,6 +1731,13 @@ struct CommentView: View {
     @State private var animatePop = false
     @State private var authorProfileImageURL: String?
     @StateObject private var userRepository = UserRepository()
+    @EnvironmentObject private var authManager: AuthManager
+    @State private var isLiked: Bool = false
+    @State private var likeCount: Int = 0
+    @State private var showError = false
+    @State private var errorMessage = ""
+    let postId: String
+    let postRepository: PostRepository
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -1792,12 +1803,24 @@ struct CommentView: View {
                         )
                         .contentShape(Rectangle())
                     }
+                    // Timestamp under content
                     Text(comment.timestamp.timeAgoDisplay())
                         .font(.caption2)
                         .foregroundColor(.gray)
                 }
                 .padding(.top, 15)
                 Spacer()
+                // Like button to the far right
+                Button(action: handleLike) {
+                    HStack(spacing: 4) {
+                        Image(systemName: isLiked ? "heart.fill" : "heart")
+                            .foregroundColor(isLiked ? .red : .gray)
+                        Text("\(likeCount)")
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding(.top, 15)
                 
                 if isCurrentUser {
                     Menu {
@@ -1815,7 +1838,6 @@ struct CommentView: View {
                     }
                 }
             }
-            
             // Only show Reply button if not a reply
             if !isReply {
                 Button(action: { onReply?(comment) }) {
@@ -1860,6 +1882,43 @@ struct CommentView: View {
             Task {
                 if let user = try? await userRepository.getUser(withId: comment.authorId) {
                     authorProfileImageURL = user.profileImageURL
+                }
+            }
+            // Initialize like state
+            if let userId = authManager.currentUser?.id {
+                isLiked = comment.likes.contains(userId)
+            }
+            likeCount = comment.likes.count
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    private func handleLike() {
+        guard let userId = authManager.currentUser?.id else {
+            showError = true
+            errorMessage = "You must be logged in to like comments"
+            return
+        }
+        
+        Task {
+            do {
+                try await postRepository.toggleCommentLike(
+                    postId: postId,
+                    commentId: comment.id ?? "",
+                    userId: userId
+                )
+                await MainActor.run {
+                    isLiked.toggle()
+                    likeCount += isLiked ? 1 : -1
+                }
+            } catch {
+                await MainActor.run {
+                    showError = true
+                    errorMessage = error.localizedDescription
                 }
             }
         }
