@@ -616,6 +616,7 @@ struct CommentsSheetView: View {
                                 },
                                 onReply: { replyingToComment = $0 },
                                 isReply: false,
+                                parentCommentId: nil,
                                 postId: post.id ?? "",
                                 postRepository: postRepository
                             )
@@ -652,6 +653,7 @@ struct CommentsSheetView: View {
                                         },
                                         onReply: { replyingToComment = $0 },
                                         isReply: true,
+                                        parentCommentId: comment.id,
                                         postId: post.id ?? "",
                                         postRepository: postRepository
                                     )
@@ -1727,6 +1729,7 @@ struct CommentView: View {
     let onDelete: () -> Void
     var onReply: ((Comment) -> Void)? = nil
     var isReply: Bool = false
+    let parentCommentId: String?
     @State private var showFullImage = false
     @State private var animatePop = false
     @State private var authorProfileImageURL: String?
@@ -1906,11 +1909,20 @@ struct CommentView: View {
         
         Task {
             do {
-                try await postRepository.toggleCommentLike(
-                    postId: postId,
-                    commentId: comment.id ?? "",
-                    userId: userId
-                )
+                if isReply, let parentId = parentCommentId, let replyId = comment.id {
+                    try await postRepository.toggleReplyLike(
+                        postId: postId,
+                        parentCommentId: parentId,
+                        replyId: replyId,
+                        userId: userId
+                    )
+                } else {
+                    try await postRepository.toggleCommentLike(
+                        postId: postId,
+                        commentId: comment.id ?? "",
+                        userId: userId
+                    )
+                }
                 await MainActor.run {
                     isLiked.toggle()
                     likeCount += isLiked ? 1 : -1

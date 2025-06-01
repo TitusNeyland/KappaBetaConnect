@@ -392,6 +392,33 @@ class PostRepository: ObservableObject {
             ])
         }
     }
+    
+    // Toggle like on a reply (nested comment)
+    func toggleReplyLike(postId: String, parentCommentId: String, replyId: String, userId: String) async throws {
+        let postRef = db.collection("posts").document(postId)
+        let postDoc = try await postRef.getDocument()
+        guard var post = try? postDoc.data(as: Post.self) else { return }
+        
+        // Find the parent comment
+        if let parentIndex = post.comments.firstIndex(where: { $0.id == parentCommentId }) {
+            var parentComment = post.comments[parentIndex]
+            // Find the reply
+            if let replyIndex = parentComment.replies.firstIndex(where: { $0.id == replyId }) {
+                var reply = parentComment.replies[replyIndex]
+                if reply.likes.contains(userId) {
+                    reply.likes.removeAll { $0 == userId }
+                } else {
+                    reply.likes.append(userId)
+                }
+                parentComment.replies[replyIndex] = reply
+                post.comments[parentIndex] = parentComment
+                // Update the entire comments array
+                try await postRef.updateData([
+                    "comments": post.comments.map { try Firestore.Encoder().encode($0) }
+                ])
+            }
+        }
+    }
 }
 
 // Helper to resize UIImage
