@@ -15,23 +15,34 @@ struct KappaBetaConnectApp: App {
     @StateObject private var userRepository = UserRepository()
     @StateObject private var birthdayService = BirthdayService.shared
     @StateObject private var notificationService = NotificationService.shared
+    @StateObject private var versionManager = VersionManager.shared
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(authManager)
-                .environmentObject(userRepository)
-                .environmentObject(birthdayService)
-                .environmentObject(notificationService)
-                .preferredColorScheme(.light)
-                .task {
-                    await birthdayService.setupBirthdayNotifications()
-                    do {
-                        try await notificationService.requestPermission()
-                    } catch {
-                        print("Failed to request notification permission: \(error.localizedDescription)")
-                    }
+            Group {
+                if versionManager.isUpdateRequired {
+                    UpdateRequiredView()
+                        .environmentObject(versionManager)
+                } else {
+                    ContentView()
+                        .environmentObject(authManager)
+                        .environmentObject(userRepository)
+                        .environmentObject(birthdayService)
+                        .environmentObject(notificationService)
+                        .environmentObject(versionManager)
+                        .preferredColorScheme(.light)
+                        .task {
+                            await birthdayService.setupBirthdayNotifications()
+                            do {
+                                try await notificationService.requestPermission()
+                            } catch {
+                                print("Failed to request notification permission: \(error.localizedDescription)")
+                            }
+                            // Check for app updates
+                            await versionManager.checkForUpdates()
+                        }
                 }
+            }
         }
     }
 }
