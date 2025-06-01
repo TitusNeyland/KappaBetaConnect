@@ -1735,12 +1735,19 @@ struct CommentView: View {
     @State private var authorProfileImageURL: String?
     @StateObject private var userRepository = UserRepository()
     @EnvironmentObject private var authManager: AuthManager
-    @State private var isLiked: Bool = false
-    @State private var likeCount: Int = 0
     @State private var showError = false
     @State private var errorMessage = ""
     let postId: String
     let postRepository: PostRepository
+    
+    // Computed properties for real-time like state
+    var isLiked: Bool {
+        guard let userId = authManager.currentUser?.id else { return false }
+        return comment.likes.contains(userId)
+    }
+    var likeCount: Int {
+        comment.likes.count
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -1887,11 +1894,6 @@ struct CommentView: View {
                     authorProfileImageURL = user.profileImageURL
                 }
             }
-            // Initialize like state
-            if let userId = authManager.currentUser?.id {
-                isLiked = comment.likes.contains(userId)
-            }
-            likeCount = comment.likes.count
         }
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) { }
@@ -1922,10 +1924,6 @@ struct CommentView: View {
                         commentId: comment.id ?? "",
                         userId: userId
                     )
-                }
-                await MainActor.run {
-                    isLiked.toggle()
-                    likeCount += isLiked ? 1 : -1
                 }
             } catch {
                 await MainActor.run {
