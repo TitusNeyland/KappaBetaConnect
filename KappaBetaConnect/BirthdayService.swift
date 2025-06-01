@@ -20,8 +20,33 @@ class BirthdayService: ObservableObject {
             return
         }
         
-        shouldShowBirthdayDialog = true
-        lastShownDate = today
+        // Check if there are any birthdays today
+        Task {
+            do {
+                let snapshot = try await db.collection("users").getDocuments()
+                let users = snapshot.documents.compactMap { document -> User? in
+                    try? document.data(as: User.self)
+                }
+                
+                let calendar = Calendar.current
+                let todayComponents = calendar.dateComponents([.month, .day], from: today)
+                
+                let hasBirthdayToday = users.contains { user in
+                    let birthdayComponents = calendar.dateComponents([.month, .day], from: user.birthday)
+                    return birthdayComponents.month == todayComponents.month && 
+                           birthdayComponents.day == todayComponents.day
+                }
+                
+                if hasBirthdayToday {
+                    await MainActor.run {
+                        shouldShowBirthdayDialog = true
+                        lastShownDate = today
+                    }
+                }
+            } catch {
+                print("Error checking birthdays: \(error.localizedDescription)")
+            }
+        }
     }
     
     func scheduleBirthdayNotifications(for users: [User]) {
