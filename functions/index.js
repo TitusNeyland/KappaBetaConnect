@@ -382,4 +382,93 @@ export const sendNewEventNotification = onDocumentCreated("events/{eventId}", as
         console.error('❌ Error sending event notification:', error);
         console.error('Error stack:', error.stack);
     }
+});
+
+export const sendCommentLikeNotification = onDocumentUpdated("posts/{postId}", async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+    const postId = event.params.postId;
+    const db = (await import("firebase-admin/firestore")).getFirestore();
+
+    // Helper to check for new likes on comments or replies
+    function findNewLikes(beforeComments, afterComments, parentAuthorId = null) {
+        let notifications = [];
+        for (let i = 0; i < afterComments.length; i++) {
+            const beforeComment = beforeComments[i] || {};
+            const afterComment = afterComments[i];
+            // Check likes on the comment itself
+            const beforeLikes = beforeComment.likes || [];
+            const afterLikes = afterComment.likes || [];
+            if (afterLikes.length > beforeLikes.length) {
+                // Find the new liker
+                const newLiker = afterLikes.find(liker => !beforeLikes.includes(liker));
+                if (newLiker && afterComment.authorId !== newLiker) {
+                    notifications.push({
+                        recipientId: afterComment.authorId,
+                        likerId: newLiker,
+                        commentId: afterComment.id,
+                        isReply: !!parentAuthorId,
+                    });
+                }
+            }
+            // Check replies recursively
+            if (afterComment.replies && afterComment.replies.length > 0) {
+                const beforeReplies = beforeComment.replies || [];
+                notifications = notifications.concat(
+                    findNewLikes(beforeReplies, afterComment.replies, afterComment.authorId)
+                );
+            }
+        }
+        return notifications;
+    }
+
+    if (!before.comments || !after.comments) return;
+    const notifications = findNewLikes(before.comments, after.comments);
+
+    for (const notif of notifications) {
+        // Get liker info
+        const likerSnap = await db.collection("users").doc(notif.likerId).get();
+        const liker = likerSnap.data();
+        if (!liker) continue;
+
+        // Get recipient info
+        const recipientSnap = await db.collection("users").doc(notif.recipientId).get();
+        const recipient = recipientSnap.data();
+        if (!recipient || !recipient.fcmToken) continue;
+
+        const likerName = liker.firstName && liker.lastName ? `${liker.firstName} ${liker.lastName}` : "Someone";
+        const message = {
+            notification: {
+                title: "❤️ New Like!",
+                body: `${likerName} liked your comment`,
+            },
+            data: {
+                type: "comment_like",
+                postId,
+                commentId: notif.commentId,
+            },
+            token: recipient.fcmToken,
+            apns: {
+                payload: {
+                    aps: {
+                        alert: {
+                            title: "❤️ New Like!",
+                            body: `${likerName} liked your comment`
+                        },
+                        sound: "default",
+                        badge: 1,
+                        "mutable-content": 1,
+                        "content-available": 1
+                    }
+                },
+                headers: {
+                    "apns-priority": "10"
+                }
+            }
+        };
+        const { getMessaging } = await import("firebase-admin/messaging");
+        const messaging = getMessaging();
+        await messaging.send(message);
+    }
+    return null;
 }); 
