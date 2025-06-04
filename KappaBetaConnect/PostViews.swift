@@ -606,7 +606,7 @@ struct CommentsSheetView: View {
                     Divider()
                         // Comments
                         VStack(spacing: 0) {
-                        ForEach(currentPost.comments.reversed()) { comment in
+                        ForEach(currentPost.comments) { comment in
                             CommentView(
                                 comment: comment,
                                 isCurrentUser: isCurrentUserComment(comment),
