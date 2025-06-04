@@ -61,13 +61,21 @@ struct PostUserInfoView: View {
                             .clipShape(Circle())
                     } placeholder: {
                         Circle()
-                            .fill(Color.gray.opacity(0.2))
-                                .frame(width: 40, height: 40)
-                        }
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 40, height: 40)
+                            .overlay(
+                                Image(systemName: "person.fill")
+                                    .foregroundColor(.gray)
+                            )
+                    }
                 } else {
                     Circle()
-                        .fill(Color.gray.opacity(0.2))
+                        .fill(Color.gray.opacity(0.3))
                         .frame(width: 40, height: 40)
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.gray)
+                        )
                 }
             }
             
