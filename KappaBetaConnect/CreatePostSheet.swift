@@ -17,7 +17,7 @@ struct CreatePostSheet: View {
     @State private var isLoading = false
     var didCreatePost: ((Bool) -> Void)?
     
-    private let maxCharacterCount = 500
+    private let maxCharacterCount = 1000
     
     private var detectedLinks: [URL] {
         newPostContent.detectURLs().map { $0.url }
