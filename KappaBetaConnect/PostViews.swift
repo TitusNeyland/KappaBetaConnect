@@ -61,13 +61,21 @@ struct PostUserInfoView: View {
                             .clipShape(Circle())
                     } placeholder: {
                         Circle()
-                            .fill(Color.gray.opacity(0.2))
-                                .frame(width: 40, height: 40)
-                        }
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 40, height: 40)
+                            .overlay(
+                                Image(systemName: "person.fill")
+                                    .foregroundColor(.gray)
+                            )
+                    }
                 } else {
                     Circle()
-                        .fill(Color.gray.opacity(0.2))
+                        .fill(Color.gray.opacity(0.3))
                         .frame(width: 40, height: 40)
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.gray)
+                        )
                 }
             }
             
@@ -606,7 +614,7 @@ struct CommentsSheetView: View {
                     Divider()
                         // Comments
                         VStack(spacing: 0) {
-                        ForEach(currentPost.comments.reversed()) { comment in
+                        ForEach(currentPost.comments) { comment in
                             CommentView(
                                 comment: comment,
                                 isCurrentUser: isCurrentUserComment(comment),
@@ -1749,6 +1757,21 @@ struct CommentView: View {
         comment.likes.count
     }
     
+    private func createAttributedContent() -> AttributedString {
+        var attributed = AttributedString(comment.content)
+        let urls = comment.content.detectURLs()
+        
+        for (url, range) in urls {
+            if let attributedRange = Range(range, in: attributed) {
+                attributed[attributedRange].foregroundColor = .blue
+                attributed[attributedRange].underlineStyle = .single
+                attributed[attributedRange].link = url
+            }
+        }
+        
+        return attributed
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 12) {
@@ -1762,14 +1785,22 @@ struct CommentView: View {
                             .clipShape(Circle())
                     } placeholder: {
                         Circle()
-                            .fill(Color.gray.opacity(0.2))
+                            .fill(Color.gray.opacity(0.3))
                             .frame(width: 40, height: 40)
+                            .overlay(
+                                Image(systemName: "person.fill")
+                                    .foregroundColor(.gray)
+                            )
                     }
                     .padding(.top, 15)
                 } else {
                     Circle()
-                        .fill(Color.gray.opacity(0.2))
+                        .fill(Color.gray.opacity(0.3))
                         .frame(width: 40, height: 40)
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.gray)
+                        )
                         .padding(.top, 15)
                 }
                 
@@ -1778,8 +1809,12 @@ struct CommentView: View {
                         .font(.caption)
                         .fontWeight(.semibold)
                     if !comment.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Text(comment.content)
+                        Text(createAttributedContent())
                             .font(.subheadline)
+                            .environment(\.openURL, OpenURLAction { url in
+                                print("Opening URL: \(url)")
+                                return .systemAction
+                            })
                     } else if comment.imageURL != nil {
                         Text("Posted an Image")
                             .font(.subheadline)

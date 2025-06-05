@@ -7,7 +7,7 @@ struct EditPostSheet: View {
     let onSave: (String) -> Void
     @State private var showProfanityAlert = false
     @State private var lastCheckedContent = ""
-    private let maxCharacterCount = 500
+    private let maxCharacterCount = 1000
 
     init(post: Post, onSave: @escaping (String) -> Void) {
         self.originalPost = post
