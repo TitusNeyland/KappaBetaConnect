@@ -137,7 +137,7 @@ struct CreatePostSheet: View {
                         Button("Post") {
                             createPost()
                         }
-                        .disabled(newPostContent.isEmpty || isLoading || newPostContent.count > maxCharacterCount)
+                        .disabled((newPostContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedImages.isEmpty) || isLoading || newPostContent.count > maxCharacterCount)
                         .foregroundColor(.black)
                         .fontWeight(.semibold)
                     }
