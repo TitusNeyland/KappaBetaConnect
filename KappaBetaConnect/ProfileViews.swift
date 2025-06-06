@@ -33,7 +33,7 @@ struct EnlargedImageView: View {
     @Binding var isPresented: Bool
     
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) {
             Color.black.opacity(0.9)
                 .ignoresSafeArea()
                 .onTapGesture {
@@ -41,16 +41,23 @@ struct EnlargedImageView: View {
                         isPresented = false
                     }
                 }
-            
             VStack {
                 Spacer()
-                
                 image
                     .resizable()
                     .scaledToFit()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                
                 Spacer()
+            }
+            Button(action: {
+                withAnimation(.easeOut) {
+                    isPresented = false
+                }
+            }) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 40))
+                    .foregroundColor(.white)
+                    .padding()
             }
         }
         .transition(.opacity)
