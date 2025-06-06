@@ -74,8 +74,12 @@ struct CreatePostSheet: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
                                     .overlay(
                                         Button(action: {
-                                            selectedImages.remove(at: index)
-                                            selectedItems.remove(at: index)
+                                            if selectedImages.indices.contains(index) {
+                                                selectedImages.remove(at: index)
+                                            }
+                                            if selectedItems.indices.contains(index) {
+                                                selectedItems.remove(at: index)
+                                            }
                                         }) {
                                             Image(systemName: "xmark.circle.fill")
                                                 .foregroundColor(.white)
@@ -150,13 +154,15 @@ struct CreatePostSheet: View {
             }
             .onChange(of: selectedItems) { items in
                 Task {
+                    var newImages: [UIImage] = []
                     for item in items {
                         if let data = try? await item.loadTransferable(type: Data.self),
                            let image = UIImage(data: data) {
-                            await MainActor.run {
-                                selectedImages.append(image)
-                            }
+                            newImages.append(image)
                         }
+                    }
+                    await MainActor.run {
+                        selectedImages = newImages
                     }
                 }
             }
