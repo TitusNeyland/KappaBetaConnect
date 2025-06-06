@@ -29,17 +29,26 @@ struct CreatePostSheet: View {
             VStack(spacing: 0) {
                 if let user = authManager.currentUser {
                     UserHeaderView(user: user)
+                    Spacer().frame(height: 12)
                 }
                 // Text Editor
-                TextEditor(text: $newPostContent)
-                    .frame(maxHeight: .infinity)
-                    .padding()
-                    .onChange(of: newPostContent) { newValue in
-                        if newValue != lastCheckedContent {
-                            lastCheckedContent = newValue
-                            checkForProfanity(newValue)
+                ZStack(alignment: .topLeading) {
+                    TextEditor(text: $newPostContent)
+                        .frame(maxHeight: .infinity)
+                        .padding(.horizontal, 4)
+                        .onChange(of: newPostContent) { newValue in
+                            if newValue != lastCheckedContent {
+                                lastCheckedContent = newValue
+                                checkForProfanity(newValue)
+                            }
                         }
+                    if newPostContent.isEmpty {
+                        Text("What's on your mind?")
+                            .foregroundColor(Color(.placeholderText))
+                            .padding(.top, 8)
+                            .padding(.horizontal, 10)
                     }
+                }
                 if !newPostContent.isEmpty {
                     HStack(alignment: .center, spacing: 8) {
                         Image(systemName: "info.circle")
@@ -88,7 +97,7 @@ struct CreatePostSheet: View {
                                         .overlay(
                                             Image(systemName: "plus")
                                                 .font(.title)
-                                                .foregroundColor(.gray)
+                                                .foregroundColor(Color(red: 212/255, green: 175/255, blue: 55/255))
                                         )
                                 }
                             }
@@ -106,7 +115,7 @@ struct CreatePostSheet: View {
                             Image(systemName: "photo.on.rectangle.angled")
                             Text("Add Photos")
                         }
-                        .foregroundColor(.blue)
+                        .foregroundColor(Color(red: 212/255, green: 175/255, blue: 55/255))
                         .padding()
                     }
                 }
@@ -124,6 +133,8 @@ struct CreatePostSheet: View {
                         createPost()
                     }
                     .disabled(newPostContent.isEmpty || isLoading || newPostContent.count > maxCharacterCount)
+                    .foregroundColor(.black)
+                    .fontWeight(.semibold)
                 }
                 .padding()
             }
@@ -134,6 +145,7 @@ struct CreatePostSheet: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundColor(.black)
                 }
             }
             .onChange(of: selectedItems) { items in
