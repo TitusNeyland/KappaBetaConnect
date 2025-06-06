@@ -27,6 +27,9 @@ struct CreatePostSheet: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
+                if let user = authManager.currentUser {
+                    UserHeaderView(user: user)
+                }
                 // Text Editor
                 TextEditor(text: $newPostContent)
                     .frame(maxHeight: .infinity)
@@ -37,6 +40,18 @@ struct CreatePostSheet: View {
                             checkForProfanity(newValue)
                         }
                     }
+                if !newPostContent.isEmpty {
+                    HStack(alignment: .center, spacing: 8) {
+                        Image(systemName: "info.circle")
+                            .foregroundColor(.gray)
+                        Text("Your post will be visible to all fraternity members")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 4)
+                }
                 
                 // Image Grid
                 if !selectedImages.isEmpty {
