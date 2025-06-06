@@ -18,8 +18,6 @@ struct EditPostSheet: View {
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Edit your post")
-                    .font(.headline)
                 TextEditor(text: $editedContent)
                     .frame(minHeight: 120, maxHeight: 200)
                     .overlay(
@@ -41,6 +39,7 @@ struct EditPostSheet: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
+                        .foregroundColor(.black)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
@@ -55,6 +54,7 @@ struct EditPostSheet: View {
                         dismiss()
                     }
                     .disabled(editedContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || editedContent.count > maxCharacterCount)
+                    .foregroundColor(.black)
                 }
             }
             .alert("Inappropriate Content", isPresented: $showProfanityAlert) {
