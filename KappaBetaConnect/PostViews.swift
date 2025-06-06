@@ -1032,6 +1032,7 @@ struct PostCard: View {
                     onEdit: isCurrentUser ? { showEditSheet = true } : nil,
                     postRepository: postRepository
                 )
+                .zIndex(1)
                 Text(createAttributedContent())
                     .font(.body)
                     .environment(\.openURL, OpenURLAction { url in
@@ -1047,6 +1048,7 @@ struct PostCard: View {
                             animatePop = true
                         }
                     }
+                    .zIndex(0)
                 }
                 
                 HStack(spacing: 20) {

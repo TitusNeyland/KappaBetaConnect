@@ -26,121 +26,130 @@ struct CreatePostSheet: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                if let user = authManager.currentUser {
-                    UserHeaderView(user: user)
-                    Spacer().frame(height: 12)
-                }
-                // Text Editor
-                ZStack(alignment: .topLeading) {
-                    TextEditor(text: $newPostContent)
-                        .frame(maxHeight: .infinity)
-                        .padding(.horizontal, 4)
-                        .onChange(of: newPostContent) { newValue in
-                            if newValue != lastCheckedContent {
-                                lastCheckedContent = newValue
-                                checkForProfanity(newValue)
-                            }
-                        }
-                    if newPostContent.isEmpty {
-                        Text("What's on your mind?")
-                            .foregroundColor(Color(.placeholderText))
-                            .padding(.top, 8)
-                            .padding(.horizontal, 10)
+            ZStack {
+                VStack(spacing: 0) {
+                    if let user = authManager.currentUser {
+                        UserHeaderView(user: user)
+                        Spacer().frame(height: 12)
                     }
-                }
-                if !newPostContent.isEmpty {
-                    HStack(alignment: .center, spacing: 8) {
-                        Image(systemName: "info.circle")
-                            .foregroundColor(.gray)
-                        Text("Your post will be visible to all fraternity members")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                        Spacer()
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom, 4)
-                }
-                
-                // Image Grid
-                if !selectedImages.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHGrid(rows: [GridItem(.fixed(100))], spacing: 8) {
-                            ForEach(0..<selectedImages.count, id: \.self) { index in
-                                Image(uiImage: selectedImages[index])
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                                    .overlay(
-                                        Button(action: {
-                                            if selectedImages.indices.contains(index) {
-                                                selectedImages.remove(at: index)
-                                            }
-                                            if selectedItems.indices.contains(index) {
-                                                selectedItems.remove(at: index)
-                                            }
-                                        }) {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .foregroundColor(.white)
-                                                .background(Color.black.opacity(0.5))
-                                                .clipShape(Circle())
-                                        }
-                                        .padding(4),
-                                        alignment: .topTrailing
-                                    )
-                            }
-                            
-                            if selectedImages.count < maxImages {
-                                PhotosPicker(selection: $selectedItems,
-                                           maxSelectionCount: maxImages - selectedImages.count,
-                                           matching: .images) {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.gray.opacity(0.2))
-                                        .frame(width: 100, height: 100)
-                                        .overlay(
-                                            Image(systemName: "plus")
-                                                .font(.title)
-                                                .foregroundColor(Color(red: 212/255, green: 175/255, blue: 55/255))
-                                        )
+                    // Text Editor
+                    ZStack(alignment: .topLeading) {
+                        TextEditor(text: $newPostContent)
+                            .frame(maxHeight: .infinity)
+                            .padding(.horizontal, 4)
+                            .onChange(of: newPostContent) { newValue in
+                                if newValue != lastCheckedContent {
+                                    lastCheckedContent = newValue
+                                    checkForProfanity(newValue)
                                 }
                             }
+                        if newPostContent.isEmpty {
+                            Text("What's on your mind?")
+                                .foregroundColor(Color(.placeholderText))
+                                .padding(.top, 8)
+                                .padding(.horizontal, 10)
+                        }
+                    }
+                    if !newPostContent.isEmpty {
+                        HStack(alignment: .center, spacing: 8) {
+                            Image(systemName: "info.circle")
+                                .foregroundColor(.gray)
+                            Text("Your post will be visible to all fraternity members")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Spacer()
                         }
                         .padding(.horizontal)
+                        .padding(.bottom, 4)
                     }
-                    .frame(height: 120)
-                    .padding(.vertical, 8)
-                } else {
-                    // Add Images Button
-                    PhotosPicker(selection: $selectedItems,
-                               maxSelectionCount: maxImages,
-                               matching: .images) {
-                        HStack {
-                            Image(systemName: "photo.on.rectangle.angled")
-                            Text("Add Photos")
+                    
+                    // Image Grid
+                    if !selectedImages.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            LazyHGrid(rows: [GridItem(.fixed(100))], spacing: 8) {
+                                ForEach(0..<selectedImages.count, id: \.self) { index in
+                                    Image(uiImage: selectedImages[index])
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 100, height: 100)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        .overlay(
+                                            Button(action: {
+                                                if selectedImages.indices.contains(index) {
+                                                    selectedImages.remove(at: index)
+                                                }
+                                                if selectedItems.indices.contains(index) {
+                                                    selectedItems.remove(at: index)
+                                                }
+                                            }) {
+                                                Image(systemName: "xmark.circle.fill")
+                                                    .foregroundColor(.white)
+                                                    .background(Color.black.opacity(0.5))
+                                                    .clipShape(Circle())
+                                            }
+                                            .padding(4),
+                                            alignment: .topTrailing
+                                        )
+                                }
+                                
+                                if selectedImages.count < maxImages {
+                                    PhotosPicker(selection: $selectedItems,
+                                               maxSelectionCount: maxImages - selectedImages.count,
+                                               matching: .images) {
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color.gray.opacity(0.2))
+                                            .frame(width: 100, height: 100)
+                                            .overlay(
+                                                Image(systemName: "plus")
+                                                    .font(.title)
+                                                    .foregroundColor(Color(red: 212/255, green: 175/255, blue: 55/255))
+                                            )
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
                         }
-                        .foregroundColor(Color(red: 212/255, green: 175/255, blue: 55/255))
-                        .padding()
+                        .frame(height: 120)
+                        .padding(.vertical, 8)
+                    } else {
+                        // Add Images Button
+                        PhotosPicker(selection: $selectedItems,
+                                   maxSelectionCount: maxImages,
+                                   matching: .images) {
+                            HStack {
+                                Image(systemName: "photo.on.rectangle.angled")
+                                Text("Add Photos")
+                            }
+                            .foregroundColor(Color(red: 212/255, green: 175/255, blue: 55/255))
+                            .padding()
+                        }
                     }
-                }
-                
-                Divider()
-                
-                // Bottom Bar
-                HStack {
-                    Text("\(newPostContent.count)/\(maxCharacterCount)")
-                        .foregroundColor(newPostContent.count > maxCharacterCount ? .red : .gray)
                     
-                    Spacer()
+                    Divider()
                     
-                    Button("Post") {
-                        createPost()
+                    // Bottom Bar
+                    HStack {
+                        Text("\(newPostContent.count)/\(maxCharacterCount)")
+                            .foregroundColor(newPostContent.count > maxCharacterCount ? .red : .gray)
+                        
+                        Spacer()
+                        
+                        Button("Post") {
+                            createPost()
+                        }
+                        .disabled(newPostContent.isEmpty || isLoading || newPostContent.count > maxCharacterCount)
+                        .foregroundColor(.black)
+                        .fontWeight(.semibold)
                     }
-                    .disabled(newPostContent.isEmpty || isLoading || newPostContent.count > maxCharacterCount)
-                    .foregroundColor(.black)
-                    .fontWeight(.semibold)
+                    .padding()
                 }
-                .padding()
+                if isLoading {
+                    Color.black.opacity(0.2)
+                        .ignoresSafeArea()
+                    ProgressView("Posting...")
+                        .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                        .scaleEffect(1.5)
+                }
             }
             .navigationTitle("Create Post")
             .navigationBarTitleDisplayMode(.inline)
@@ -150,6 +159,7 @@ struct CreatePostSheet: View {
                         dismiss()
                     }
                     .foregroundColor(.black)
+                    .disabled(isLoading)
                 }
             }
             .onChange(of: selectedItems) { items in
