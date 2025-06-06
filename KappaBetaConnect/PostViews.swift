@@ -62,12 +62,12 @@ struct PostUserInfoView: View {
                     } placeholder: {
                         Circle()
                             .fill(Color.gray.opacity(0.3))
-                            .frame(width: 40, height: 40)
+                                .frame(width: 40, height: 40)
                             .overlay(
                                 Image(systemName: "person.fill")
                                     .foregroundColor(.gray)
                             )
-                    }
+                        }
                 } else {
                     Circle()
                         .fill(Color.gray.opacity(0.3))
@@ -363,6 +363,8 @@ struct CommentsSheetView: View {
     @State private var isLoading = false
     @State private var replyingToComment: Comment?
     @State private var expandedReplies: [String: Bool] = [:] // commentId: isExpanded
+    @State private var selectedImageIndex = 0
+    @State private var showFullImage = false
     
     init(post: Post, showSheet: Binding<Bool>, newComment: Binding<String>, onComment: @escaping () -> Void, postRepository: PostRepository, onCommentAdded: ((Comment) -> Void)? = nil, onCommentDeleted: ((String) -> Void)? = nil) {
         self.post = post
@@ -575,26 +577,14 @@ struct CommentsSheetView: View {
                             .fontWeight(.regular)
                             .padding(.vertical, 4)
                             // Post image
-                            if let imageURL = currentPost.imageURL, let url = URL(string: imageURL) {
-                                AsyncImage(url: url) { image in
-                                    image
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 380)
-                                        .clipped()
-                                        .cornerRadius(18)
-                                        .padding(.horizontal, 0)
-                                } placeholder: {
-                                    ZStack {
-                                        Rectangle()
-                                            .fill(Color.gray.opacity(0.15))
-                                            .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 380)
-                                            .cornerRadius(18)
-                                        ProgressView()
+                            if !currentPost.imageURLs.isEmpty {
+                                PostImageGrid(imageURLs: currentPost.imageURLs) { index in
+                                    withAnimation(.spring()) {
+                                        selectedImageIndex = index
+                                        showFullImage = true
+                                        animatePop = true
                                     }
-                                    .padding(.horizontal, 0)
                                 }
-                                .padding(.vertical, 4)
                             }
                         // Post stats
                         HStack(spacing: 20) {
@@ -928,6 +918,41 @@ class UserCacheWrapper {
     }
 }
 
+struct PostImageGrid: View {
+    let imageURLs: [String]
+    let onImageTap: (Int) -> Void
+    
+    var body: some View {
+        let columns = imageURLs.count == 1 ? 1 : 2
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: columns), spacing: 4) {
+            ForEach(imageURLs.indices, id: \.self) { index in
+                if let url = URL(string: imageURLs[index]) {
+                    AsyncImage(url: url) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(height: imageURLs.count == 1 ? 250 : 120)
+                            .clipped()
+                            .cornerRadius(10)
+                    } placeholder: {
+                        ZStack {
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.15))
+                                .frame(height: imageURLs.count == 1 ? 250 : 120)
+                                .cornerRadius(10)
+                            ProgressView()
+                        }
+                    }
+                    .onTapGesture {
+                        onImageTap(index)
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
 struct PostCard: View {
     let post: Post
     let postRepository: PostRepository
@@ -948,6 +973,7 @@ struct PostCard: View {
     @State private var showReportSheet = false
     @State private var reportReason = ""
     @State private var showFullImage = false
+    @State private var selectedImageIndex = 0
     @State private var animatePop = false
     @State private var showLikesSheet = false
     @State private var likedUsers: [User] = []
@@ -1013,33 +1039,10 @@ struct PostCard: View {
                         return .systemAction
                     })
                 
-                if let imageURL = currentPost.imageURL, let url = URL(string: imageURL) {
-                    AsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .frame(maxHeight: 250)
-                            .clipped()
-                            .cornerRadius(10)
-                    } placeholder: {
-                        ZStack {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.15))
-                                .frame(maxHeight: 250)
-                                .cornerRadius(10)
-                            ProgressView()
-                        }
-                    }
-                    .padding(.bottom, 4)
-                    .allowsHitTesting(false)
-                    .overlay(
-                        Button(action: { withAnimation(.spring()) { showFullImage = true; animatePop = true } }) {
-                            Color.clear
-                        }
-                    )
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                if !currentPost.imageURLs.isEmpty {
+                    PostImageGrid(imageURLs: currentPost.imageURLs) { index in
                         withAnimation(.spring()) {
+                            selectedImageIndex = index
                             showFullImage = true
                             animatePop = true
                         }
@@ -1251,33 +1254,9 @@ struct PostCard: View {
             .onDisappear {
                 postRepository.stopSinglePostListener(postId: post.id ?? "")
             }
-            if showFullImage, let imageURL = currentPost.imageURL, let url = URL(string: imageURL) {
-                Color.black.opacity(0.7)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.spring()) { showFullImage = false; animatePop = false }
-                    }
-                ZStack(alignment: .topTrailing) {
-                    AsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .scaleEffect(animatePop ? 1.0 : 0.7)
-                            .opacity(animatePop ? 1.0 : 0.0)
-                            .animation(.spring(), value: animatePop)
-                    } placeholder: {
-                        ProgressView()
-                    }
-                    Button(action: { withAnimation(.spring()) { showFullImage = false; animatePop = false } }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 32))
-                            .foregroundColor(.white)
-                            .padding()
-                    }
-                }
-                .transition(.scale)
-            }
+        }
+        .fullScreenCover(isPresented: $showFullImage) {
+            FullScreenImageViewer(imageURLs: currentPost.imageURLs, selectedIndex: $selectedImageIndex, isPresented: $showFullImage)
         }
     }
     
@@ -1965,6 +1944,49 @@ struct CommentView: View {
                     showError = true
                     errorMessage = error.localizedDescription
                 }
+            }
+        }
+    }
+}
+
+struct FullScreenImageViewer: View {
+    let imageURLs: [String]
+    @Binding var selectedIndex: Int
+    @Binding var isPresented: Bool
+    
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Color.black.ignoresSafeArea()
+            TabView(selection: $selectedIndex) {
+                ForEach(imageURLs.indices, id: \.self) { index in
+                    if let url = URL(string: imageURLs[index]) {
+                        AsyncImage(url: url) { image in
+                            image
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(Color.black)
+                                .ignoresSafeArea()
+                        } placeholder: {
+                            ZStack {
+                                Color.black.ignoresSafeArea()
+                                ProgressView()
+                            }
+                        }
+                        .tag(index)
+                    }
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .ignoresSafeArea()
+            
+            Button(action: {
+                isPresented = false
+            }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding()
             }
         }
     }

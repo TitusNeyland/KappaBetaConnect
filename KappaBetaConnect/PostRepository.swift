@@ -186,10 +186,14 @@ class PostRepository: ObservableObject {
         }
     }
     
-    func createPost(content: String, authorId: String, authorName: String, image: UIImage? = nil) async throws {
-        var imageURL: String? = nil
-        if let image = image {
-            imageURL = try await uploadImage(image, authorId: authorId)
+    func createPost(content: String, authorId: String, authorName: String, images: [UIImage] = []) async throws {
+        var imageURLs: [String] = []
+        
+        // Upload up to 4 images
+        for image in images.prefix(4) {
+            if let imageURL = try? await uploadImage(image, authorId: authorId) {
+                imageURLs.append(imageURL)
+            }
         }
         
         let post = Post(
@@ -200,7 +204,7 @@ class PostRepository: ObservableObject {
             likes: [],
             comments: [],
             shareCount: 0,
-            imageURL: imageURL
+            imageURLs: imageURLs
         )
         
         _ = try await db.collection("posts").addDocument(from: post)

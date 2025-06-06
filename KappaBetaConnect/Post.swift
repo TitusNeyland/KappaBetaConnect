@@ -10,9 +10,9 @@ struct Post: Identifiable, Codable {
     var likes: [String] // Array of user IDs who liked the post
     var comments: [Comment]
     var shareCount: Int
-    var imageURL: String? // Optional image URL
+    var imageURLs: [String] // Array of image URLs, max 4
     
-    init(content: String, authorId: String, authorName: String, timestamp: Date = Date(), likes: [String] = [], comments: [Comment] = [], shareCount: Int = 0, imageURL: String? = nil) {
+    init(content: String, authorId: String, authorName: String, timestamp: Date = Date(), likes: [String] = [], comments: [Comment] = [], shareCount: Int = 0, imageURLs: [String] = []) {
         self.content = content
         self.authorId = authorId
         self.authorName = authorName
@@ -20,7 +20,7 @@ struct Post: Identifiable, Codable {
         self.likes = likes
         self.comments = comments
         self.shareCount = shareCount
-        self.imageURL = imageURL
+        self.imageURLs = imageURLs
     }
     
     enum CodingKeys: String, CodingKey {
@@ -32,7 +32,7 @@ struct Post: Identifiable, Codable {
         case likes
         case comments
         case shareCount
-        case imageURL
+        case imageURLs
     }
 }
 

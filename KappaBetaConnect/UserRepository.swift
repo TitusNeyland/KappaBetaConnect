@@ -163,9 +163,12 @@ class UserRepository: ObservableObject {
             let snapshot = try await db.collection(usersCollection)
                 .getDocuments()
             
-            return try snapshot.documents.compactMap { document in
+            let users = try snapshot.documents.compactMap { document in
                 try? dictionaryToUser(document.data(), id: document.documentID)
             }
+            
+            // Sort users by first name
+            return users.sorted { $0.firstName.lowercased() < $1.firstName.lowercased() }
         }
         
         let searchText = searchText.lowercased()
@@ -179,12 +182,15 @@ class UserRepository: ObservableObject {
         }
         
         // Filter users based on partial matches in first name or last name
-        return allUsers.filter { user in
+        let filteredUsers = allUsers.filter { user in
             let firstName = user.firstName.lowercased()
             let lastName = user.lastName.lowercased()
             
             return firstName.contains(searchText) || lastName.contains(searchText)
         }
+        
+        // Sort filtered users by first name
+        return filteredUsers.sorted { $0.firstName.lowercased() < $1.firstName.lowercased() }
     }
     
     func findUserByName(firstName: String, lastName: String) async throws -> User? {
