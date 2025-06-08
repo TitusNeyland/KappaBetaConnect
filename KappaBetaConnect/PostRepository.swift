@@ -6,9 +6,13 @@ class PostRepository: ObservableObject {
     let db = Firestore.firestore()
     private let storage = Storage.storage()
     @Published var posts: [Post] = []
-    private var postsListener: ListenerRegistration?
+    @Published var isLoadingMore = false
+    @Published var hasMorePosts = true
     private var postListeners: [String: ListenerRegistration] = [:]
     private var blockedUsers: [String] = []
+    private var lastDocument: DocumentSnapshot?
+    private let postsPerPage = 3
+    private var postsListener: ListenerRegistration?
     
     init() {
         startPostsListener()
@@ -20,17 +24,11 @@ class PostRepository: ObservableObject {
         postListeners.values.forEach { $0.remove() }
     }
     
-    func updateBlockedUsers(_ blockedUsers: [String]) {
-        Task { @MainActor in
-            self.blockedUsers = blockedUsers
-            // Refresh posts to apply new block list
-            try? await fetchPosts()
-        }
-    }
-    
     private func startPostsListener() {
+        // Listen only for the most recent posts (first page)
         postsListener = db.collection("posts")
             .order(by: "timestamp", descending: true)
+            .limit(to: postsPerPage)
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let self = self else { return }
                 
@@ -43,28 +41,11 @@ class PostRepository: ObservableObject {
                 
                 let fetchedPosts = snapshot.documents.compactMap { document -> Post? in
                     do {
-                        print("Attempting to decode post with ID: \(document.documentID)")
-                        print("Raw post data: \(document.data())")
                         var post = try document.data(as: Post.self)
                         post.id = document.documentID
                         return post
                     } catch {
                         print("Error decoding post: \(error.localizedDescription)")
-                        print("Raw data for post \(document.documentID): \(document.data())")
-                        if let decodingError = error as? DecodingError {
-                            switch decodingError {
-                            case .keyNotFound(let key, let context):
-                                print("Missing key: \(key.stringValue), context: \(context.debugDescription)")
-                            case .typeMismatch(let type, let context):
-                                print("Type mismatch: expected \(type), context: \(context.debugDescription)")
-                            case .valueNotFound(let type, let context):
-                                print("Value not found: expected \(type), context: \(context.debugDescription)")
-                            case .dataCorrupted(let context):
-                                print("Data corrupted: \(context.debugDescription)")
-                            @unknown default:
-                                print("Unknown decoding error")
-                            }
-                        }
                         return nil
                     }
                 }
@@ -75,9 +56,29 @@ class PostRepository: ObservableObject {
                 }
                 
                 Task { @MainActor in
-                    self.posts = filteredPosts
+                    // Update only the first page of posts
+                    if self.posts.count <= self.postsPerPage {
+                        self.posts = filteredPosts
+                    } else {
+                        // Keep the first page updated but preserve paginated posts
+                        let remainingPosts = Array(self.posts.dropFirst(self.postsPerPage))
+                        self.posts = filteredPosts + remainingPosts
+                    }
+                    
+                    // Update lastDocument for pagination
+                    if let lastDoc = snapshot.documents.last {
+                        self.lastDocument = lastDoc
+                    }
                 }
             }
+    }
+    
+    func updateBlockedUsers(_ blockedUsers: [String]) {
+        Task { @MainActor in
+            self.blockedUsers = blockedUsers
+            // Refresh posts to apply new block list
+            try? await fetchPosts()
+        }
     }
     
     func startSinglePostListener(postId: String, completion: @escaping (Post?) -> Void) {
@@ -118,9 +119,16 @@ class PostRepository: ObservableObject {
     }
     
     func fetchPosts() async throws {
+        // Reset pagination state
+        lastDocument = nil
+        hasMorePosts = true
+        
         let snapshot = try await db.collection("posts")
             .order(by: "timestamp", descending: true)
+            .limit(to: postsPerPage)
             .getDocuments()
+        
+        lastDocument = snapshot.documents.last
         
         let fetchedPosts = try snapshot.documents.compactMap { document in
             print("Attempting to decode post with ID: \(document.documentID)")
@@ -157,6 +165,45 @@ class PostRepository: ObservableObject {
         
         await MainActor.run {
             self.posts = filteredPosts
+            self.hasMorePosts = !snapshot.documents.isEmpty
+        }
+    }
+    
+    func loadMorePosts() async throws {
+        guard !isLoadingMore && hasMorePosts, let lastDocument = lastDocument else { return }
+        
+        await MainActor.run {
+            isLoadingMore = true
+        }
+        
+        let snapshot = try await db.collection("posts")
+            .order(by: "timestamp", descending: true)
+            .start(afterDocument: lastDocument)
+            .limit(to: postsPerPage)
+            .getDocuments()
+        
+        self.lastDocument = snapshot.documents.last
+        
+        let fetchedPosts = try snapshot.documents.compactMap { document in
+            do {
+                var post = try document.data(as: Post.self)
+                post.id = document.documentID
+                return post
+            } catch {
+                print("Error decoding post: \(error.localizedDescription)")
+                return nil
+            }
+        }
+        
+        // Filter out posts from blocked users
+        let filteredPosts = fetchedPosts.filter { post in
+            !self.blockedUsers.contains(post.authorId)
+        }
+        
+        await MainActor.run {
+            self.posts.append(contentsOf: filteredPosts)
+            self.hasMorePosts = !snapshot.documents.isEmpty
+            self.isLoadingMore = false
         }
     }
     
@@ -186,10 +233,14 @@ class PostRepository: ObservableObject {
         }
     }
     
-    func createPost(content: String, authorId: String, authorName: String, image: UIImage? = nil) async throws {
-        var imageURL: String? = nil
-        if let image = image {
-            imageURL = try await uploadImage(image, authorId: authorId)
+    func createPost(content: String, authorId: String, authorName: String, images: [UIImage] = []) async throws {
+        var imageURLs: [String] = []
+        
+        // Upload up to 4 images
+        for image in images.prefix(4) {
+            if let imageURL = try? await uploadImage(image, authorId: authorId) {
+                imageURLs.append(imageURL)
+            }
         }
         
         let post = Post(
@@ -200,7 +251,7 @@ class PostRepository: ObservableObject {
             likes: [],
             comments: [],
             shareCount: 0,
-            imageURL: imageURL
+            imageURLs: imageURLs
         )
         
         _ = try await db.collection("posts").addDocument(from: post)

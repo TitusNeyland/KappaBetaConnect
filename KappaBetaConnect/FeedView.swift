@@ -14,7 +14,7 @@ struct FeedView: View {
         ZStack {
             VStack(spacing: 0) {
                 ScrollView {
-                    VStack(spacing: 20) {
+                    LazyVStack(spacing: 20) {
                         // KB Logo
                         Image("kblogo")
                             .resizable()
@@ -24,6 +24,31 @@ struct FeedView: View {
                         
                         ForEach(postRepository.posts) { post in
                             PostCard(post: post, postRepository: postRepository)
+                                .onAppear {
+                                    // Load more posts when reaching the last post
+                                    if post.id == postRepository.posts.last?.id && !postRepository.isLoadingMore && postRepository.hasMorePosts {
+                                        Task {
+                                            do {
+                                                try await postRepository.loadMorePosts()
+                                            } catch {
+                                                print("Error loading more posts: \(error.localizedDescription)")
+                                            }
+                                        }
+                                    }
+                                }
+                        }
+                        
+                        // Loading indicator
+                        if postRepository.isLoadingMore {
+                            ProgressView()
+                                .padding()
+                        }
+                        
+                        // No more posts indicator
+                        if !postRepository.hasMorePosts && !postRepository.posts.isEmpty {
+                            Text("No more posts")
+                                .foregroundColor(.gray)
+                                .padding()
                         }
                     }
                     .padding()
@@ -94,6 +119,7 @@ struct FeedView: View {
             Text(errorMessage)
         }
         .task {
+            // Initial load of posts
             await refreshData()
         }
     }
