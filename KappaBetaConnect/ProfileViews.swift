@@ -531,6 +531,7 @@ struct ProfileView: View {
     @StateObject private var lineRepository = LineRepository()
     @StateObject private var contentModeration = ContentModerationService()
     @EnvironmentObject private var authManager: AuthManager
+    @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.dismiss) private var dismiss
     @State private var showLogoutAlert = false
     @State private var navigateToLogin = false
@@ -988,6 +989,30 @@ struct ProfileView: View {
                         // Manage Profile Button
                         if isCurrentUserProfile {
                             VStack(spacing: 10) {
+                                // Add Dark Mode Toggle
+                                VStack(spacing: 15) {
+                                    HStack {
+                                        Text("Appearance")
+                                            .font(.headline)
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, 20)
+                                    
+                                    HStack {
+                                        Image(systemName: "moon.fill")
+                                            .foregroundColor(.gray)
+                                        Text("Dark Mode")
+                                            .foregroundColor(.primary)
+                                        Spacer()
+                                        Toggle("", isOn: Binding(
+                                            get: { themeManager.colorScheme == .dark },
+                                            set: { themeManager.setTheme($0) }
+                                        ))
+                                    }
+                                    .padding(.horizontal, 20)
+                                }
+                                .padding(.top, 20)
+                                
                                 Button(action: {
                                     showManageProfile = true
                                 }) {

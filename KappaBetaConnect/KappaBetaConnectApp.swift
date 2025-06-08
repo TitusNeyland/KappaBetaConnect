@@ -16,6 +16,7 @@ struct KappaBetaConnectApp: App {
     @StateObject private var birthdayService = BirthdayService.shared
     @StateObject private var notificationService = NotificationService.shared
     @StateObject private var versionManager = VersionManager.shared
+    @StateObject private var themeManager = ThemeManager.shared
     
     var body: some Scene {
         WindowGroup {
@@ -30,7 +31,8 @@ struct KappaBetaConnectApp: App {
                         .environmentObject(birthdayService)
                         .environmentObject(notificationService)
                         .environmentObject(versionManager)
-                        .preferredColorScheme(.light)
+                        .environmentObject(themeManager)
+                        .preferredColorScheme(themeManager.colorScheme)
                         .task {
                             await birthdayService.setupBirthdayNotifications()
                             do {
