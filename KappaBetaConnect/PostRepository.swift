@@ -12,14 +12,65 @@ class PostRepository: ObservableObject {
     private var blockedUsers: [String] = []
     private var lastDocument: DocumentSnapshot?
     private let postsPerPage = 3
+    private var postsListener: ListenerRegistration?
     
     init() {
-        // Remove the automatic listener since we're using pagination
+        startPostsListener()
     }
     
     deinit {
         // Clean up listeners
+        postsListener?.remove()
         postListeners.values.forEach { $0.remove() }
+    }
+    
+    private func startPostsListener() {
+        // Listen only for the most recent posts (first page)
+        postsListener = db.collection("posts")
+            .order(by: "timestamp", descending: true)
+            .limit(to: postsPerPage)
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let self = self else { return }
+                
+                if let error = error {
+                    print("Error listening for post updates: \(error.localizedDescription)")
+                    return
+                }
+                
+                guard let snapshot = snapshot else { return }
+                
+                let fetchedPosts = snapshot.documents.compactMap { document -> Post? in
+                    do {
+                        var post = try document.data(as: Post.self)
+                        post.id = document.documentID
+                        return post
+                    } catch {
+                        print("Error decoding post: \(error.localizedDescription)")
+                        return nil
+                    }
+                }
+                
+                // Filter out posts from blocked users
+                let filteredPosts = fetchedPosts.filter { post in
+                    !self.blockedUsers.contains(post.authorId)
+                }
+                
+                Task { @MainActor in
+                    // Update only the first page of posts
+                    if self.posts.count <= self.postsPerPage {
+                        self.posts = filteredPosts
+                    } else {
+                        // Keep the first page updated but preserve paginated posts
+                        let remainingPosts = Array(self.posts.dropFirst(self.postsPerPage))
+                        self.posts = filteredPosts + remainingPosts
+                    }
+                    
+                    // Update lastDocument for pagination
+                    if let lastDoc = snapshot.documents.last {
+                        self.lastDocument = lastDoc
+                    }
+                }
+            }
     }
     
     func updateBlockedUsers(_ blockedUsers: [String]) {
