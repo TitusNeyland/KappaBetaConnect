@@ -1956,6 +1956,9 @@ struct FullScreenImageViewer: View {
     @Binding var selectedIndex: Int
     @Binding var isPresented: Bool
     
+    @GestureState private var dragOffset: CGSize = .zero
+    @State private var accumulatedOffset: CGFloat = 0
+    
     var body: some View {
         ZStack(alignment: .topLeading) {
             Color.black.ignoresSafeArea()
@@ -1981,6 +1984,21 @@ struct FullScreenImageViewer: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
+            .offset(y: dragOffset.height)
+            .gesture(
+                DragGesture()
+                    .updating($dragOffset) { value, state, _ in
+                        // Only allow vertical drag
+                        if abs(value.translation.height) > abs(value.translation.width) {
+                            state = value.translation
+                        }
+                    }
+                    .onEnded { value in
+                        if value.translation.height > 100 && abs(value.translation.height) > abs(value.translation.width) {
+                            isPresented = false
+                        }
+                    }
+            )
             
             Button(action: {
                 isPresented = false
