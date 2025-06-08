@@ -925,7 +925,7 @@ struct PostImageGrid: View {
     var body: some View {
         let columns = imageURLs.count == 1 ? 1 : 2
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: columns), spacing: 4) {
-            ForEach(imageURLs.indices, id: \.self) { index in
+            ForEach(imageURLs.indices, id: \ .self) { index in
                 if let url = URL(string: imageURLs[index]) {
                     AsyncImage(url: url) { image in
                         image
@@ -934,6 +934,10 @@ struct PostImageGrid: View {
                             .frame(height: imageURLs.count == 1 ? 250 : 120)
                             .clipped()
                             .cornerRadius(10)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                onImageTap(index)
+                            }
                     } placeholder: {
                         ZStack {
                             Rectangle()
@@ -943,13 +947,9 @@ struct PostImageGrid: View {
                             ProgressView()
                         }
                     }
-                    .onTapGesture {
-                        onImageTap(index)
-                    }
                 }
             }
         }
-        .padding(.vertical, 4)
     }
 }
 
