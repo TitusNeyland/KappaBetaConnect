@@ -252,12 +252,24 @@ struct PostInteractionButtonsView: View {
     let onLike: () -> Void
     let onComment: () -> Void
     let onShare: () -> Void
+    @State private var isAnimating = false
     
     var body: some View {
         HStack(spacing: 20) {
-            Button(action: onLike) {
+            Button(action: {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    isAnimating = true
+                }
+                onLike()
+                // Reset animation after a short delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    isAnimating = false
+                }
+            }) {
                 HStack {
                     Image(systemName: isLiked ? "heart.fill" : "heart")
+                        .scaleEffect(isAnimating ? 1.3 : 1.0)
+                        .foregroundColor(isLiked ? .red : .gray)
                     Text("Like")
                 }
                 .foregroundColor(isLiked ? .red : .gray)
