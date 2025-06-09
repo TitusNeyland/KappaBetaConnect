@@ -1271,11 +1271,28 @@ struct PostCard: View {
             return
         }
         
+        // Add vibration feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        // Update local state immediately
+        if currentPost.likes.contains(userId) {
+            currentPost.likes.removeAll { $0 == userId }
+        } else {
+            currentPost.likes.append(userId)
+        }
+        
         Task {
             do {
                 try await postRepository.toggleLike(postId: post.id ?? "", userId: userId)
             } catch {
+                // Revert the local state if the server call fails
                 await MainActor.run {
+                    if currentPost.likes.contains(userId) {
+                        currentPost.likes.removeAll { $0 == userId }
+                    } else {
+                        currentPost.likes.append(userId)
+                    }
                     showError = true
                     errorMessage = error.localizedDescription
                 }
