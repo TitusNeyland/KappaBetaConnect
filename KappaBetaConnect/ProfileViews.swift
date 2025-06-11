@@ -2,6 +2,7 @@ import SwiftUI
 import FirebaseStorage
 import PhotosUI
 import FirebaseAuth
+import UIKit
 
 class ImageService {
     static let shared = ImageService()
@@ -1682,7 +1683,11 @@ struct InterestToggleButton: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            action()
+        }) {
             Text(interest)
                 .font(.subheadline)
                 .padding(.horizontal, 12)
