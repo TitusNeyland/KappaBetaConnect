@@ -8,6 +8,7 @@ class PostRepository: ObservableObject {
     @Published var posts: [Post] = []
     @Published var isLoadingMore = false
     @Published var hasMorePosts = true
+    @Published var initialLoading = true
     private var postListeners: [String: ListenerRegistration] = [:]
     private var blockedUsers: [String] = []
     private var lastDocument: DocumentSnapshot?
@@ -34,10 +35,18 @@ class PostRepository: ObservableObject {
                 
                 if let error = error {
                     print("Error listening for post updates: \(error.localizedDescription)")
+                    Task { @MainActor in
+                        self.initialLoading = false
+                    }
                     return
                 }
                 
-                guard let snapshot = snapshot else { return }
+                guard let snapshot = snapshot else {
+                    Task { @MainActor in
+                        self.initialLoading = false
+                    }
+                    return
+                }
                 
                 let fetchedPosts = snapshot.documents.compactMap { document -> Post? in
                     do {
@@ -69,6 +78,9 @@ class PostRepository: ObservableObject {
                     if let lastDoc = snapshot.documents.last {
                         self.lastDocument = lastDoc
                     }
+                    
+                    // Set initialLoading to false after first successful load
+                    self.initialLoading = false
                 }
             }
     }
