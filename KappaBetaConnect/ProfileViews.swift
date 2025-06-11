@@ -948,6 +948,10 @@ struct ProfileView: View {
                                                         .foregroundColor(.black)
                                                 }
                                             }
+                                            .simultaneousGesture(TapGesture().onEnded { _ in
+                                                let generator = UIImpactFeedbackGenerator(style: .light)
+                                                generator.impactOccurred()
+                                            })
                                         } else {
                                             VStack(spacing: 2) {
                                                 Image(systemName: type.icon)
