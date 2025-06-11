@@ -12,67 +12,78 @@ struct FeedView: View {
     
     var body: some View {
         ZStack {
-            VStack(spacing: 0) {
-                ScrollView {
-                    LazyVStack(spacing: 20) {
-                        // KB Logo
-                        Image("kblogo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 60)
-                            .padding(.top, 10)
-                        
-                        ForEach(postRepository.posts) { post in
-                            PostCard(post: post, postRepository: postRepository)
-                                .onAppear {
-                                    // Load more posts when reaching the last post
-                                    if post.id == postRepository.posts.last?.id && !postRepository.isLoadingMore && postRepository.hasMorePosts {
-                                        Task {
-                                            do {
-                                                try await postRepository.loadMorePosts()
-                                            } catch {
-                                                print("Error loading more posts: \(error.localizedDescription)")
+            if postRepository.initialLoading {
+                ProgressView("Loading posts...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                VStack(spacing: 0) {
+                    ScrollView {
+                        LazyVStack(spacing: 20) {
+                            // KB Logo
+                            Image("kblogo")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 60)
+                                .padding(.top, 10)
+                            
+                            if postRepository.posts.isEmpty {
+                                Text("No posts yet")
+                                    .foregroundColor(.gray)
+                                    .padding()
+                            } else {
+                                ForEach(postRepository.posts) { post in
+                                    PostCard(post: post, postRepository: postRepository)
+                                        .onAppear {
+                                            // Load more posts when reaching the last post
+                                            if post.id == postRepository.posts.last?.id && !postRepository.isLoadingMore && postRepository.hasMorePosts {
+                                                Task {
+                                                    do {
+                                                        try await postRepository.loadMorePosts()
+                                                    } catch {
+                                                        print("Error loading more posts: \(error.localizedDescription)")
+                                                    }
+                                                }
                                             }
                                         }
-                                    }
                                 }
+                                
+                                // Loading indicator
+                                if postRepository.isLoadingMore {
+                                    ProgressView()
+                                        .padding()
+                                }
+                                
+                                // No more posts indicator
+                                if !postRepository.hasMorePosts && !postRepository.posts.isEmpty {
+                                    Text("No more posts")
+                                        .foregroundColor(.gray)
+                                        .padding()
+                                }
+                            }
                         }
-                        
-                        // Loading indicator
-                        if postRepository.isLoadingMore {
-                            ProgressView()
-                                .padding()
-                        }
-                        
-                        // No more posts indicator
-                        if !postRepository.hasMorePosts && !postRepository.posts.isEmpty {
-                            Text("No more posts")
-                                .foregroundColor(.gray)
-                                .padding()
-                        }
+                        .padding()
                     }
-                    .padding()
+                    .refreshable {
+                        await refreshData()
+                    }
                 }
-                .refreshable {
-                    await refreshData()
-                }
+                .overlay(
+                    Button(action: {
+                        showNewPostSheet = true
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.title2)
+                            .foregroundColor(.white)
+                            .frame(width: 60, height: 60)
+                            .background(Color(red: 0.831, green: 0.686, blue: 0.216))
+                            .clipShape(Circle())
+                            .shadow(radius: 4)
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 20),
+                    alignment: .bottomTrailing
+                )
             }
-            .overlay(
-                Button(action: {
-                    showNewPostSheet = true
-                }) {
-                    Image(systemName: "plus")
-                        .font(.title2)
-                        .foregroundColor(.white)
-                        .frame(width: 60, height: 60)
-                        .background(Color(red: 0.831, green: 0.686, blue: 0.216))
-                        .clipShape(Circle())
-                        .shadow(radius: 4)
-                }
-                .padding(.trailing, 20)
-                .padding(.bottom, 20),
-                alignment: .bottomTrailing
-            )
             
             // Centered Toast
             if showToast {
@@ -125,16 +136,16 @@ struct FeedView: View {
     }
     
     private func refreshData() async {
-            do {
+        do {
             if let currentUserId = authManager.currentUser?.id {
                 let blockedUsers = try await contentModeration.getBlockedUsers(userId: currentUserId)
                 postRepository.updateBlockedUsers(blockedUsers)
             }
-                try await postRepository.fetchPosts()
-            } catch {
-                await MainActor.run {
-                    showError = true
-                    errorMessage = error.localizedDescription
+            try await postRepository.fetchPosts()
+        } catch {
+            await MainActor.run {
+                showError = true
+                errorMessage = error.localizedDescription
             }
         }
     }
