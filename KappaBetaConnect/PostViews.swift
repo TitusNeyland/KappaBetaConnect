@@ -1949,10 +1949,16 @@ struct CommentView: View {
     
     private func handleLike() {
         guard let userId = authManager.currentUser?.id else {
-            showError = true
-            errorMessage = "You must be logged in to like comments"
+            Task { @MainActor in
+                showError = true
+                errorMessage = "You must be logged in to like comments"
+            }
             return
         }
+        
+        // Add vibration feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
         
         Task {
             do {
