@@ -124,7 +124,11 @@ struct PostUserInfoView: View {
                         Image(systemName: "pencil")
                             .foregroundColor(.black)
                     }
-                    Button(action: onDelete) {
+                    Button(action: {
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+                        onDelete()
+                    }) {
                         Image(systemName: "trash")
                             .foregroundColor(.red)
                     }
