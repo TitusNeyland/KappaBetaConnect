@@ -1755,6 +1755,7 @@ struct CommentView: View {
     @EnvironmentObject private var authManager: AuthManager
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var isAnimating = false
     let postId: String
     let postRepository: PostRepository
     
@@ -1866,9 +1867,19 @@ struct CommentView: View {
                 .padding(.top, 15)
                 Spacer()
                 // Like button to the far right
-                Button(action: handleLike) {
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        isAnimating = true
+                    }
+                    handleLike()
+                    // Reset animation after a short delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        isAnimating = false
+                    }
+                }) {
                     HStack(spacing: 4) {
                         Image(systemName: isLiked ? "heart.fill" : "heart")
+                            .scaleEffect(isAnimating ? 1.3 : 1.0)
                             .foregroundColor(isLiked ? .red : .gray)
                         Text("\(likeCount)")
                             .font(.caption2)
@@ -1949,10 +1960,16 @@ struct CommentView: View {
     
     private func handleLike() {
         guard let userId = authManager.currentUser?.id else {
-            showError = true
-            errorMessage = "You must be logged in to like comments"
+            Task { @MainActor in
+                showError = true
+                errorMessage = "You must be logged in to like comments"
+            }
             return
         }
+        
+        // Add vibration feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
         
         Task {
             do {
