@@ -252,12 +252,24 @@ struct PostInteractionButtonsView: View {
     let onLike: () -> Void
     let onComment: () -> Void
     let onShare: () -> Void
+    @State private var isAnimating = false
     
     var body: some View {
         HStack(spacing: 20) {
-            Button(action: onLike) {
+            Button(action: {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    isAnimating = true
+                }
+                onLike()
+                // Reset animation after a short delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    isAnimating = false
+                }
+            }) {
                 HStack {
                     Image(systemName: isLiked ? "heart.fill" : "heart")
+                        .scaleEffect(isAnimating ? 1.3 : 1.0)
+                        .foregroundColor(isLiked ? .red : .gray)
                     Text("Like")
                 }
                 .foregroundColor(isLiked ? .red : .gray)
@@ -1271,11 +1283,28 @@ struct PostCard: View {
             return
         }
         
+        // Add vibration feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        // Update local state immediately
+        if currentPost.likes.contains(userId) {
+            currentPost.likes.removeAll { $0 == userId }
+        } else {
+            currentPost.likes.append(userId)
+        }
+        
         Task {
             do {
                 try await postRepository.toggleLike(postId: post.id ?? "", userId: userId)
             } catch {
+                // Revert the local state if the server call fails
                 await MainActor.run {
+                    if currentPost.likes.contains(userId) {
+                        currentPost.likes.removeAll { $0 == userId }
+                    } else {
+                        currentPost.likes.append(userId)
+                    }
                     showError = true
                     errorMessage = error.localizedDescription
                 }
