@@ -138,7 +138,7 @@ struct CreatePostSheet: View {
                             createPost()
                         }
                         .disabled((newPostContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedImages.isEmpty) || isLoading || newPostContent.count > maxCharacterCount)
-                        .foregroundColor(.black)
+                        .foregroundColor(Color(.label))
                         .fontWeight(.semibold)
                     }
                     .padding()
@@ -158,7 +158,7 @@ struct CreatePostSheet: View {
                     Button("Cancel") {
                         dismiss()
                     }
-                    .foregroundColor(.black)
+                    .foregroundColor(Color(.label))
                     .disabled(isLoading)
                 }
             }
