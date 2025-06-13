@@ -273,7 +273,7 @@ struct FilterSheet: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(.black)
+                        .tint(Color(.label))
                     }
                 }
                 
@@ -298,7 +298,7 @@ struct FilterSheet: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(.black)
+                        .tint(Color(.label))
                     }
                 }
             }

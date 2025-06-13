@@ -122,7 +122,7 @@ struct PostUserInfoView: View {
                 HStack(spacing: 12) {
                     Button(action: { onEdit?() }) {
                         Image(systemName: "pencil")
-                            .foregroundColor(.black)
+                            .foregroundColor(Color(.label))
                     }
                     Button(action: onDelete) {
                         Image(systemName: "trash")
