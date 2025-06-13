@@ -5,6 +5,7 @@ struct FeedView: View {
     @StateObject private var contentModeration = ContentModerationService()
     @EnvironmentObject private var authManager: AuthManager
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showNewPostSheet = false
     @State private var showError = false
     @State private var errorMessage = ""
@@ -12,6 +13,10 @@ struct FeedView: View {
     
     var body: some View {
         ZStack {
+            // Set background color based on color scheme
+            (colorScheme == .dark ? Color(red: 0.10, green: 0.10, blue: 0.12) : Color(.systemBackground))
+                .ignoresSafeArea()
+            
             if postRepository.initialLoading {
                 ProgressView("Loading posts...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

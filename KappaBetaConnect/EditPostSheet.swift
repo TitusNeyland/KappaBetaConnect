@@ -39,7 +39,7 @@ struct EditPostSheet: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
-                        .foregroundColor(.black)
+                        .foregroundColor(Color(.label))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
@@ -54,7 +54,7 @@ struct EditPostSheet: View {
                         dismiss()
                     }
                     .disabled(editedContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || editedContent.count > maxCharacterCount)
-                    .foregroundColor(.black)
+                    .foregroundColor(Color(.label))
                 }
             }
             .alert("Inappropriate Content", isPresented: $showProfanityAlert) {

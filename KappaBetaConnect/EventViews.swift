@@ -4,6 +4,7 @@ struct EventsView: View {
     @StateObject private var eventRepository = EventRepository()
     @StateObject private var userRepository = UserRepository()
     @EnvironmentObject private var authManager: AuthManager
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showAddEventSheet = false
     @State private var showError = false
     @State private var errorMessage = ""
@@ -20,46 +21,65 @@ struct EventsView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Search Bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
-                    TextField("Search", text: $searchText)
-                        .textFieldStyle(.plain)
-                }
-                .padding(8)
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
-                .padding()
-                
-                if filteredEvents.isEmpty {
-                    VStack {
-                        Image(systemName: "calendar")
-                            .font(.system(size: 50))
+        ZStack {
+            (colorScheme == .dark ? Color(red: 0.10, green: 0.10, blue: 0.12) : Color(.systemBackground))
+                .ignoresSafeArea()
+            NavigationStack {
+                VStack(spacing: 0) {
+                    // Search Bar
+                    HStack {
+                        Image(systemName: "magnifyingglass")
                             .foregroundColor(.gray)
-                        Text("No events scheduled")
-                            .foregroundColor(.gray)
+                        TextField("Search", text: $searchText)
+                            .textFieldStyle(.plain)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(filteredEvents) { event in
-                                NavigationLink(destination: EventDetailView(userRepository: userRepository, eventRepository: eventRepository, eventId: event.id ?? "")) {
-                                    EventListItem(event: event)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
+                    .padding(8)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(8)
+                    .padding()
+                    
+                    if filteredEvents.isEmpty {
+                        VStack {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 50))
+                                .foregroundColor(.gray)
+                            Text("No events scheduled")
+                                .foregroundColor(.gray)
                         }
-                        .padding(.vertical)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                ForEach(filteredEvents) { event in
+                                    NavigationLink(destination: EventDetailView(userRepository: userRepository, eventRepository: eventRepository, eventId: event.id ?? "")) {
+                                        EventListItem(event: event)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(.vertical)
+                        }
                     }
                 }
-            }
-            .navigationTitle("Events")
-            .sheet(isPresented: $showAddEventSheet, onDismiss: {
-                Task {
+                .navigationTitle("Events")
+                .sheet(isPresented: $showAddEventSheet, onDismiss: {
+                    Task {
+                        do {
+                            try await eventRepository.fetchEvents()
+                        } catch {
+                            showError = true
+                            errorMessage = error.localizedDescription
+                        }
+                    }
+                }) {
+                    AddEventView(eventRepository: eventRepository, userRepository: userRepository)
+                }
+                .alert("Error", isPresented: $showError) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    Text(errorMessage)
+                }
+                .task {
                     do {
                         try await eventRepository.fetchEvents()
                     } catch {
@@ -67,47 +87,32 @@ struct EventsView: View {
                         errorMessage = error.localizedDescription
                     }
                 }
-            }) {
-                AddEventView(eventRepository: eventRepository, userRepository: userRepository)
-            }
-            .alert("Error", isPresented: $showError) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text(errorMessage)
-            }
-            .task {
-                do {
-                    try await eventRepository.fetchEvents()
-                } catch {
-                    showError = true
-                    errorMessage = error.localizedDescription
-                }
-            }
-            .overlay(
-                Button(action: {
-                    print("Add event button tapped")
-                    print("Current user: \(authManager.currentUser?.id ?? "nil")")
-                    if let currentUser = authManager.currentUser {
-                        print("User is logged in: \(currentUser.firstName) \(currentUser.lastName)")
-                        showAddEventSheet = true
-                    } else {
-                        print("No user logged in")
-                        showError = true
-                        errorMessage = "Please log in to create events"
+                .overlay(
+                    Button(action: {
+                        print("Add event button tapped")
+                        print("Current user: \(authManager.currentUser?.id ?? "nil")")
+                        if let currentUser = authManager.currentUser {
+                            print("User is logged in: \(currentUser.firstName) \(currentUser.lastName)")
+                            showAddEventSheet = true
+                        } else {
+                            print("No user logged in")
+                            showError = true
+                            errorMessage = "Please log in to create events"
+                        }
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.title2)
+                            .foregroundColor(.white)
+                            .frame(width: 60, height: 60)
+                            .background(Color(red: 0.831, green: 0.686, blue: 0.216))
+                            .clipShape(Circle())
+                            .shadow(radius: 4)
                     }
-                }) {
-                    Image(systemName: "plus")
-                        .font(.title2)
-                        .foregroundColor(.white)
-                        .frame(width: 60, height: 60)
-                        .background(Color(red: 0.831, green: 0.686, blue: 0.216))
-                        .clipShape(Circle())
-                        .shadow(radius: 4)
-                }
-                .padding(.trailing, 20)
-                .padding(.bottom, 20),
-                alignment: .bottomTrailing
-            )
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 20),
+                    alignment: .bottomTrailing
+                )
+            }
         }
     }
 }

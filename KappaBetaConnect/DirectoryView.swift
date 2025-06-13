@@ -12,6 +12,7 @@ struct DirectoryView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var showFilterSheet = false
     @State private var activeFilters: Filters = Filters()
+    @Environment(\.colorScheme) private var colorScheme
     
     var filteredUsers: [User] {
         users.filter { user in
@@ -50,79 +51,83 @@ struct DirectoryView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Search Bar and Filter Button
-                HStack {
+        ZStack {
+            (colorScheme == .dark ? Color(red: 0.10, green: 0.10, blue: 0.12) : Color(.systemBackground))
+                .ignoresSafeArea()
+            NavigationStack {
+                VStack(spacing: 0) {
+                    // Search Bar and Filter Button
                     HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.gray)
-                        TextField("Search by name...", text: $searchText)
-                            .textFieldStyle(.plain)
-                            .focused($isSearchFocused)
-                            .onChange(of: searchText) { _ in
-                                searchTask?.cancel()
-                                searchTask = Task {
-                                    try? await Task.sleep(nanoseconds: 300_000_000)
-                                    if !Task.isCancelled {
-                                        await searchUsers()
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.gray)
+                            TextField("Search by name...", text: $searchText)
+                                .textFieldStyle(.plain)
+                                .focused($isSearchFocused)
+                                .onChange(of: searchText) { _ in
+                                    searchTask?.cancel()
+                                    searchTask = Task {
+                                        try? await Task.sleep(nanoseconds: 300_000_000)
+                                        if !Task.isCancelled {
+                                            await searchUsers()
+                                        }
                                     }
                                 }
-                            }
-                    }
-                    .padding(8)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
-                    
-                    // Filter Button
-                    Button(action: {
-                        showFilterSheet = true
-                    }) {
-                        Image(systemName: activeFilters.hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                            .foregroundColor(activeFilters.hasActiveFilters ? Color(red: 0.831, green: 0.686, blue: 0.216) : .gray)
-                            .font(.system(size: 22))
-                    }
-                }
-                .padding()
-                
-                if isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if filteredUsers.isEmpty {
-                    VStack {
-                        Image(systemName: "person.3")
-                            .font(.system(size: 50))
-                            .foregroundColor(.gray)
-                        Text("No members found")
-                            .foregroundColor(.gray)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(filteredUsers) { user in
-                                UserCard(user: user)
-                            }
                         }
-                        .padding()
+                        .padding(8)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                        
+                        // Filter Button
+                        Button(action: {
+                            showFilterSheet = true
+                        }) {
+                            Image(systemName: activeFilters.hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                                .foregroundColor(activeFilters.hasActiveFilters ? Color(red: 0.831, green: 0.686, blue: 0.216) : .gray)
+                                .font(.system(size: 22))
+                        }
+                    }
+                    .padding()
+                    
+                    if isLoading {
+                        ProgressView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if filteredUsers.isEmpty {
+                        VStack {
+                            Image(systemName: "person.3")
+                                .font(.system(size: 50))
+                                .foregroundColor(.gray)
+                            Text("No members found")
+                                .foregroundColor(.gray)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                ForEach(filteredUsers) { user in
+                                    UserCard(user: user)
+                                }
+                            }
+                            .padding()
+                        }
                     }
                 }
-            }
-            .navigationTitle("Directory")
-            .sheet(isPresented: $showFilterSheet) {
-                FilterSheet(filters: $activeFilters)
-            }
-            .alert("Error", isPresented: $showError) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text(errorMessage)
-            }
-            .task {
-                await searchUsers()
-            }
-            .onChange(of: scenePhase) { newPhase in
-                if newPhase != .active {
-                    isSearchFocused = false
+                .navigationTitle("Directory")
+                .sheet(isPresented: $showFilterSheet) {
+                    FilterSheet(filters: $activeFilters)
+                }
+                .alert("Error", isPresented: $showError) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    Text(errorMessage)
+                }
+                .task {
+                    await searchUsers()
+                }
+                .onChange(of: scenePhase) { newPhase in
+                    if newPhase != .active {
+                        isSearchFocused = false
+                    }
                 }
             }
         }
@@ -273,7 +278,7 @@ struct FilterSheet: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(.black)
+                        .tint(Color(.label))
                     }
                 }
                 
@@ -298,7 +303,7 @@ struct FilterSheet: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(.black)
+                        .tint(Color(.label))
                     }
                 }
             }

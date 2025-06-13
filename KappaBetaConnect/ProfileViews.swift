@@ -144,6 +144,7 @@ struct ManageProfileView: View {
                                 }
                             }
                             .pickerStyle(.menu)
+                            .tint(Color(.label))
                             .frame(width: 100)
                         }
                         
@@ -162,6 +163,7 @@ struct ManageProfileView: View {
                                 }
                             }
                             .pickerStyle(.menu)
+                            .tint(Color(.label))
                             .frame(width: 100)
                         }
                         
@@ -190,30 +192,30 @@ struct ManageProfileView: View {
                             .foregroundColor(.gray)
                         Spacer()
                         Picker("", selection: $state) {
-                            Text("Select").tag("")
+                            Text("Select State").tag("")
                             ForEach(states, id: \.self) { state in
                                 Text(state).tag(state)
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(.black)
+                        .tint(Color(.label))
                     }
                 }
                 
                 Section(header: Text("Hometown")) {
                     TextField("City", text: $homeCity)
                     HStack {
-                        Text("State")
+                        Text("Home State")
                             .foregroundColor(.gray)
                         Spacer()
                         Picker("", selection: $homeState) {
-                            Text("Select").tag("")
+                            Text("Select State").tag("")
                             ForEach(states, id: \.self) { state in
                                 Text(state).tag(state)
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(.black)
+                        .tint(Color(.label))
                     }
                 }
                 
@@ -223,13 +225,14 @@ struct ManageProfileView: View {
                             .foregroundColor(.gray)
                         Spacer()
                         Picker("", selection: $careerField) {
-                            Text("Select Career Field").tag("")
+                            Text("Select").tag("")
                             ForEach(careerFields, id: \.self) { field in
                                 Text(field).tag(field)
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(.black)
+                        .tint(Color(.label))
+                        .frame(width: 180)
                     }
                     
                     TextField("Job Title", text: $jobTitle)
@@ -290,6 +293,7 @@ struct ManageProfileView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundColor(Color(.label))
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -297,6 +301,7 @@ struct ManageProfileView: View {
                         saveProfile()
                     }
                     .disabled(isLoading)
+                    .foregroundColor(Color(.label))
                 }
             }
             .onAppear {
@@ -531,6 +536,7 @@ struct ProfileView: View {
     @StateObject private var lineRepository = LineRepository()
     @StateObject private var contentModeration = ContentModerationService()
     @EnvironmentObject private var authManager: AuthManager
+    @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.dismiss) private var dismiss
     @State private var showLogoutAlert = false
     @State private var navigateToLogin = false
@@ -941,10 +947,10 @@ struct ProfileView: View {
                                                 VStack(spacing: 2) {
                                                     Image(systemName: type.icon)
                                                         .font(.system(size: 20))
-                                                        .foregroundColor(.black)
+                                                        .foregroundColor(Color(.label))
                                                     Text(type.rawValue)
                                                         .font(.system(size: 9))
-                                                        .foregroundColor(.black)
+                                                        .foregroundColor(Color(.label))
                                                 }
                                             }
                                         } else {
@@ -988,6 +994,30 @@ struct ProfileView: View {
                         // Manage Profile Button
                         if isCurrentUserProfile {
                             VStack(spacing: 10) {
+                                // Add Dark Mode Toggle
+                                VStack(spacing: 15) {
+                                    HStack {
+                                        Text("Appearance")
+                                            .font(.headline)
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, 20)
+                                    
+                                    HStack {
+                                        Image(systemName: "moon.fill")
+                                            .foregroundColor(.gray)
+                                        Text("Dark Mode")
+                                            .foregroundColor(.primary)
+                                        Spacer()
+                                        Toggle("", isOn: Binding(
+                                            get: { themeManager.colorScheme == .dark },
+                                            set: { themeManager.setTheme($0) }
+                                        ))
+                                    }
+                                    .padding(.horizontal, 20)
+                                }
+                                .padding(.top, 20)
+                                
                                 Button(action: {
                                     showManageProfile = true
                                 }) {
@@ -1049,7 +1079,7 @@ struct ProfileView: View {
                         }) {
                             Image(systemName: "questionmark.circle.fill")
                                 .font(.system(size: 24))
-                                .foregroundColor(.black)
+                                .foregroundColor(Color(.label))
                                 .frame(width: 50, height: 50)
                                 .background(Color(.systemBackground))
                                 .clipShape(Circle())
@@ -1074,7 +1104,7 @@ struct ProfileView: View {
                             }) {
                                 Image(systemName: "message.circle.fill")
                                     .font(.system(size: 24))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(Color(.label))
                                     .frame(width: 50, height: 50)
                                     .background(Color(.systemBackground))
                                     .clipShape(Circle())
@@ -1089,7 +1119,7 @@ struct ProfileView: View {
                             }) {
                                 Image(systemName: "envelope.circle.fill")
                                     .font(.system(size: 24))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(Color(.label))
                                     .frame(width: 50, height: 50)
                                     .background(Color(.systemBackground))
                                     .clipShape(Circle())
@@ -1118,9 +1148,9 @@ struct ProfileView: View {
             }) {
                 HStack {
                     Image(systemName: "chevron.left")
-                        .foregroundColor(.black)
+                        .foregroundColor(Color(.label))
                     Text("Back")
-                        .foregroundColor(.black)
+                        .foregroundColor(Color(.label))
                 }
             }
         )
@@ -1593,7 +1623,7 @@ struct InterestsEditView: View {
                     
                     Button(action: addCustomInterest) {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundColor(.black)
+                            .foregroundColor(Color(.label))
                             .font(.title2)
                     }
                     .disabled(newInterest.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
