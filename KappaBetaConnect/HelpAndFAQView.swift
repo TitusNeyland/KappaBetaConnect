@@ -118,7 +118,7 @@ struct HelpAndFAQView: View {
                     Button("Close") {
                         dismiss()
                     }
-                    .foregroundColor(.black)
+                    .foregroundColor(.primary)
                 }
             }
         }

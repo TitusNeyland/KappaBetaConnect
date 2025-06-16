@@ -85,7 +85,7 @@ struct PostUserInfoView: View {
                         .font(.headline)
                     if let user = authorUser, user.isAdmin {
                         Image(systemName: "checkmark.seal.fill")
-                            .foregroundColor(.black)
+                            .foregroundColor(.primary)
                             .font(.system(size: 14))
                     }
                 }
@@ -573,7 +573,7 @@ struct CommentsSheetView: View {
                                         .fontWeight(.semibold)
                                     if let user = postAuthorUser, user.isAdmin {
                                         Image(systemName: "checkmark.seal.fill")
-                                            .foregroundColor(.black)
+                                            .foregroundColor(.primary)
                                             .font(.system(size: 16))
                                     }
                                 }

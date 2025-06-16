@@ -182,7 +182,7 @@ struct UserCard: View {
                         
                         if user.isAdmin {
                             Image(systemName: "checkmark.seal.fill")
-                                .foregroundColor(.black)
+                                .foregroundColor(.primary)
                                 .font(.system(size: 14))
                         }
                     }
