@@ -110,9 +110,9 @@ struct FeedView: View {
         }) {
             HStack {
                 Image(systemName: "chevron.left")
-                    .foregroundColor(.black)
+                    .foregroundColor(.primary)
                 Text("Back")
-                    .foregroundColor(.black)
+                    .foregroundColor(.primary)
             }
         })
         .sheet(isPresented: $showNewPostSheet) {
