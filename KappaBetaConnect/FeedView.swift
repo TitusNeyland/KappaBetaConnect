@@ -113,11 +113,6 @@ struct FeedView: View {
                     alignment: .bottomTrailing
                 )
             }
-            
-            // Centered Toast
-            if showToast {
-                Toast(message: "Post uploaded successfully", isShowing: $showToast)
-            }
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
