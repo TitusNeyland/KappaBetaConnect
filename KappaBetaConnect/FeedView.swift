@@ -30,7 +30,7 @@ struct FeedView: View {
                     }
                     .padding(.vertical, 10)
                     .padding(.horizontal, 24)
-                    .background(postRepository.isUploadingPost ? Color.blue.opacity(0.95) : (postRepository.uploadStatusMessage == "Post uploaded!" ? Color.green.opacity(0.95) : Color.red.opacity(0.95)))
+                    .background(postRepository.isUploadingPost ? Color.black.opacity(0.95) : (postRepository.uploadStatusMessage == "Post uploaded!" ? Color.green.opacity(0.95) : Color.red.opacity(0.95)))
                     .cornerRadius(16)
                     .shadow(radius: 8)
                     Spacer()
