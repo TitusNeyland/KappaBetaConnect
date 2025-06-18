@@ -285,7 +285,8 @@ struct PostInteractionButtonsView: View {
             
             Button(action: onShare) {
                 HStack {
-                    Image(systemName: "square.and.arrow.up")
+                    Image(systemName: "paperplane")
+                        .foregroundColor(.gray)
                     Text("Share")
                 }
                 .foregroundColor(.gray)
@@ -2116,7 +2117,7 @@ struct PostStatsBar: View {
             }
             Button(action: onShare) {
                 HStack(spacing: 4) {
-                    Image(systemName: "square.and.arrow.up")
+                    Image(systemName: "paperplane")
                         .foregroundColor(.gray)
                     Text("\(shareCount)")
                         .foregroundColor(.primary)
