@@ -1232,6 +1232,7 @@ struct PostCard: View {
                             Button("Done") {
                                 showLikesSheet = false
                             }
+                            .foregroundColor(Color(.label))
                         }
                     }
                 }
