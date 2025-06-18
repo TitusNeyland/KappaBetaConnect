@@ -3,7 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @StateObject private var eventRepository = EventRepository()
     @StateObject private var userRepository = UserRepository()
-    @StateObject private var postRepository = PostRepository()
+    @EnvironmentObject var postRepository: PostRepository
     @StateObject private var lineRepository = LineRepository()
     @EnvironmentObject private var authManager: AuthManager
     @State private var recommendedUsers: [User] = []

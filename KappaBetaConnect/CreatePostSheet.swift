@@ -15,6 +15,7 @@ struct CreatePostSheet: View {
     @State private var lastCheckedContent = ""
     @State private var selectedItems: [PhotosPickerItem] = []
     @State private var isLoading = false
+    @State private var isProcessingImages = false
     var didCreatePost: ((Bool) -> Void)?
     
     private let maxCharacterCount = 1000
@@ -137,18 +138,11 @@ struct CreatePostSheet: View {
                         Button("Post") {
                             createPost()
                         }
-                        .disabled((newPostContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedImages.isEmpty) || isLoading || newPostContent.count > maxCharacterCount)
+                        .disabled((newPostContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedImages.isEmpty) || isLoading || isProcessingImages || newPostContent.count > maxCharacterCount)
                         .foregroundColor(Color(.label))
                         .fontWeight(.semibold)
                     }
                     .padding()
-                }
-                if isLoading {
-                    Color.black.opacity(0.2)
-                        .ignoresSafeArea()
-                    ProgressView("Posting...")
-                        .progressViewStyle(CircularProgressViewStyle(tint: .black))
-                        .scaleEffect(1.5)
                 }
             }
             .navigationTitle("Create Post")
@@ -164,6 +158,7 @@ struct CreatePostSheet: View {
             }
             .onChange(of: selectedItems) { items in
                 Task {
+                    isProcessingImages = true
                     var newImages: [UIImage] = []
                     for item in items {
                         if let data = try? await item.loadTransferable(type: Data.self),
@@ -173,6 +168,7 @@ struct CreatePostSheet: View {
                     }
                     await MainActor.run {
                         selectedImages = newImages
+                        isProcessingImages = false
                     }
                 }
             }
@@ -182,27 +178,15 @@ struct CreatePostSheet: View {
     private func createPost() {
         guard let currentUser = authManager.currentUser else { return }
         
-        isLoading = true
+        dismiss() // Dismiss immediately
+        didCreatePost?(true)
         Task {
-            do {
-                try await postRepository.createPost(
-                    content: newPostContent,
-                    authorId: currentUser.id ?? "",
-                    authorName: "\(currentUser.firstName) \(currentUser.lastName)",
-                    images: selectedImages
-                )
-                
-                await MainActor.run {
-                    didCreatePost?(true)
-                    dismiss()
-                }
-            } catch {
-                await MainActor.run {
-                    showError = true
-                    errorMessage = error.localizedDescription
-                }
-            }
-            isLoading = false
+            _ = try? await postRepository.createPost(
+                content: newPostContent,
+                authorId: currentUser.id ?? "",
+                authorName: "\(currentUser.firstName) \(currentUser.lastName)",
+                images: selectedImages
+            )
         }
     }
     

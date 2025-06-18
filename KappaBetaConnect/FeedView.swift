@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct FeedView: View {
-    @StateObject private var postRepository = PostRepository()
+    @EnvironmentObject var postRepository: PostRepository
     @StateObject private var contentModeration = ContentModerationService()
     @EnvironmentObject private var authManager: AuthManager
     @Environment(\.dismiss) private var dismiss
@@ -16,6 +16,30 @@ struct FeedView: View {
             // Set background color based on color scheme
             (colorScheme == .dark ? Color(red: 0.10, green: 0.10, blue: 0.12) : Color(.systemBackground))
                 .ignoresSafeArea()
+            
+            // Global upload indicator (banner at top)
+            if postRepository.isUploadingPost || (postRepository.uploadStatusMessage != nil && postRepository.uploadStatusMessage != "Uploading post...") {
+                VStack {
+                    HStack {
+                        if postRepository.isUploadingPost {
+                            ProgressView()
+                        }
+                        Text(postRepository.uploadStatusMessage ?? "")
+                            .font(.subheadline)
+                            .foregroundColor(.white)
+                    }
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 24)
+                    .background(postRepository.isUploadingPost ? Color.black.opacity(0.95) : (postRepository.uploadStatusMessage == "Post uploaded!" ? Color.green.opacity(0.95) : Color.red.opacity(0.95)))
+                    .cornerRadius(16)
+                    .shadow(radius: 8)
+                    Spacer()
+                }
+                .padding(.top, 60)
+                .padding(.horizontal, 32)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .zIndex(10)
+            }
             
             if postRepository.initialLoading {
                 ProgressView("Loading posts...")
@@ -89,11 +113,6 @@ struct FeedView: View {
                     alignment: .bottomTrailing
                 )
             }
-            
-            // Centered Toast
-            if showToast {
-                Toast(message: "Post uploaded successfully", isShowing: $showToast)
-            }
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -138,6 +157,16 @@ struct FeedView: View {
             // Initial load of posts
             await refreshData()
         }
+        .onChange(of: postRepository.uploadStatusMessage) { newValue in
+            // Auto-dismiss the upload status message after 2 seconds if not uploading
+            if let msg = newValue, !postRepository.isUploadingPost, msg != "Uploading post..." {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    withAnimation {
+                        postRepository.uploadStatusMessage = nil
+                    }
+                }
+            }
+        }
     }
     
     private func refreshData() async {
@@ -147,6 +176,10 @@ struct FeedView: View {
                 postRepository.updateBlockedUsers(blockedUsers)
             }
             try await postRepository.fetchPosts()
+            // Prefetch the next batch in the background
+            Task {
+                try? await postRepository.loadMorePosts()
+            }
         } catch {
             await MainActor.run {
                 showError = true

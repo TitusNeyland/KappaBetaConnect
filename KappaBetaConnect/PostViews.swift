@@ -113,9 +113,6 @@ struct PostUserInfoView: View {
                     Image(systemName: "ellipsis")
                         .foregroundColor(.gray)
                         .font(.system(size: 22, weight: .bold))
-                        .padding(12)
-                        .background(Color(.systemGray6).opacity(0.7))
-                        .clipShape(Circle())
                         .contentShape(Rectangle())
                 }
             } else {
@@ -285,7 +282,8 @@ struct PostInteractionButtonsView: View {
             
             Button(action: onShare) {
                 HStack {
-                    Image(systemName: "square.and.arrow.up")
+                    Image(systemName: "paperplane")
+                        .foregroundColor(.gray)
                     Text("Share")
                 }
                 .foregroundColor(.gray)
@@ -377,6 +375,8 @@ struct CommentsSheetView: View {
     @State private var expandedReplies: [String: Bool] = [:] // commentId: isExpanded
     @State private var selectedImageIndex = 0
     @State private var showFullImage = false
+    @State private var showCommentSheet = false
+    @State private var showShareSheet = false
     
     init(post: Post, showSheet: Binding<Bool>, newComment: Binding<String>, onComment: @escaping () -> Void, postRepository: PostRepository, onCommentAdded: ((Comment) -> Void)? = nil, onCommentDeleted: ((String) -> Void)? = nil) {
         self.post = post
@@ -599,17 +599,15 @@ struct CommentsSheetView: View {
                                 }
                             }
                         // Post stats
-                        HStack(spacing: 20) {
-                            Text("\(currentPost.likes.count) likes")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                            Text("\(currentPost.comments.count) comments")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                            Text("\(currentPost.shareCount) shares")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
+                        PostStatsBar(
+                            likeCount: currentPost.likes.count,
+                            commentCount: currentPost.comments.count,
+                            shareCount: currentPost.shareCount,
+                            isLiked: currentPost.likes.contains(authManager.currentUser?.id ?? ""),
+                            onLike: handleLike,
+                            onComment: { showCommentSheet = true },
+                            onShare: { showShareSheet = true }
+                        )
                     }
                     .padding()
                     .background(Color(.secondarySystemGroupedBackground))
@@ -912,6 +910,41 @@ struct CommentsSheetView: View {
             }
         }
     }
+    
+    private func handleLike() {
+        guard let userId = authManager.currentUser?.id else {
+            Task { @MainActor in
+                showError = true
+                errorMessage = "You must be logged in to like posts"
+            }
+            return
+        }
+        // Add vibration feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        // Update local state immediately
+        if currentPost.likes.contains(userId) {
+            currentPost.likes.removeAll { $0 == userId }
+        } else {
+            currentPost.likes.append(userId)
+        }
+        Task {
+            do {
+                try await postRepository.toggleLike(postId: post.id ?? "", userId: userId)
+            } catch {
+                // Revert the local state if the server call fails
+                await MainActor.run {
+                    if currentPost.likes.contains(userId) {
+                        currentPost.likes.removeAll { $0 == userId }
+                    } else {
+                        currentPost.likes.append(userId)
+                    }
+                    showError = true
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
 }
 
 // Add this before the PostCard struct
@@ -1063,33 +1096,20 @@ struct PostCard: View {
                     .zIndex(0)
                 }
                 
-                HStack(spacing: 20) {
-                    Button(action: {
+                PostStatsBar(
+                    likeCount: currentPost.likes.count,
+                    commentCount: currentPost.comments.count,
+                    shareCount: currentPost.shareCount,
+                    isLiked: isLiked,
+                    onLike: handleLike,
+                    onComment: { showCommentSheet = true },
+                    onShare: { showShareSheet = true },
+                    onLikeCountTap: {
                         Task {
                             await loadLikedUsers()
                             showLikesSheet = true
                         }
-                    }) {
-                        Text("\(currentPost.likes.count) likes")
-                            .font(.caption)
-                            .foregroundColor(.gray)
                     }
-                    
-                    Text("\(currentPost.comments.count) comments")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    
-                    Text("\(currentPost.shareCount) shares")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-                
-                PostInteractionButtonsView(
-                    post: currentPost,
-                    isLiked: isLiked,
-                    onLike: handleLike,
-                    onComment: { showCommentSheet = true },
-                    onShare: { showShareSheet = true }
                 )
                 
                 PostCommentsView(
@@ -1209,6 +1229,7 @@ struct PostCard: View {
                             Button("Done") {
                                 showLikesSheet = false
                             }
+                            .foregroundColor(Color(.label))
                         }
                     }
                 }
@@ -1882,8 +1903,8 @@ struct CommentView: View {
                             .scaleEffect(isAnimating ? 1.3 : 1.0)
                             .foregroundColor(isLiked ? .red : .gray)
                         Text("\(likeCount)")
-                            .font(.caption2)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.primary)
+                            .font(.subheadline)
                     }
                 }
                 .padding(.top, 15)
@@ -1897,9 +1918,6 @@ struct CommentView: View {
                         Image(systemName: "ellipsis")
                             .foregroundColor(.gray)
                             .font(.system(size: 22, weight: .bold))
-                            .padding(12)
-                            .background(Color(.systemGray6).opacity(0.7))
-                            .clipShape(Circle())
                             .contentShape(Rectangle())
                     }
                 }
@@ -2053,6 +2071,65 @@ struct FullScreenImageViewer: View {
                     .font(.system(size: 32, weight: .bold))
                     .foregroundColor(.white)
                     .padding()
+            }
+        }
+    }
+}
+
+// --- New Instagram-style PostStatsBar ---
+struct PostStatsBar: View {
+    let likeCount: Int
+    let commentCount: Int
+    let shareCount: Int
+    let isLiked: Bool
+    let onLike: () -> Void
+    let onComment: () -> Void
+    let onShare: () -> Void
+    var onLikeCountTap: (() -> Void)? = nil
+    @State private var isAnimating = false
+
+    var body: some View {
+        HStack(spacing: 32) {
+            // Like icon and count
+            HStack(spacing: 4) {
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        isAnimating = true
+                    }
+                    onLike()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        isAnimating = false
+                    }
+                }) {
+                    Image(systemName: isLiked ? "heart.fill" : "heart")
+                        .scaleEffect(isAnimating ? 1.3 : 1.0)
+                        .foregroundColor(isLiked ? .red : .gray)
+                }
+                Button(action: { onLikeCountTap?() }) {
+                    Text("\(likeCount)")
+                        .foregroundColor(.primary)
+                        .font(.subheadline)
+                }
+            }
+            // Comment icon and count
+            Button(action: onComment) {
+                HStack(spacing: 4) {
+                    Image(systemName: "bubble.right")
+                        .foregroundColor(.gray)
+                    Text("\(commentCount)")
+                        .foregroundColor(.primary)
+                        .font(.subheadline)
+                }
+            }
+            // Share icon and count
+            Button(action: onShare) {
+                HStack(spacing: 4) {
+                    Image(systemName: "paperplane")
+                        .foregroundColor(.gray)
+                    Text("\(shareCount)")
+                        .foregroundColor(.primary)
+                        .font(.subheadline)
+                }
             }
         }
     }
