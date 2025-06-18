@@ -357,7 +357,9 @@ class PostRepository: ObservableObject {
     
     func deletePost(postId: String) async throws {
         try await db.collection("posts").document(postId).delete()
-        // The listener will handle updating the posts array
+        await MainActor.run {
+            self.posts.removeAll { $0.id == postId }
+        }
     }
     
     // Update post content
