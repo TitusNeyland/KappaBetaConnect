@@ -1106,7 +1106,13 @@ struct PostCard: View {
                     isLiked: isLiked,
                     onLike: handleLike,
                     onComment: { showCommentSheet = true },
-                    onShare: { showShareSheet = true }
+                    onShare: { showShareSheet = true },
+                    onLikeCountTap: {
+                        Task {
+                            await loadLikedUsers()
+                            showLikesSheet = true
+                        }
+                    }
                 )
                 
                 PostCommentsView(
@@ -2084,28 +2090,33 @@ struct PostStatsBar: View {
     let onLike: () -> Void
     let onComment: () -> Void
     let onShare: () -> Void
+    var onLikeCountTap: (() -> Void)? = nil
     @State private var isAnimating = false
 
     var body: some View {
         HStack(spacing: 32) {
-            Button(action: {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                    isAnimating = true
-                }
-                onLike()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    isAnimating = false
-                }
-            }) {
-                HStack(spacing: 4) {
+            // Like icon and count
+            HStack(spacing: 4) {
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        isAnimating = true
+                    }
+                    onLike()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        isAnimating = false
+                    }
+                }) {
                     Image(systemName: isLiked ? "heart.fill" : "heart")
                         .scaleEffect(isAnimating ? 1.3 : 1.0)
                         .foregroundColor(isLiked ? .red : .gray)
+                }
+                Button(action: { onLikeCountTap?() }) {
                     Text("\(likeCount)")
                         .foregroundColor(.primary)
                         .font(.subheadline)
                 }
             }
+            // Comment icon and count
             Button(action: onComment) {
                 HStack(spacing: 4) {
                     Image(systemName: "bubble.right")
@@ -2115,6 +2126,7 @@ struct PostStatsBar: View {
                         .font(.subheadline)
                 }
             }
+            // Share icon and count
             Button(action: onShare) {
                 HStack(spacing: 4) {
                     Image(systemName: "paperplane")
