@@ -17,6 +17,30 @@ struct FeedView: View {
             (colorScheme == .dark ? Color(red: 0.10, green: 0.10, blue: 0.12) : Color(.systemBackground))
                 .ignoresSafeArea()
             
+            // Global upload indicator (banner at top)
+            if postRepository.isUploadingPost || (postRepository.uploadStatusMessage != nil && postRepository.uploadStatusMessage != "Uploading post...") {
+                VStack {
+                    HStack {
+                        if postRepository.isUploadingPost {
+                            ProgressView()
+                        }
+                        Text(postRepository.uploadStatusMessage ?? "")
+                            .font(.subheadline)
+                            .foregroundColor(.white)
+                    }
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 24)
+                    .background(postRepository.isUploadingPost ? Color.blue.opacity(0.95) : (postRepository.uploadStatusMessage == "Post uploaded!" ? Color.green.opacity(0.95) : Color.red.opacity(0.95)))
+                    .cornerRadius(16)
+                    .shadow(radius: 8)
+                    Spacer()
+                }
+                .padding(.top, 60)
+                .padding(.horizontal, 32)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .zIndex(10)
+            }
+            
             if postRepository.initialLoading {
                 ProgressView("Loading posts...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -137,6 +161,16 @@ struct FeedView: View {
         .task {
             // Initial load of posts
             await refreshData()
+        }
+        .onChange(of: postRepository.uploadStatusMessage) { newValue in
+            // Auto-dismiss the upload status message after 2 seconds if not uploading
+            if let msg = newValue, !postRepository.isUploadingPost, msg != "Uploading post..." {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    withAnimation {
+                        postRepository.uploadStatusMessage = nil
+                    }
+                }
+            }
         }
     }
     

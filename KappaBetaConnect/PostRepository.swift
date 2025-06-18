@@ -13,6 +13,9 @@ class PostRepository: ObservableObject {
     private var blockedUsers: [String] = []
     private var lastDocument: DocumentSnapshot?
     private let postsPerPage = 3
+    // --- Upload state ---
+    @Published var isUploadingPost: Bool = false
+    @Published var uploadStatusMessage: String? = nil
     
     init() {}
     
@@ -207,32 +210,45 @@ class PostRepository: ObservableObject {
     }
     
     func createPost(content: String, authorId: String, authorName: String, images: [UIImage] = []) async throws {
-        var imageURLs: [String] = []
-        
-        // Upload up to 4 images
-        for image in images.prefix(4) {
-            if let imageURL = try? await uploadImage(image, authorId: authorId) {
-                imageURLs.append(imageURL)
-            }
+        await MainActor.run {
+            self.isUploadingPost = true
+            self.uploadStatusMessage = "Uploading post..."
         }
-        
-        let post = Post(
-            content: content,
-            authorId: authorId,
-            authorName: authorName,
-            timestamp: Date(),
-            likes: [],
-            comments: [],
-            shareCount: 0,
-            imageURLs: imageURLs
-        )
-        
-        _ = try await db.collection("posts").addDocument(from: post)
+        var imageURLs: [String] = []
+        do {
+            // Upload up to 4 images
+            for image in images.prefix(4) {
+                if let imageURL = try? await uploadImage(image, authorId: authorId) {
+                    imageURLs.append(imageURL)
+                }
+            }
+            let post = Post(
+                content: content,
+                authorId: authorId,
+                authorName: authorName,
+                timestamp: Date(),
+                likes: [],
+                comments: [],
+                shareCount: 0,
+                imageURLs: imageURLs
+            )
+            _ = try await db.collection("posts").addDocument(from: post)
+            await MainActor.run {
+                self.isUploadingPost = false
+                self.uploadStatusMessage = "Post uploaded!"
+            }
+        } catch {
+            await MainActor.run {
+                self.isUploadingPost = false
+                self.uploadStatusMessage = "Failed to upload post."
+            }
+            throw error
+        }
     }
     
     private func uploadImage(_ image: UIImage, authorId: String) async throws -> String {
-        let resizedImage = image.resizedTo(maxDimension: 1080)
-        guard let imageData = resizedImage.jpegData(compressionQuality: 0.7) else {
+        let resizedImage = image.resizedTo(maxDimension: 2048)
+        guard let imageData = resizedImage.jpegData(compressionQuality: 0.95) else {
             throw NSError(domain: "ImageError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to data"])
         }
         let imageID = UUID().uuidString
@@ -287,8 +303,8 @@ class PostRepository: ObservableObject {
     }
     
     private func uploadCommentImage(_ image: UIImage, authorId: String) async throws -> String {
-        let resizedImage = image.resizedTo(maxDimension: 1080)
-        guard let imageData = resizedImage.jpegData(compressionQuality: 0.7) else {
+        let resizedImage = image.resizedTo(maxDimension: 2048)
+        guard let imageData = resizedImage.jpegData(compressionQuality: 0.95) else {
             throw NSError(domain: "ImageError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to data"])
         }
         let imageID = UUID().uuidString
@@ -458,7 +474,7 @@ extension UIImage {
         if size.width <= maxDimension && size.height <= maxDimension {
             return self // No resizing needed
         }
-        UIGraphicsBeginImageContextWithOptions(newSize, false, 0.7)
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0) // Best quality
         defer { UIGraphicsEndImageContext() }
         draw(in: CGRect(origin: .zero, size: newSize))
         return UIGraphicsGetImageFromCurrentImageContext() ?? self

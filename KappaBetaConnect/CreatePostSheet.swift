@@ -143,13 +143,6 @@ struct CreatePostSheet: View {
                     }
                     .padding()
                 }
-                if isLoading {
-                    Color.black.opacity(0.2)
-                        .ignoresSafeArea()
-                    ProgressView("Posting...")
-                        .progressViewStyle(CircularProgressViewStyle(tint: .black))
-                        .scaleEffect(1.5)
-                }
             }
             .navigationTitle("Create Post")
             .navigationBarTitleDisplayMode(.inline)
@@ -182,27 +175,18 @@ struct CreatePostSheet: View {
     private func createPost() {
         guard let currentUser = authManager.currentUser else { return }
         
-        isLoading = true
         Task {
-            do {
-                try await postRepository.createPost(
-                    content: newPostContent,
-                    authorId: currentUser.id ?? "",
-                    authorName: "\(currentUser.firstName) \(currentUser.lastName)",
-                    images: selectedImages
-                )
-                
-                await MainActor.run {
-                    didCreatePost?(true)
-                    dismiss()
-                }
-            } catch {
-                await MainActor.run {
-                    showError = true
-                    errorMessage = error.localizedDescription
-                }
+            // Start upload in background, dismiss immediately
+            _ = try? await postRepository.createPost(
+                content: newPostContent,
+                authorId: currentUser.id ?? "",
+                authorName: "\(currentUser.firstName) \(currentUser.lastName)",
+                images: selectedImages
+            )
+            await MainActor.run {
+                didCreatePost?(true)
+                dismiss()
             }
-            isLoading = false
         }
     }
     
