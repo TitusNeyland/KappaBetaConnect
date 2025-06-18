@@ -232,7 +232,15 @@ class PostRepository: ObservableObject {
                 shareCount: 0,
                 imageURLs: imageURLs
             )
-            _ = try await db.collection("posts").addDocument(from: post)
+            let ref = try await db.collection("posts").addDocument(from: post)
+            // Fetch the post with its Firestore ID and insert at the top of the feed
+            let doc = try await ref.getDocument()
+            if var newPost = try? doc.data(as: Post.self) {
+                newPost.id = doc.documentID
+                await MainActor.run {
+                    self.posts.insert(newPost, at: 0)
+                }
+            }
             await MainActor.run {
                 self.isUploadingPost = false
                 self.uploadStatusMessage = "Post uploaded!"
