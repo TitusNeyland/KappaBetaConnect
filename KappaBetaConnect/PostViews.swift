@@ -113,9 +113,6 @@ struct PostUserInfoView: View {
                     Image(systemName: "ellipsis")
                         .foregroundColor(.gray)
                         .font(.system(size: 22, weight: .bold))
-                        .padding(12)
-                        .background(Color(.systemGray6).opacity(0.7))
-                        .clipShape(Circle())
                         .contentShape(Rectangle())
                 }
             } else {
@@ -1921,9 +1918,6 @@ struct CommentView: View {
                         Image(systemName: "ellipsis")
                             .foregroundColor(.gray)
                             .font(.system(size: 22, weight: .bold))
-                            .padding(12)
-                            .background(Color(.systemGray6).opacity(0.7))
-                            .clipShape(Circle())
                             .contentShape(Rectangle())
                     }
                 }
