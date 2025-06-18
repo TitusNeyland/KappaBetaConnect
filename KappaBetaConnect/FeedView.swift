@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct FeedView: View {
-    @StateObject private var postRepository = PostRepository()
+    @EnvironmentObject var postRepository: PostRepository
     @StateObject private var contentModeration = ContentModerationService()
     @EnvironmentObject private var authManager: AuthManager
     @Environment(\.dismiss) private var dismiss
@@ -147,6 +147,10 @@ struct FeedView: View {
                 postRepository.updateBlockedUsers(blockedUsers)
             }
             try await postRepository.fetchPosts()
+            // Prefetch the next batch in the background
+            Task {
+                try? await postRepository.loadMorePosts()
+            }
         } catch {
             await MainActor.run {
                 showError = true

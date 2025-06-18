@@ -13,76 +13,12 @@ class PostRepository: ObservableObject {
     private var blockedUsers: [String] = []
     private var lastDocument: DocumentSnapshot?
     private let postsPerPage = 3
-    private var postsListener: ListenerRegistration?
     
-    init() {
-        startPostsListener()
-    }
+    init() {}
     
     deinit {
-        // Clean up listeners
-        postsListener?.remove()
+        // Clean up listeners for single post listeners
         postListeners.values.forEach { $0.remove() }
-    }
-    
-    private func startPostsListener() {
-        // Listen only for the most recent posts (first page)
-        postsListener = db.collection("posts")
-            .order(by: "timestamp", descending: true)
-            .limit(to: postsPerPage)
-            .addSnapshotListener { [weak self] snapshot, error in
-                guard let self = self else { return }
-                
-                if let error = error {
-                    print("Error listening for post updates: \(error.localizedDescription)")
-                    Task { @MainActor in
-                        self.initialLoading = false
-                    }
-                    return
-                }
-                
-                guard let snapshot = snapshot else {
-                    Task { @MainActor in
-                        self.initialLoading = false
-                    }
-                    return
-                }
-                
-                let fetchedPosts = snapshot.documents.compactMap { document -> Post? in
-                    do {
-                        var post = try document.data(as: Post.self)
-                        post.id = document.documentID
-                        return post
-                    } catch {
-                        print("Error decoding post: \(error.localizedDescription)")
-                        return nil
-                    }
-                }
-                
-                // Filter out posts from blocked users
-                let filteredPosts = fetchedPosts.filter { post in
-                    !self.blockedUsers.contains(post.authorId)
-                }
-                
-                Task { @MainActor in
-                    // Update only the first page of posts
-                    if self.posts.count <= self.postsPerPage {
-                        self.posts = filteredPosts
-                    } else {
-                        // Keep the first page updated but preserve paginated posts
-                        let remainingPosts = Array(self.posts.dropFirst(self.postsPerPage))
-                        self.posts = filteredPosts + remainingPosts
-                    }
-                    
-                    // Update lastDocument for pagination
-                    if let lastDoc = snapshot.documents.last {
-                        self.lastDocument = lastDoc
-                    }
-                    
-                    // Set initialLoading to false after first successful load
-                    self.initialLoading = false
-                }
-            }
     }
     
     func updateBlockedUsers(_ blockedUsers: [String]) {
@@ -131,17 +67,18 @@ class PostRepository: ObservableObject {
     }
     
     func fetchPosts() async throws {
+        print("Starting fetchPosts")
         // Reset pagination state
-        lastDocument = nil
-        hasMorePosts = true
-        
+        await MainActor.run {
+            self.lastDocument = nil
+            self.hasMorePosts = true
+            self.initialLoading = true
+        }
         let snapshot = try await db.collection("posts")
             .order(by: "timestamp", descending: true)
             .limit(to: postsPerPage)
             .getDocuments()
-        
-        lastDocument = snapshot.documents.last
-        
+        let lastDoc = snapshot.documents.last
         let fetchedPosts = try snapshot.documents.compactMap { document in
             print("Attempting to decode post with ID: \(document.documentID)")
             print("Raw post data: \(document.data())")
@@ -169,33 +106,35 @@ class PostRepository: ObservableObject {
                 return nil
             }
         }
-        
         // Filter out posts from blocked users
         let filteredPosts = fetchedPosts.filter { post in
             !self.blockedUsers.contains(post.authorId)
         }
-        
         await MainActor.run {
             self.posts = filteredPosts
-            self.hasMorePosts = !snapshot.documents.isEmpty
+            self.hasMorePosts = !(snapshot.documents.isEmpty)
+            self.lastDocument = lastDoc
+            self.initialLoading = false
+            print("Finished fetchPosts, posts count: \(self.posts.count)")
         }
     }
     
     func loadMorePosts() async throws {
-        guard !isLoadingMore && hasMorePosts, let lastDocument = lastDocument else { return }
-        
+        print("Starting loadMorePosts")
+        var shouldLoad = false
         await MainActor.run {
-            isLoadingMore = true
+            shouldLoad = !self.isLoadingMore && self.hasMorePosts && self.lastDocument != nil
+            if shouldLoad {
+                self.isLoadingMore = true
+            }
         }
-        
+        guard shouldLoad, let lastDocument = self.lastDocument else { return }
         let snapshot = try await db.collection("posts")
             .order(by: "timestamp", descending: true)
             .start(afterDocument: lastDocument)
             .limit(to: postsPerPage)
             .getDocuments()
-        
-        self.lastDocument = snapshot.documents.last
-        
+        let newLastDoc = snapshot.documents.last
         let fetchedPosts = try snapshot.documents.compactMap { document in
             do {
                 var post = try document.data(as: Post.self)
@@ -206,16 +145,38 @@ class PostRepository: ObservableObject {
                 return nil
             }
         }
-        
         // Filter out posts from blocked users
         let filteredPosts = fetchedPosts.filter { post in
             !self.blockedUsers.contains(post.authorId)
         }
-        
         await MainActor.run {
             self.posts.append(contentsOf: filteredPosts)
-            self.hasMorePosts = !snapshot.documents.isEmpty
+            self.hasMorePosts = !(snapshot.documents.isEmpty)
+            self.lastDocument = newLastDoc
             self.isLoadingMore = false
+            print("Finished loadMorePosts, posts count: \(self.posts.count)")
+        }
+    }
+    
+    // Fetch with timeout for debugging freezes
+    func fetchPostsWithTimeout() async {
+        do {
+            try await withThrowingTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    try await self.fetchPosts()
+                }
+                group.addTask {
+                    try await Task.sleep(nanoseconds: 10 * 1_000_000_000) // 10 seconds
+                    throw NSError(domain: "Timeout", code: 1)
+                }
+                try await group.next()
+                group.cancelAll()
+            }
+        } catch {
+            await MainActor.run {
+                self.initialLoading = false
+                print("fetchPostsWithTimeout error: \(error.localizedDescription)")
+            }
         }
     }
     
